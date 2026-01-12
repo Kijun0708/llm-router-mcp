@@ -1,11 +1,21 @@
 // src/config.ts
 
 import { Config } from './types.js';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// 프로젝트 루트 경로 계산
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = join(__dirname, '..');
+
+// 기본 CLIProxyAPI 경로 (번들된 실행파일)
+const defaultCliproxyPath = join(projectRoot, 'vendor', 'cliproxy', 'cli-proxy-api.exe');
 
 export function loadConfig(): Config {
   return {
     cliproxyUrl: process.env.CLIPROXY_URL || 'http://localhost:8787',
-    cliproxyPath: process.env.CLIPROXY_PATH,  // CLIProxyAPI 실행 파일 경로 (자동 시작용)
+    cliproxyPath: process.env.CLIPROXY_PATH || defaultCliproxyPath,  // CLIProxyAPI 실행 파일 경로
     exaApiKey: process.env.EXA_API_KEY,       // Exa AI 검색 API 키
     context7ApiKey: process.env.CONTEXT7_API_KEY, // Context7 문서 API 키
 

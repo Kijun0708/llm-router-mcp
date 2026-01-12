@@ -27,3 +27,8 @@ test-*.mjs
 # Claude local settings
 .claude/
 tmpclaude-*
+
+# CLIProxyAPI runtime files (keep exe and config.example.yaml)
+vendor/cliproxy/config.yaml
+vendor/cliproxy/logs/
+vendor/cliproxy/tmpclaude-*

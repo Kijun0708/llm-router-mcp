@@ -34,6 +34,10 @@ Rate limit 발생 시 자동으로 다른 전문가로 전환됩니다.
 ## 설치
 
 ```bash
+# 저장소 클론
+git clone https://github.com/Kijun0708/custommcp.git
+cd custommcp
+
 # 의존성 설치
 npm install
 
@@ -41,24 +45,26 @@ npm install
 npm run build
 ```
 
+**CLIProxyAPI가 포함되어 있습니다** (`vendor/cliproxy/cli-proxy-api.exe`)
+
 ## 설정
 
 ### 환경변수 (.env)
 
 ```bash
-# CLIProxyAPI 설정
-CLIPROXY_URL=http://localhost:8787
-CLIPROXY_PATH=C:/path/to/cli-proxy-api.exe
-
-# Exa API (웹 검색)
+# Exa API (웹 검색) - 필수
 EXA_API_KEY=your_exa_api_key
 
-# Context7 API (라이브러리 문서)
+# Context7 API (라이브러리 문서) - 선택
 CONTEXT7_API_KEY=your_context7_api_key
 
-# 캐시 설정
-CACHE_ENABLED=true
-CACHE_TTL_MS=1800000
+# CLIProxyAPI 설정 (기본값 사용 시 생략 가능)
+# CLIPROXY_URL=http://localhost:8787
+# CLIPROXY_PATH=vendor/cliproxy/cli-proxy-api.exe
+
+# 캐시 설정 (선택)
+# CACHE_ENABLED=true
+# CACHE_TTL_MS=1800000
 ```
 
 ### Claude Code 연동
@@ -75,6 +81,19 @@ CACHE_TTL_MS=1800000
   }
 }
 ```
+
+### AI 프로바이더 인증
+
+MCP 연동 후 각 AI 프로바이더 OAuth 인증:
+
+```
+"인증 상태 확인해줘"  → auth_status로 현재 상태 확인
+"GPT 인증해줘"       → auth_gpt로 브라우저 OAuth 진행
+"Claude 인증해줘"    → auth_claude
+"Gemini 인증해줘"    → auth_gemini
+```
+
+인증 정보는 `~/.cli-proxy-api/` 폴더에 저장됩니다.
 
 ## MCP 도구 목록
 
@@ -118,24 +137,6 @@ CACHE_TTL_MS=1800000
 | 도구 | 설명 |
 |------|------|
 | `llm_router_health` | 서버 상태 확인, 캐시 관리 |
-
-## 인증
-
-이 MCP는 [CLIProxyAPI](https://github.com/anthropics/cli-proxy-api)를 통해 AI 모델에 접근합니다. 각 프로바이더는 OAuth 인증이 필요합니다.
-
-### 인증 상태 확인
-```
-"인증 상태 확인해줘" 또는 auth_status 도구 사용
-```
-
-### 프로바이더 인증
-```
-"GPT 인증해줘" → auth_gpt 도구가 브라우저를 열어 OAuth 진행
-"Claude 인증해줘" → auth_claude
-"Gemini 인증해줘" → auth_gemini
-```
-
-인증 정보는 `~/.cli-proxy-api/` 폴더에 저장됩니다.
 
 ## 사용 예시
 
