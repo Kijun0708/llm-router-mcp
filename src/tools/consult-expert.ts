@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { experts } from "../experts/index.js";
 import { callExpertWithFallback, callExpertWithToolsAndFallback } from "../services/expert-router.js";
+import { sessionMemory } from "../services/session-memory.js";
 
 export const consultExpertSchema = z.object({
   expert: z.enum(["strategist", "researcher", "reviewer", "frontend", "writer", "explorer"])
@@ -95,13 +96,28 @@ export async function handleConsultExpert(params: z.infer<typeof consultExpertSc
     // use_tools가 true이면 도구 사용 가능한 함수 호출
     const enableTools = params.use_tools !== false;
 
+    // 세션 메모리에서 공유 컨텍스트 가져오기
+    const sharedContext = sessionMemory.getContextForExpert();
+
+    // 사용자 제공 컨텍스트와 세션 메모리 병합
+    let fullContext = '';
+    if (sharedContext) {
+      fullContext += `[세션 공유 컨텍스트]\n${sharedContext}\n\n`;
+    }
+    if (params.context) {
+      fullContext += `[추가 컨텍스트]\n${params.context}`;
+    }
+
     const result = await callExpertWithToolsAndFallback(
       params.expert,
       params.question,
-      params.context,
+      fullContext || undefined,
       params.skip_cache,
       enableTools
     );
+
+    // 전문가 응답을 세션 메모리에 저장
+    sessionMemory.addExpertResponse(result.actualExpert, params.question, result.response);
 
     const expert = experts[params.expert];
     const actualExpert = experts[result.actualExpert];

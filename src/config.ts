@@ -12,9 +12,14 @@ const projectRoot = join(__dirname, '..');
 // 기본 CLIProxyAPI 경로 (번들된 실행파일)
 const defaultCliproxyPath = join(projectRoot, 'vendor', 'cliproxy', 'cli-proxy-api.exe');
 
-export function loadConfig(): Config {
+export function loadConfig(overridePort?: number): Config {
+  const baseUrl = process.env.CLIPROXY_URL || 'http://localhost:8787';
+  const cliproxyUrl = overridePort
+    ? `http://127.0.0.1:${overridePort}`
+    : baseUrl;
+
   return {
-    cliproxyUrl: process.env.CLIPROXY_URL || 'http://localhost:8787',
+    cliproxyUrl,
     cliproxyPath: process.env.CLIPROXY_PATH || defaultCliproxyPath,  // CLIProxyAPI 실행 파일 경로
     exaApiKey: process.env.EXA_API_KEY,       // Exa AI 검색 API 키
     context7ApiKey: process.env.CONTEXT7_API_KEY, // Context7 문서 API 키
@@ -56,4 +61,11 @@ export function loadConfig(): Config {
   };
 }
 
-export const config = loadConfig();
+export let config = loadConfig();
+
+/**
+ * 런타임에 config 재로드 (포트 변경 시 사용)
+ */
+export function reloadConfig(overridePort?: number): void {
+  config = loadConfig(overridePort);
+}

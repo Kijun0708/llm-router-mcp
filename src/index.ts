@@ -24,7 +24,11 @@ import {
   searchLibrariesTool, searchLibrariesSchema, handleSearchLibraries,
   authStatusTool, authStatusSchema, handleAuthStatus,
   authGptTool, authClaudeTool, authGeminiTool, authProviderSchema,
-  handleAuthGpt, handleAuthClaude, handleAuthGemini
+  handleAuthGpt, handleAuthClaude, handleAuthGemini,
+  setExpertModelTool, setExpertModelSchema, handleSetExpertModel,
+  memoryAddTool, memoryAddSchema, handleMemoryAdd,
+  memoryListTool, memoryListSchema, handleMemoryList,
+  memoryClearTool, memoryClearSchema, handleMemoryClear
 } from "./tools/index.js";
 
 // 서버 초기화
@@ -154,7 +158,35 @@ function registerTools() {
     () => handleAuthGemini()
   );
 
-  logger.info('All tools registered (17 tools)');
+  // 18. set_expert_model
+  server.tool(
+    setExpertModelTool.name,
+    setExpertModelSchema.shape,
+    (args) => handleSetExpertModel(setExpertModelSchema.parse(args))
+  );
+
+  // 19. memory_add
+  server.tool(
+    memoryAddTool.name,
+    memoryAddSchema.shape,
+    (args) => handleMemoryAdd(memoryAddSchema.parse(args))
+  );
+
+  // 20. memory_list
+  server.tool(
+    memoryListTool.name,
+    memoryListSchema.shape,
+    (args) => handleMemoryList(memoryListSchema.parse(args))
+  );
+
+  // 21. memory_clear
+  server.tool(
+    memoryClearTool.name,
+    memoryClearSchema.shape,
+    (args) => handleMemoryClear(memoryClearSchema.parse(args))
+  );
+
+  logger.info('All tools registered (21 tools)');
 }
 
 // 메인 함수

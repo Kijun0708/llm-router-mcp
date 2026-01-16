@@ -32,3 +32,6 @@ tmpclaude-*
 vendor/cliproxy/config.yaml
 vendor/cliproxy/logs/
 vendor/cliproxy/tmpclaude-*
+
+# Release builds (use GitHub Releases instead)
+release/

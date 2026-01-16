@@ -64,10 +64,21 @@ export async function handleHealthCheck(params: z.infer<typeof healthCheckSchema
   // CLIProxyAPI 연결 테스트
   let apiStatus = 'unknown';
   try {
-    const res = await fetch(`${config.cliproxyUrl}/health`, {
+    const res = await fetch(`${config.cliproxyUrl}/v1/models`, {
       signal: AbortSignal.timeout(5000)
     });
-    apiStatus = res.ok ? '✅ 연결됨' : `⚠️ 응답 오류 (${res.status})`;
+    if (res.ok) {
+      const body = await res.json() as { data?: unknown[] };
+      if (body.data && body.data.length > 0) {
+        apiStatus = '✅ 연결됨';
+      } else {
+        apiStatus = '⚠️ 연결됨 (인증 필요)';
+      }
+    } else if (res.status === 401) {
+      apiStatus = '⚠️ 연결됨 (인증 필요)';
+    } else {
+      apiStatus = `❌ 응답 오류 (${res.status})`;
+    }
   } catch {
     apiStatus = '❌ 연결 실패';
   }
