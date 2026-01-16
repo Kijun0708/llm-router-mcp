@@ -34,3 +34,8 @@ export {
   ralphLoopCancelTool, ralphLoopCancelSchema, handleRalphLoopCancel,
   ralphLoopStatusTool, ralphLoopStatusSchema, handleRalphLoopStatus
 } from './ralph-loop.js';
+export {
+  hookStatusTool, hookStatusSchema, handleHookStatus,
+  hookToggleTool, hookToggleSchema, handleHookToggle,
+  hookSystemToggleTool, hookSystemToggleSchema, handleHookSystemToggle
+} from './hook-manager.js';

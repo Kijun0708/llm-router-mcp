@@ -7,6 +7,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { logger } from "./utils/logger.js";
 
 import { ensureCliproxyRunning } from "./utils/cliproxy-launcher.js";
+import { setupHookSystem } from "./hooks/index.js";
+
 // 도구 임포트
 import {
   consultExpertTool, consultExpertSchema, handleConsultExpert,
@@ -32,7 +34,10 @@ import {
   orchestrateTaskTool, orchestrateTaskSchema, handleOrchestrateTask,
   ralphLoopStartTool, ralphLoopStartSchema, handleRalphLoopStart,
   ralphLoopCancelTool, ralphLoopCancelSchema, handleRalphLoopCancel,
-  ralphLoopStatusTool, ralphLoopStatusSchema, handleRalphLoopStatus
+  ralphLoopStatusTool, ralphLoopStatusSchema, handleRalphLoopStatus,
+  hookStatusTool, hookStatusSchema, handleHookStatus,
+  hookToggleTool, hookToggleSchema, handleHookToggle,
+  hookSystemToggleTool, hookSystemToggleSchema, handleHookSystemToggle
 } from "./tools/index.js";
 
 // 서버 초기화
@@ -218,12 +223,36 @@ function registerTools() {
     () => handleRalphLoopStatus()
   );
 
-  logger.info('All tools registered (25 tools)');
+  // 26. hook_status
+  server.tool(
+    hookStatusTool.name,
+    hookStatusSchema.shape,
+    (args) => handleHookStatus(hookStatusSchema.parse(args))
+  );
+
+  // 27. hook_toggle
+  server.tool(
+    hookToggleTool.name,
+    hookToggleSchema.shape,
+    (args) => handleHookToggle(hookToggleSchema.parse(args))
+  );
+
+  // 28. hook_system_toggle
+  server.tool(
+    hookSystemToggleTool.name,
+    hookSystemToggleSchema.shape,
+    (args) => handleHookSystemToggle(hookSystemToggleSchema.parse(args))
+  );
+
+  logger.info('All tools registered (28 tools)');
 }
 
 // 메인 함수
 async function main() {
   logger.info('Starting LLM Router MCP Server v2.0.0');
+
+  // Hook 시스템 초기화
+  setupHookSystem();
 
   // CLIProxyAPI 자동 시작
   await ensureCliproxyRunning();
