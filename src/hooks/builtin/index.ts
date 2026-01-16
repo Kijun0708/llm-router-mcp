@@ -10,11 +10,13 @@ export { loggingHooks, registerLoggingHooks } from './logging.js';
 export { contextInjectorHooks, registerContextInjectorHooks } from './context-injector.js';
 export { rateLimitHooks, registerRateLimitHooks } from './rate-limit-handler.js';
 export { errorRecoveryHooks, registerErrorRecoveryHooks } from './error-recovery.js';
+export { keywordDetectorHooks, registerKeywordDetectorHooks } from './keyword-detector.js';
 
 import { registerLoggingHooks } from './logging.js';
 import { registerContextInjectorHooks } from './context-injector.js';
 import { registerRateLimitHooks } from './rate-limit-handler.js';
 import { registerErrorRecoveryHooks } from './error-recovery.js';
+import { registerKeywordDetectorHooks } from './keyword-detector.js';
 
 /**
  * Registers all built-in hooks.
@@ -24,4 +26,5 @@ export function registerAllBuiltinHooks(): void {
   registerContextInjectorHooks();
   registerRateLimitHooks();
   registerErrorRecoveryHooks();
+  registerKeywordDetectorHooks();
 }

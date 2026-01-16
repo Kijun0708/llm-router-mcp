@@ -43,7 +43,13 @@ import {
   externalHookListTool, externalHookListSchema, handleExternalHookList,
   boulderStatusTool, boulderStatusSchema, handleBoulderStatus,
   boulderRecoverTool, boulderRecoverSchema, handleBoulderRecover,
-  boulderDetailTool, boulderDetailSchema, handleBoulderDetail
+  boulderDetailTool, boulderDetailSchema, handleBoulderDetail,
+  keywordAddTool, keywordAddSchema, handleKeywordAdd,
+  keywordRemoveTool, keywordRemoveSchema, handleKeywordRemove,
+  keywordListTool, keywordListSchema, handleKeywordList,
+  keywordDetectTool, keywordDetectSchema, handleKeywordDetect,
+  keywordToggleTool, keywordToggleSchema, handleKeywordToggle,
+  keywordSystemToggleTool, keywordSystemToggleSchema, handleKeywordSystemToggle
 } from "./tools/index.js";
 
 // 서버 초기화
@@ -292,7 +298,49 @@ function registerTools() {
     (args) => handleExternalHookList(externalHookListSchema.parse(args))
   );
 
-  logger.info('All tools registered (34 tools)');
+  // 35. keyword_add
+  server.tool(
+    keywordAddTool.name,
+    keywordAddSchema.shape,
+    (args) => handleKeywordAdd(keywordAddSchema.parse(args))
+  );
+
+  // 36. keyword_remove
+  server.tool(
+    keywordRemoveTool.name,
+    keywordRemoveSchema.shape,
+    (args) => handleKeywordRemove(keywordRemoveSchema.parse(args))
+  );
+
+  // 37. keyword_list
+  server.tool(
+    keywordListTool.name,
+    keywordListSchema.shape,
+    (args) => handleKeywordList(keywordListSchema.parse(args))
+  );
+
+  // 38. keyword_detect
+  server.tool(
+    keywordDetectTool.name,
+    keywordDetectSchema.shape,
+    (args) => handleKeywordDetect(keywordDetectSchema.parse(args))
+  );
+
+  // 39. keyword_toggle
+  server.tool(
+    keywordToggleTool.name,
+    keywordToggleSchema.shape,
+    (args) => handleKeywordToggle(keywordToggleSchema.parse(args))
+  );
+
+  // 40. keyword_system_toggle
+  server.tool(
+    keywordSystemToggleTool.name,
+    keywordSystemToggleSchema.shape,
+    (args) => handleKeywordSystemToggle(keywordSystemToggleSchema.parse(args))
+  );
+
+  logger.info('All tools registered (40 tools)');
 }
 
 // 메인 함수

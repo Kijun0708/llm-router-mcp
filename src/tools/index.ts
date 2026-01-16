@@ -47,3 +47,11 @@ export {
   boulderRecoverTool, boulderRecoverSchema, handleBoulderRecover,
   boulderDetailTool, boulderDetailSchema, handleBoulderDetail
 } from './boulder-state.js';
+export {
+  keywordAddTool, keywordAddSchema, handleKeywordAdd,
+  keywordRemoveTool, keywordRemoveSchema, handleKeywordRemove,
+  keywordListTool, keywordListSchema, handleKeywordList,
+  keywordDetectTool, keywordDetectSchema, handleKeywordDetect,
+  keywordToggleTool, keywordToggleSchema, handleKeywordToggle,
+  keywordSystemToggleTool, keywordSystemToggleSchema, handleKeywordSystemToggle
+} from './keyword-detector.js';
