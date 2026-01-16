@@ -37,7 +37,10 @@ import {
   ralphLoopStatusTool, ralphLoopStatusSchema, handleRalphLoopStatus,
   hookStatusTool, hookStatusSchema, handleHookStatus,
   hookToggleTool, hookToggleSchema, handleHookToggle,
-  hookSystemToggleTool, hookSystemToggleSchema, handleHookSystemToggle
+  hookSystemToggleTool, hookSystemToggleSchema, handleHookSystemToggle,
+  boulderStatusTool, boulderStatusSchema, handleBoulderStatus,
+  boulderRecoverTool, boulderRecoverSchema, handleBoulderRecover,
+  boulderDetailTool, boulderDetailSchema, handleBoulderDetail
 } from "./tools/index.js";
 
 // 서버 초기화
@@ -244,7 +247,28 @@ function registerTools() {
     (args) => handleHookSystemToggle(hookSystemToggleSchema.parse(args))
   );
 
-  logger.info('All tools registered (28 tools)');
+  // 29. boulder_status
+  server.tool(
+    boulderStatusTool.name,
+    boulderStatusSchema.shape,
+    (args) => handleBoulderStatus(boulderStatusSchema.parse(args))
+  );
+
+  // 30. boulder_recover
+  server.tool(
+    boulderRecoverTool.name,
+    boulderRecoverSchema.shape,
+    (args) => handleBoulderRecover(boulderRecoverSchema.parse(args))
+  );
+
+  // 31. boulder_detail
+  server.tool(
+    boulderDetailTool.name,
+    boulderDetailSchema.shape,
+    (args) => handleBoulderDetail(boulderDetailSchema.parse(args))
+  );
+
+  logger.info('All tools registered (31 tools)');
 }
 
 // 메인 함수

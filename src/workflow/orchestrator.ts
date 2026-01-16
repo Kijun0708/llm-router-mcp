@@ -23,12 +23,33 @@ import {
 import { PHASE_HANDLERS, contextToResult } from './phases/index.js';
 import { logger } from '../utils/logger.js';
 import { executeHooks } from '../hooks/index.js';
+import {
+  getBoulderManager,
+  BoulderStateManager,
+  WorkflowPhase
+} from '../features/boulder-state/index.js';
 
 /**
  * Sleep utility for polling.
  */
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Maps PhaseId to WorkflowPhase for Boulder State.
+ */
+function mapPhaseIdToWorkflowPhase(phaseId: PhaseId): WorkflowPhase {
+  const mapping: Record<PhaseId, WorkflowPhase> = {
+    'intent': 'intent',
+    'assessment': 'assessment',
+    'exploration': 'exploration',
+    'implementation': 'implementation',
+    'recovery': 'recovery',
+    'verification': 'verification',
+    'completion': 'completion'
+  };
+  return mapping[phaseId] || 'intent';
 }
 
 /**
@@ -84,9 +105,11 @@ export class WorkflowOrchestrator implements IWorkflowOrchestrator {
   private config: WorkflowConfig;
   private cancelled: boolean = false;
   private currentContext: WorkflowContext | null = null;
+  private boulderManager: BoulderStateManager;
 
   constructor(config?: Partial<WorkflowConfig>) {
     this.config = { ...DEFAULT_WORKFLOW_CONFIG, ...config };
+    this.boulderManager = getBoulderManager();
   }
 
   /**
@@ -106,6 +129,19 @@ export class WorkflowOrchestrator implements IWorkflowOrchestrator {
 
     logger.info({ request: request.substring(0, 100) }, 'Starting workflow');
 
+    // Create Boulder State for crash recovery
+    let boulder;
+    try {
+      boulder = await this.boulderManager.createBoulder({
+        request,
+        maxAttempts: config.maxAttempts
+      });
+      logger.debug({ boulderId: boulder.id }, 'Boulder state created');
+    } catch (error) {
+      // Boulder creation failed (likely existing active boulder)
+      logger.warn({ error }, 'Failed to create boulder state, continuing without');
+    }
+
     // Execute onWorkflowStart hook
     await executeHooks('onWorkflowStart', {
       request,
@@ -121,6 +157,11 @@ export class WorkflowOrchestrator implements IWorkflowOrchestrator {
     try {
       // Main execution loop
       while (currentPhase && !this.cancelled) {
+        // Start phase in boulder
+        if (boulder) {
+          this.boulderManager.startPhase(mapPhaseIdToWorkflowPhase(currentPhase));
+        }
+
         // Execute onWorkflowPhase hook
         await executeHooks('onWorkflowPhase', {
           phaseId: currentPhase,
@@ -130,6 +171,16 @@ export class WorkflowOrchestrator implements IWorkflowOrchestrator {
         });
 
         const result = await this.executePhase(context, currentPhase);
+
+        // Checkpoint phase completion in boulder
+        if (boulder) {
+          await this.boulderManager.checkpoint(
+            mapPhaseIdToWorkflowPhase(currentPhase),
+            result.success,
+            result.output,
+            result.success ? undefined : result.output
+          );
+        }
 
         lastOutput = result.output;
         previousPhase = currentPhase;
@@ -149,6 +200,17 @@ export class WorkflowOrchestrator implements IWorkflowOrchestrator {
                      context.implementationAttempts < context.maxAttempts;
 
       const result = contextToResult(context, lastOutput, success);
+
+      // Complete or fail boulder
+      if (boulder) {
+        if (success) {
+          await this.boulderManager.complete(result.output);
+        } else {
+          await this.boulderManager.fail(
+            context.escalationRequired ? 'Escalation required' : 'Max attempts reached'
+          );
+        }
+      }
 
       // Execute onWorkflowEnd hook
       await executeHooks('onWorkflowEnd', {
@@ -172,6 +234,13 @@ export class WorkflowOrchestrator implements IWorkflowOrchestrator {
         attemptsMade: context.implementationAttempts,
         escalated: true
       };
+
+      // Fail boulder on error
+      if (boulder) {
+        await this.boulderManager.fail(
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+      }
 
       // Execute onWorkflowEnd hook for failure
       await executeHooks('onWorkflowEnd', {
@@ -420,6 +489,50 @@ export class WorkflowOrchestrator implements IWorkflowOrchestrator {
    */
   getContext(): WorkflowContext | null {
     return this.currentContext;
+  }
+
+  /**
+   * Checks for crashed workflows and returns recovery info.
+   */
+  checkForCrash(): { canRecover: boolean; message: string; boulderId?: string } {
+    const recovery = this.boulderManager.checkForCrashedBoulder();
+    return {
+      canRecover: recovery.canRecover,
+      message: recovery.message,
+      boulderId: recovery.boulder?.id
+    };
+  }
+
+  /**
+   * Resumes a crashed workflow.
+   */
+  async resumeCrashed(): Promise<WorkflowResult | null> {
+    const recovery = this.boulderManager.checkForCrashedBoulder();
+
+    if (!recovery.canRecover || !recovery.boulder) {
+      logger.info('No crashed workflow to resume');
+      return null;
+    }
+
+    const boulder = recovery.boulder;
+    logger.info({
+      boulderId: boulder.id,
+      resumePhase: recovery.resumeFromPhase
+    }, 'Resuming crashed workflow');
+
+    // Resume the boulder
+    this.boulderManager.resumeBoulder();
+
+    // Re-execute from the beginning with the same request
+    // The boulder manager will track this as a continuation
+    return this.execute(boulder.request);
+  }
+
+  /**
+   * Gets the boulder manager for direct access.
+   */
+  getBoulderManager(): BoulderStateManager {
+    return this.boulderManager;
   }
 }
 

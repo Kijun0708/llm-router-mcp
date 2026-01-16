@@ -39,3 +39,8 @@ export {
   hookToggleTool, hookToggleSchema, handleHookToggle,
   hookSystemToggleTool, hookSystemToggleSchema, handleHookSystemToggle
 } from './hook-manager.js';
+export {
+  boulderStatusTool, boulderStatusSchema, handleBoulderStatus,
+  boulderRecoverTool, boulderRecoverSchema, handleBoulderRecover,
+  boulderDetailTool, boulderDetailSchema, handleBoulderDetail
+} from './boulder-state.js';
