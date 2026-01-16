@@ -49,7 +49,14 @@ import {
   keywordListTool, keywordListSchema, handleKeywordList,
   keywordDetectTool, keywordDetectSchema, handleKeywordDetect,
   keywordToggleTool, keywordToggleSchema, handleKeywordToggle,
-  keywordSystemToggleTool, keywordSystemToggleSchema, handleKeywordSystemToggle
+  keywordSystemToggleTool, keywordSystemToggleSchema, handleKeywordSystemToggle,
+  permissionCheckTool, permissionCheckSchema, handlePermissionCheck,
+  permissionGrantTool, permissionGrantSchema, handlePermissionGrant,
+  permissionDenyTool, permissionDenySchema, handlePermissionDeny,
+  permissionListTool, permissionListSchema, handlePermissionList,
+  permissionPatternToggleTool, permissionPatternToggleSchema, handlePermissionPatternToggle,
+  permissionSystemToggleTool, permissionSystemToggleSchema, handlePermissionSystemToggle,
+  permissionClearSessionTool, permissionClearSessionSchema, handlePermissionClearSession
 } from "./tools/index.js";
 
 // 서버 초기화
@@ -340,7 +347,56 @@ function registerTools() {
     (args) => handleKeywordSystemToggle(keywordSystemToggleSchema.parse(args))
   );
 
-  logger.info('All tools registered (40 tools)');
+  // 41. permission_check
+  server.tool(
+    permissionCheckTool.name,
+    permissionCheckSchema.shape,
+    (args) => handlePermissionCheck(permissionCheckSchema.parse(args))
+  );
+
+  // 42. permission_grant
+  server.tool(
+    permissionGrantTool.name,
+    permissionGrantSchema.shape,
+    (args) => handlePermissionGrant(permissionGrantSchema.parse(args))
+  );
+
+  // 43. permission_deny
+  server.tool(
+    permissionDenyTool.name,
+    permissionDenySchema.shape,
+    (args) => handlePermissionDeny(permissionDenySchema.parse(args))
+  );
+
+  // 44. permission_list
+  server.tool(
+    permissionListTool.name,
+    permissionListSchema.shape,
+    (args) => handlePermissionList(permissionListSchema.parse(args))
+  );
+
+  // 45. permission_pattern_toggle
+  server.tool(
+    permissionPatternToggleTool.name,
+    permissionPatternToggleSchema.shape,
+    (args) => handlePermissionPatternToggle(permissionPatternToggleSchema.parse(args))
+  );
+
+  // 46. permission_system_toggle
+  server.tool(
+    permissionSystemToggleTool.name,
+    permissionSystemToggleSchema.shape,
+    (args) => handlePermissionSystemToggle(permissionSystemToggleSchema.parse(args))
+  );
+
+  // 47. permission_clear_session
+  server.tool(
+    permissionClearSessionTool.name,
+    permissionClearSessionSchema.shape,
+    (args) => handlePermissionClearSession(permissionClearSessionSchema.parse(args))
+  );
+
+  logger.info('All tools registered (47 tools)');
 }
 
 // 메인 함수

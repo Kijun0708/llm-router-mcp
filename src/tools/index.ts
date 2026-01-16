@@ -55,3 +55,12 @@ export {
   keywordToggleTool, keywordToggleSchema, handleKeywordToggle,
   keywordSystemToggleTool, keywordSystemToggleSchema, handleKeywordSystemToggle
 } from './keyword-detector.js';
+export {
+  permissionCheckTool, permissionCheckSchema, handlePermissionCheck,
+  permissionGrantTool, permissionGrantSchema, handlePermissionGrant,
+  permissionDenyTool, permissionDenySchema, handlePermissionDeny,
+  permissionListTool, permissionListSchema, handlePermissionList,
+  permissionPatternToggleTool, permissionPatternToggleSchema, handlePermissionPatternToggle,
+  permissionSystemToggleTool, permissionSystemToggleSchema, handlePermissionSystemToggle,
+  permissionClearSessionTool, permissionClearSessionSchema, handlePermissionClearSession
+} from './permission-system.js';
