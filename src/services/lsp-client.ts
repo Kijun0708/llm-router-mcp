@@ -41,11 +41,13 @@ function getGrepConfig(): { grepPath: string; bashPath: string | null } {
 function executeGrep(args: string[], cwd: string, timeoutMs: number = 30000): Promise<string> {
   const { grepPath, bashPath } = getGrepConfig();
 
-  // Build command string
-  const argsStr = args.map(arg => {
-    // Quote args that need quoting (contain spaces or special chars)
-    if (arg.includes(' ') || arg.includes('|') || arg.includes('$')) {
-      return `"${arg}"`;
+  // Build command string with proper quoting for bash
+  const argsStr = args.map((arg, index) => {
+    // The -E pattern (6th arg after -rn --include x4 -E) needs single quotes in bash
+    // to preserve backslashes like \b
+    if (arg.includes('\\') || arg.includes('$') || arg.includes('|') || arg.includes(' ')) {
+      // Use single quotes for patterns with backslashes
+      return `'${arg}'`;
     }
     return arg;
   }).join(' ');
