@@ -16,41 +16,49 @@ import { existsSync, readFileSync } from 'fs';
 import { logger } from '../utils/logger.js';
 
 /**
- * Gets the grep command for the current OS
- * On Windows, uses Git's grep if available
+ * Gets grep configuration for the current OS
  */
-function getGrepCommand(): { cmd: string; useExec: boolean } {
+function getGrepConfig(): { grepPath: string; bashPath: string | null } {
   if (process.platform !== 'win32') {
-    return { cmd: 'grep', useExec: false };
+    return { grepPath: 'grep', bashPath: null };
   }
 
-  // Try Git for Windows grep
+  // Git for Windows paths
   const gitGrepPath = 'C:\\Program Files\\Git\\usr\\bin\\grep.exe';
-  if (existsSync(gitGrepPath)) {
-    return { cmd: gitGrepPath, useExec: true };
+  const gitBashPath = 'C:\\Program Files\\Git\\bin\\bash.exe';
+
+  if (existsSync(gitGrepPath) && existsSync(gitBashPath)) {
+    return { grepPath: gitGrepPath, bashPath: gitBashPath };
   }
 
-  // Fallback to hoping grep is in PATH (e.g., via Git Bash)
-  return { cmd: 'grep', useExec: false };
+  // Fallback
+  return { grepPath: 'grep', bashPath: null };
 }
 
 /**
  * Executes grep command and returns stdout
  */
 function executeGrep(args: string[], cwd: string, timeoutMs: number = 30000): Promise<string> {
-  const { cmd, useExec } = getGrepCommand();
+  const { grepPath, bashPath } = getGrepConfig();
 
-  // Remove quotes from pattern args for direct spawn
-  const cleanArgs = args.map(arg => arg.replace(/^"(.*)"$/, '$1'));
+  // Build command string
+  const argsStr = args.map(arg => {
+    // Quote args that need quoting (contain spaces or special chars)
+    if (arg.includes(' ') || arg.includes('|') || arg.includes('$')) {
+      return `"${arg}"`;
+    }
+    return arg;
+  }).join(' ');
 
-  // Replace '.' with the actual cwd path for Windows compatibility
-  const finalArgs = cleanArgs.map(arg => arg === '.' ? cwd : arg);
+  const fullCommand = bashPath
+    ? `"${grepPath}" ${argsStr}`
+    : `grep ${argsStr}`;
 
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, finalArgs, {
+    const child = spawn(fullCommand, [], {
       cwd,
       stdio: ['ignore', 'pipe', 'pipe'],
-      shell: false
+      shell: bashPath || true
     });
 
     let stdout = '';
