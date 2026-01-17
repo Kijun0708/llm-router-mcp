@@ -207,17 +207,18 @@ function buildSearchArgs(options: AstGrepSearchOptions): string[] {
   // JSON output for parsing
   args.push('--json');
 
-  // Include patterns
+  // Include patterns (use --globs)
   if (options.include && options.include.length > 0) {
     for (const pattern of options.include) {
-      args.push('--include', pattern);
+      args.push('--globs', pattern);
     }
   }
 
-  // Exclude patterns
+  // Exclude patterns (use --globs with ! prefix)
   if (options.exclude && options.exclude.length > 0) {
     for (const pattern of options.exclude) {
-      args.push('--exclude', pattern);
+      // Prepend ! for exclusion pattern
+      args.push('--globs', pattern.startsWith('!') ? pattern : `!${pattern}`);
     }
   }
 
@@ -419,15 +420,16 @@ export async function astGrepReplace(
     args.push('--update-all'); // Actually apply changes
   }
 
-  // Include/exclude patterns
+  // Include/exclude patterns (use --globs)
   if (options.include && options.include.length > 0) {
     for (const pattern of options.include) {
-      args.push('--include', pattern);
+      args.push('--globs', pattern);
     }
   }
   if (options.exclude && options.exclude.length > 0) {
     for (const pattern of options.exclude) {
-      args.push('--exclude', pattern);
+      // Prepend ! for exclusion pattern
+      args.push('--globs', pattern.startsWith('!') ? pattern : `!${pattern}`);
     }
   }
 
