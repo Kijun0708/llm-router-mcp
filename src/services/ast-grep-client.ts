@@ -239,35 +239,50 @@ function parseAstGrepOutput(stdout: string): AstGrepMatch[] {
   }
 
   try {
-    // ast-grep outputs JSON lines (one per match)
-    const lines = stdout.trim().split('\n');
-    const matches: AstGrepMatch[] = [];
+    const trimmed = stdout.trim();
+    let rawMatches: any[] = [];
 
-    for (const line of lines) {
-      if (!line.trim()) continue;
-
+    // ast-grep --json outputs a JSON array (not JSON lines)
+    // Try parsing as JSON array first
+    if (trimmed.startsWith('[')) {
       try {
-        const match = JSON.parse(line);
-        matches.push({
-          file: match.file || match.path,
-          range: {
-            start: {
-              line: match.range?.start?.line ?? match.start?.line ?? 0,
-              column: match.range?.start?.column ?? match.start?.column ?? 0
-            },
-            end: {
-              line: match.range?.end?.line ?? match.end?.line ?? 0,
-              column: match.range?.end?.column ?? match.end?.column ?? 0
-            }
-          },
-          text: match.text || match.matched || '',
-          lines: match.lines || match.context || match.text || '',
-          metaVariables: match.metaVariables || match.meta_variables
-        });
+        rawMatches = JSON.parse(trimmed);
       } catch (e) {
-        // Skip malformed JSON lines
-        logger.debug({ line }, 'Failed to parse ast-grep output line');
+        logger.debug('Failed to parse as JSON array, trying JSON lines');
       }
+    }
+
+    // Fallback: try JSON lines format (--json=stream)
+    if (rawMatches.length === 0 && !trimmed.startsWith('[')) {
+      const lines = trimmed.split('\n');
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          rawMatches.push(JSON.parse(line));
+        } catch (e) {
+          // Skip malformed JSON lines
+        }
+      }
+    }
+
+    const matches: AstGrepMatch[] = [];
+    for (const match of rawMatches) {
+      matches.push({
+        file: match.file || match.path,
+        range: {
+          start: {
+            line: match.range?.start?.line ?? match.start?.line ?? 0,
+            column: match.range?.start?.column ?? match.start?.column ?? 0
+          },
+          end: {
+            line: match.range?.end?.line ?? match.end?.line ?? 0,
+            column: match.range?.end?.column ?? match.end?.column ?? 0
+          }
+        },
+        text: match.text || match.matched || '',
+        lines: match.lines || match.context || match.text || '',
+        metaVariables: match.metaVariables || match.meta_variables
+      });
     }
 
     return matches;
