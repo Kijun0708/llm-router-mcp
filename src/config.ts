@@ -53,22 +53,22 @@ export function loadConfig(overridePort?: number): Config {
       byModel: {
         'claude-opus-4-5-20251101': 2,
         'gpt-5.2': 3,
-        'gemini-2.5-flash': 10
+        'gemini-3-flash-preview': 10
       }
     },
 
     models: {
       strategist: process.env.MODEL_STRATEGIST || 'gpt-5.2',  // GPT 5.2 사용
       researcher: process.env.MODEL_RESEARCHER || 'claude-sonnet-4-5-20250929',
-      reviewer: process.env.MODEL_REVIEWER || 'gemini-2.5-pro',
-      frontend: process.env.MODEL_FRONTEND || 'gemini-2.5-pro',
-      writer: process.env.MODEL_WRITER || 'gemini-2.5-flash',
-      explorer: process.env.MODEL_EXPLORER || 'gemini-2.5-flash',
-      multimodal: process.env.MODEL_MULTIMODAL || 'gemini-2.5-pro',  // Multimodal analysis
+      reviewer: process.env.MODEL_REVIEWER || 'gemini-3-pro-preview',
+      frontend: process.env.MODEL_FRONTEND || 'gemini-3-pro-preview',
+      writer: process.env.MODEL_WRITER || 'gemini-3-flash-preview',
+      explorer: process.env.MODEL_EXPLORER || 'gemini-3-flash-preview',
+      multimodal: process.env.MODEL_MULTIMODAL || 'gemini-3-pro-preview',  // Multimodal analysis
       // Planning Agents
       prometheus: process.env.MODEL_PROMETHEUS || 'claude-sonnet-4-5-20250929',  // Strategic planning
       metis: process.env.MODEL_METIS || 'gpt-5.2',  // Pre-planning analysis
-      momus: process.env.MODEL_MOMUS || 'gemini-2.5-pro',  // Plan validation
+      momus: process.env.MODEL_MOMUS || 'gemini-3-pro-preview',  // Plan validation
       librarian: process.env.MODEL_LIBRARIAN || 'claude-sonnet-4-5-20250929',  // Multi-repo analysis
       // 특화 전문가
       security: process.env.MODEL_SECURITY || 'claude-sonnet-4-5-20250929',  // 보안 취약점 분석
@@ -80,8 +80,8 @@ export function loadConfig(overridePort?: number): Config {
       gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.2-codex',
       claude_blank_1: process.env.MODEL_CLAUDE_BLANK_1 || 'claude-opus-4-5-20251101',
       claude_blank_2: process.env.MODEL_CLAUDE_BLANK_2 || 'claude-sonnet-4-5-20250929',
-      gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || 'gemini-2.5-pro',
-      gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || 'gemini-2.5-flash',
+      gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || 'gemini-3-pro-preview',
+      gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || 'gemini-3-flash-preview',
       // 페르소나 할당 전문가
       debate_moderator: process.env.MODEL_DEBATE_MODERATOR || 'claude-sonnet-4-5-20250929'
     }
