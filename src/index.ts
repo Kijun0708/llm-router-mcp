@@ -123,7 +123,10 @@ import {
   todoCompleteTool, todoCompleteSchema, handleTodoComplete,
   todoListTool, todoListSchema, handleTodoList,
   todoRemindTool, todoRemindSchema, handleTodoRemind,
-  todoClearTool, todoClearSchema, handleTodoClear
+  todoClearTool, todoClearSchema, handleTodoClear,
+  // Dynamic Persona Debate tools
+  dynamicDebateTool, dynamicDebateSchema, handleDynamicDebate,
+  autoDebateTool, autoDebateSchema, handleAutoDebate
 } from "./tools/index.js";
 
 // 서버 초기화
@@ -876,16 +879,30 @@ function registerTools() {
     (args) => handleTodoClear(todoClearSchema.parse(args))
   );
 
-  // 107-111. Interactive Bash Tools (5 tools)
+  // 107. dynamic_debate
+  server.tool(
+    dynamicDebateTool.name,
+    dynamicDebateSchema.shape,
+    (args) => handleDynamicDebate(dynamicDebateSchema.parse(args))
+  );
+
+  // 108. auto_debate
+  server.tool(
+    autoDebateTool.name,
+    autoDebateSchema.shape,
+    (args) => handleAutoDebate(autoDebateSchema.parse(args))
+  );
+
+  // 109-113. Interactive Bash Tools (5 tools)
   registerInteractiveBashTools(server);
 
-  // 112-120. Skill Tools (9 tools)
+  // 114-122. Skill Tools (9 tools)
   registerSkillTools(server);
 
-  // 121-129. MCP Manager Tools (9 tools)
+  // 123-131. MCP Manager Tools (9 tools)
   registerMcpManagerTools(server);
 
-  logger.info('All tools registered (129 tools)');
+  logger.info('All tools registered (131 tools)');
 }
 
 // 메인 함수
