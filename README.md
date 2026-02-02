@@ -12,7 +12,7 @@ LLM Router MCP는 [oh-my-opencode](https://github.com/nicepkg/oh-my-opencode) �
 
 ### 주요 특징
 
-- **11개 AI 전문가**: GPT, Claude, Gemini를 역할별로 활용
+- **22개 AI 전문가**: GPT, Claude, Gemini를 역할별로 활용 (특화 전문가 + 동적 페르소나)
 - **129개 MCP 도구**: 코드 분석, 웹 검색, Git, 브라우저 자동화 등
 - **38개+ 내장 훅**: Sisyphus 패턴, Think Mode, 자동 복구 등
 - **10개 내장 스킬**: 코드 리뷰, 보안 감사, 심층 분석 등 전문가 자동 라우팅
@@ -58,11 +58,17 @@ CONTEXT7_API_KEY=your_context7_api_key
   "mcpServers": {
     "llm-router": {
       "command": "node",
-      "args": ["/path/to/custommcp/dist/index.js"]
+      "args": ["/path/to/custommcp/dist/index.js"],
+      "env": {
+        "CLIPROXY_URL": "http://127.0.0.1:8317",
+        "EXA_API_KEY": "your_exa_api_key"
+      }
     }
   }
 }
 ```
+
+> **참고**: `CLIPROXY_URL`은 필수 환경변수입니다. CLIProxyAPI가 실행 중인 포트로 설정하세요.
 
 ### 4. AI 프로바이더 인증
 
@@ -97,11 +103,13 @@ custommcp doctor
 
 ## 전문가 시스템
 
+### 기본 전문가 (11명)
+
 | 전문가 | 모델 | 역할 | 폴백 |
 |--------|------|------|------|
 | `strategist` | GPT 5.2 | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
 | `researcher` | Claude Sonnet | 문서 분석, 코드베이스 탐색 | reviewer → explorer |
-| `reviewer` | Gemini Pro | 코드 리뷰, 보안 분석 | explorer |
+| `reviewer` | Gemini Pro | 코드 리뷰, 보안 분석 | explorer → codex_reviewer |
 | `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | writer → explorer |
 | `writer` | Gemini Flash | 기술 문서 작성 | explorer |
 | `explorer` | Gemini Flash | 빠른 검색, 간단한 쿼리 | - |
@@ -110,6 +118,32 @@ custommcp doctor
 | `metis` | GPT 5.2 | 전략적 계획, 복잡한 문제 분해 | strategist → researcher |
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → explorer |
 | `prometheus` | Claude Sonnet | 창의적 솔루션, 혁신적 접근 | strategist → researcher |
+
+### 특화 전문가 (4명)
+
+| 전문가 | 모델 | 역할 | 폴백 |
+|--------|------|------|------|
+| `security` | Claude Sonnet | OWASP/CWE 보안 취약점 분석 | reviewer → strategist |
+| `tester` | Claude Sonnet | TDD/테스트 전략 설계 | reviewer → researcher |
+| `data` | GPT 5.2 | DB 설계, 쿼리 최적화 | strategist → researcher |
+| `codex_reviewer` | GPT Codex | GPT 관점 코드 리뷰 | reviewer → strategist |
+
+### 동적 페르소나 전문가 (6명) - 토론용
+
+| 전문가 | 모델 | 특징 |
+|--------|------|------|
+| `gpt_blank_1` | GPT 5.2 | OpenAI 범용 모델 |
+| `gpt_blank_2` | GPT Codex | OpenAI 코드 특화 |
+| `claude_blank_1` | Claude Opus | Anthropic 최고 성능 |
+| `claude_blank_2` | Claude Sonnet | Anthropic 빠른 모델 |
+| `gemini_blank_1` | Gemini Pro | Google 고성능 |
+| `gemini_blank_2` | Gemini Flash | Google 빠른 응답 |
+
+### 토론 조정자 (1명)
+
+| 전문가 | 모델 | 역할 |
+|--------|------|------|
+| `debate_moderator` | Claude Sonnet | 토론 주제 분석 → 자동 페르소나 할당 |
 
 ---
 
@@ -202,6 +236,67 @@ tags:
 
 스킬 프롬프트 내용...
 ```
+
+### 동적 페르소나 토론
+
+다양한 AI 모델에 사용자 정의 페르소나를 부여하여 토론:
+
+#### 토론 방식
+
+| 방식 | 도구 | 설명 |
+|------|------|------|
+| **자동 페르소나** | `auto_debate` | AI가 주제에 맞는 역할 자동 설계 |
+| **수동 페르소나** | `dynamic_debate` | 사용자가 직접 각 AI 역할 지정 |
+| **전문가 토론** | `ensemble_query` | 기존 전문가들로 토론 |
+
+#### 사용 예시
+
+```
+"주식 손절 타이밍에 대해 토론해줘"
+→ 토론 방식 선택:
+  1️⃣ 자동 페르소나 (추천) - AI가 역할 설계
+  2️⃣ 수동 페르소나 - 직접 역할 지정
+  3️⃣ 전문가 토론 - 기존 전문가 활용
+```
+
+#### auto_debate 예시
+
+```
+auto_debate({
+  topic: "주식 손절 타이밍 전략",
+  participant_count: 3,  // 3명 또는 6명
+  max_rounds: 2
+})
+```
+
+→ AI가 자동으로 "기술적 분석가", "펀더멘털 분석가", "리스크 관리자" 등 역할 설계 후 토론 진행
+
+#### dynamic_debate 예시
+
+```
+dynamic_debate({
+  topic: "마이크로서비스 vs 모놀리식",
+  participants: [
+    { expert: "gpt_blank_1", persona: "마이크로서비스 옹호자" },
+    { expert: "claude_blank_1", persona: "모놀리식 옹호자" },
+    { expert: "gemini_blank_1", persona: "중립적 아키텍트" }
+  ],
+  max_rounds: 2
+})
+```
+
+#### 앙상블 프리셋
+
+| 프리셋 | 설명 |
+|--------|------|
+| `dynamic_debate_3` | 3명 동적 페르소나 토론 |
+| `dynamic_debate_6` | 6명 확장 토론 |
+| `security_debate` | 보안 전문가 토론 |
+| `multi_review` | 다중 관점 코드리뷰 |
+| `tdd_review` | TDD 검토 앙상블 |
+| `data_architecture` | 데이터 아키텍처 검토 |
+
+---
 
 ### Think Mode (확장 사고)
 
@@ -317,6 +412,8 @@ aliases:
 | `consult_expert` | 전문가에게 직접 질문 |
 | `route_by_category` | 카테고리 기반 자동 라우팅 |
 | `ensemble_query` | 여러 전문가 의견 종합 |
+| `dynamic_debate` | 수동 페르소나 지정 토론 |
+| `auto_debate` | AI가 자동으로 페르소나 설계 후 토론 |
 
 ### 코드 분석
 | 도구 | 설명 |
@@ -452,11 +549,11 @@ aliases:
 
 ```bash
 # 필수
+CLIPROXY_URL=http://127.0.0.1:8317  # CLIProxyAPI 엔드포인트 (포트는 실제 사용 중인 값으로)
 EXA_API_KEY=                    # Exa 웹 검색 API 키
 
 # 선택
 CONTEXT7_API_KEY=               # Context7 라이브러리 문서 API 키
-CLIPROXY_URL=http://localhost:8787  # CLIProxyAPI 엔드포인트
 CLIPROXY_PATH=vendor/cliproxy/cli-proxy-api.exe  # CLIProxyAPI 경로
 
 # 캐시 (선택)
@@ -467,6 +564,25 @@ CACHE_TTL_MS=1800000           # 캐시 TTL (30분)
 CONCURRENCY_ANTHROPIC=3         # Anthropic API 동시 요청 수
 CONCURRENCY_OPENAI=3            # OpenAI API 동시 요청 수
 CONCURRENCY_GOOGLE=5            # Google API 동시 요청 수
+```
+
+### MCP 설정에서 환경변수 지정
+
+`.env` 파일 대신 MCP 설정에서 직접 지정 가능:
+
+```json
+{
+  "mcpServers": {
+    "llm-router": {
+      "command": "node",
+      "args": ["/path/to/custommcp/dist/index.js"],
+      "env": {
+        "CLIPROXY_URL": "http://127.0.0.1:8317",
+        "EXA_API_KEY": "your_api_key"
+      }
+    }
+  }
+}
 ```
 
 ---
@@ -516,10 +632,11 @@ custommcp/
 
 | 항목 | 수량 |
 |------|------|
-| MCP 도구 | 129개 |
+| MCP 도구 | 131개 |
 | 내장 훅 | 38개+ |
-| 전문가 | 11개 |
+| 전문가 | 22개 (기본 11 + 특화 4 + 동적 6 + 조정자 1) |
 | 내장 스킬 | 10개 |
+| 앙상블 프리셋 | 11개 |
 | 기능 모듈 | 15+ |
 
 ---
@@ -546,9 +663,10 @@ custommcp/
 | 아키텍처 | Claude Code 플러그인 | Claude Code 플러그인 | MCP 서버 |
 | 런타임 | Bun | TypeScript/Agent SDK | Node.js |
 | LLM | Claude 전용 | Claude 전용 | GPT + Claude + Gemini |
-| 전문가 수 | 7개 | 12개 | 11개 |
-| 도구 수 | 13개 | - | 129개 |
+| 전문가 수 | 7개 | 12개 | 22개 |
+| 도구 수 | 13개 | - | 131개 |
 | 내장 스킬 | - | 12개 | 10개 |
+| 동적 토론 | - | - | ✅ (auto_debate, dynamic_debate) |
 | 세션 제어 | 직접 제어 | 직접 제어 | MCP 프로토콜 통해 간접 |
 
 ---
@@ -557,11 +675,15 @@ custommcp/
 
 ### CLIProxyAPI 연결 실패
 ```bash
-# CLIProxyAPI 수동 실행
+# 1. CLIProxyAPI 수동 실행
 ./vendor/cliproxy/cli-proxy-api.exe
 
-# 또는 환경변수로 URL 지정
-CLIPROXY_URL=http://localhost:8787
+# 2. config.yaml에서 포트 확인
+cat vendor/cliproxy/config.yaml | grep port
+
+# 3. 환경변수 설정 (필수)
+# .env 또는 mcp.json에서 설정
+CLIPROXY_URL=http://127.0.0.1:8317  # 실제 포트로 변경
 ```
 
 ### 인증 문제

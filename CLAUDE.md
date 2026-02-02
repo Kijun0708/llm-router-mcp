@@ -82,7 +82,7 @@ Six AI experts with specialized roles and automatic fallback chains:
 Environment variables (see `.env.example`):
 
 ```bash
-CLIPROXY_URL=http://localhost:8787    # CLIProxyAPI endpoint
+CLIPROXY_URL=http://127.0.0.1:<PORT>  # CLIProxyAPI endpoint (필수 - 실제 포트로 설정)
 CACHE_ENABLED=true                     # Response caching
 CACHE_TTL_MS=1800000                   # 30 minute cache TTL
 RETRY_MAX=3                            # Max retry attempts

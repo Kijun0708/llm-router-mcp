@@ -142,5 +142,19 @@ export interface Config {
     metis: string;
     momus: string;
     librarian: string;
+    // 특화 전문가
+    security: string;
+    tester: string;
+    data: string;
+    codex_reviewer: string;
+    // Blank 전문가 (동적 페르소나 토론용)
+    gpt_blank_1: string;
+    gpt_blank_2: string;
+    claude_blank_1: string;
+    claude_blank_2: string;
+    gemini_blank_1: string;
+    gemini_blank_2: string;
+    // 페르소나 할당 전문가
+    debate_moderator: string;
   };
 }

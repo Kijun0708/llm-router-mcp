@@ -13,10 +13,17 @@ const projectRoot = join(__dirname, '..');
 const defaultCliproxyPath = join(projectRoot, 'vendor', 'cliproxy', 'cli-proxy-api.exe');
 
 export function loadConfig(overridePort?: number): Config {
-  const baseUrl = process.env.CLIPROXY_URL || 'http://localhost:8317';
+  // CLIPROXY_URL은 환경변수로 반드시 설정해야 함
+  const baseUrl = process.env.CLIPROXY_URL;
+  if (!baseUrl && !overridePort) {
+    throw new Error(
+      'CLIPROXY_URL 환경변수가 설정되지 않았습니다. ' +
+      '.env 파일 또는 환경변수에 CLIPROXY_URL=http://127.0.0.1:<PORT>를 설정하세요.'
+    );
+  }
   const cliproxyUrl = overridePort
     ? `http://127.0.0.1:${overridePort}`
-    : baseUrl;
+    : baseUrl!;
 
   return {
     cliproxyUrl,
@@ -62,7 +69,21 @@ export function loadConfig(overridePort?: number): Config {
       prometheus: process.env.MODEL_PROMETHEUS || 'claude-sonnet-4-5-20250929',  // Strategic planning
       metis: process.env.MODEL_METIS || 'gpt-5.2',  // Pre-planning analysis
       momus: process.env.MODEL_MOMUS || 'gemini-2.5-pro',  // Plan validation
-      librarian: process.env.MODEL_LIBRARIAN || 'claude-sonnet-4-5-20250929'  // Multi-repo analysis
+      librarian: process.env.MODEL_LIBRARIAN || 'claude-sonnet-4-5-20250929',  // Multi-repo analysis
+      // 특화 전문가
+      security: process.env.MODEL_SECURITY || 'claude-sonnet-4-5-20250929',  // 보안 취약점 분석
+      tester: process.env.MODEL_TESTER || 'claude-sonnet-4-5-20250929',  // TDD/테스트 전략
+      data: process.env.MODEL_DATA || 'gpt-5.2',  // DB 설계/쿼리 최적화
+      codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.2-codex',  // GPT 코드리뷰
+      // Blank 전문가 (동적 페르소나 토론용 - 다양한 모델)
+      gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || 'gpt-5.2',
+      gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.2-codex',
+      claude_blank_1: process.env.MODEL_CLAUDE_BLANK_1 || 'claude-opus-4-5-20250929',
+      claude_blank_2: process.env.MODEL_CLAUDE_BLANK_2 || 'claude-sonnet-4-5-20250929',
+      gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || 'gemini-3.0-pro',
+      gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || 'gemini-3.0-flash',
+      // 페르소나 할당 전문가
+      debate_moderator: process.env.MODEL_DEBATE_MODERATOR || 'claude-sonnet-4-5-20250929'
     }
   };
 }

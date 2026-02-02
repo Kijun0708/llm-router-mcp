@@ -20,8 +20,21 @@ import {
 // Tool Schemas
 // ============================================================================
 
+const allExpertIds = [
+  // Core experts
+  'strategist', 'researcher', 'reviewer', 'frontend', 'writer', 'explorer', 'multimodal',
+  // Planning experts
+  'prometheus', 'metis', 'momus', 'librarian',
+  // Specialized experts
+  'security', 'tester', 'data', 'codex_reviewer',
+  // Blank experts
+  'gpt_blank_1', 'gpt_blank_2', 'claude_blank_1', 'claude_blank_2', 'gemini_blank_1', 'gemini_blank_2',
+  // Debate moderator
+  'debate_moderator'
+] as const;
+
 const participantSchema = z.object({
-  expert: z.enum(['strategist', 'researcher', 'reviewer', 'frontend', 'writer', 'explorer', 'multimodal'])
+  expert: z.enum(allExpertIds)
     .describe('참여 전문가 ID'),
   weight: z.number().min(0).max(2).optional()
     .describe('가중치 (0-2, 기본: 1.0)'),
@@ -38,13 +51,13 @@ export const ensembleQuerySchema = z.object({
     .default('parallel')
     .describe('앙상블 전략'),
 
-  experts: z.array(z.enum(['strategist', 'researcher', 'reviewer', 'frontend', 'writer', 'explorer', 'multimodal']))
+  experts: z.array(z.enum(allExpertIds))
     .min(1)
-    .max(7)
+    .max(10)
     .default(['strategist', 'researcher', 'reviewer'])
     .describe('참여할 전문가 목록'),
 
-  synthesizer: z.enum(['strategist', 'researcher', 'reviewer', 'frontend', 'writer', 'explorer', 'multimodal'])
+  synthesizer: z.enum(allExpertIds)
     .optional()
     .describe('합성 담당 전문가 (synthesize 전략용)'),
 
@@ -115,13 +128,27 @@ export const ensembleQueryTool = {
 - **chain**: 이전 결과를 다음 전문가에게 전달
 
 ## 전문가
+**Core:**
 - strategist (GPT): 설계, 아키텍처, 전략
 - researcher (Claude): 조사, 분석, 문서화
 - reviewer (Gemini): 코드 리뷰, 버그/보안
 - frontend (Gemini): UI/UX, 컴포넌트
 - writer (Gemini): 문서 작성
 - explorer (Gemini): 빠른 탐색
-- multimodal (Gemini): 이미지/시각 분석`,
+- multimodal (Gemini): 이미지/시각 분석
+
+**Specialized:**
+- security (Claude): 보안 취약점, OWASP
+- tester (Claude): TDD, 테스트 전략
+- data (GPT): DB 설계, 쿼리 최적화
+- codex_reviewer (GPT Codex): 코드 리뷰
+
+**Blank (동적 페르소나):**
+- gpt_blank_1, gpt_blank_2 (GPT)
+- claude_blank_1, claude_blank_2 (Claude)
+- gemini_blank_1, gemini_blank_2 (Gemini)
+
+💡 페르소나 토론은 \`dynamic_debate\` 또는 \`auto_debate\` 도구 사용 권장`,
 
   inputSchema: ensembleQuerySchema,
 
@@ -140,13 +167,22 @@ export const ensemblePresetTool = {
 
   description: `미리 정의된 프리셋으로 앙상블을 실행합니다.
 
-## 사용 가능한 프리셋
+## 기본 프리셋
 - diverse_perspectives: 다양한 관점 수집
 - synthesized_analysis: 통합 분석
 - expert_debate: 전문가 토론
 - code_review_ensemble: 코드 리뷰
 - quick_consensus: 빠른 합의
 
+## 신규 프리셋
+- dynamic_debate_3: 동적 페르소나 토론 (3명)
+- dynamic_debate_6: 동적 페르소나 토론 (6명)
+- security_debate: 보안 검토 토론
+- multi_review: 다중 관점 코드리뷰
+- tdd_review: TDD 검토 앙상블
+- data_architecture: 데이터 아키텍처 검토
+
+💡 커스텀 페르소나 토론은 \`dynamic_debate\` 또는 \`auto_debate\` 도구 사용 권장
 프리셋 목록은 ensemble_presets_list로 확인하세요.`,
 
   inputSchema: ensemblePresetSchema,

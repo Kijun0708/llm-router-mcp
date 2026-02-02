@@ -86,6 +86,53 @@ export {
   buildLibrarianPrompt,
 } from './librarian.prompt.js';
 
+// Security (OWASP/CWE Analysis)
+export {
+  SECURITY_SYSTEM_PROMPT,
+  SECURITY_METADATA,
+  buildSecurityPrompt,
+  type SecurityDepth,
+} from './security.prompt.js';
+
+// Tester (TDD/Test Strategy)
+export {
+  TESTER_SYSTEM_PROMPT,
+  TESTER_METADATA,
+  buildTesterPrompt,
+  type TestDepth,
+} from './tester.prompt.js';
+
+// Data (Database/Query Optimization)
+export {
+  DATA_SYSTEM_PROMPT,
+  DATA_METADATA,
+  buildDataPrompt,
+  type DataDepth,
+} from './data.prompt.js';
+
+// Codex Reviewer (GPT Code Review)
+export {
+  CODEX_REVIEWER_SYSTEM_PROMPT,
+  CODEX_REVIEWER_METADATA,
+  buildCodexReviewerPrompt,
+  type CodexReviewDepth,
+} from './codex-reviewer.prompt.js';
+
+// Blank (Dynamic Persona)
+export {
+  BLANK_SYSTEM_PROMPT,
+  BLANK_METADATA,
+  buildBlankPromptWithPersona,
+  buildDebatePrompt,
+} from './blank.prompt.js';
+
+// Debate Moderator (Persona Designer)
+export {
+  DEBATE_MODERATOR_SYSTEM_PROMPT,
+  DEBATE_MODERATOR_METADATA,
+  buildDebateModeratorPrompt,
+} from './debate-moderator.prompt.js';
+
 // Import for internal use
 import { STRATEGIST_SYSTEM_PROMPT, STRATEGIST_METADATA } from './strategist.prompt.js';
 import { RESEARCHER_SYSTEM_PROMPT, RESEARCHER_METADATA } from './researcher.prompt.js';
@@ -98,6 +145,12 @@ import { PROMETHEUS_SYSTEM_PROMPT, PROMETHEUS_METADATA } from './prometheus.prom
 import { METIS_SYSTEM_PROMPT, METIS_METADATA } from './metis.prompt.js';
 import { MOMUS_SYSTEM_PROMPT, MOMUS_METADATA } from './momus.prompt.js';
 import { LIBRARIAN_SYSTEM_PROMPT, LIBRARIAN_METADATA } from './librarian.prompt.js';
+import { SECURITY_SYSTEM_PROMPT, SECURITY_METADATA } from './security.prompt.js';
+import { TESTER_SYSTEM_PROMPT, TESTER_METADATA } from './tester.prompt.js';
+import { DATA_SYSTEM_PROMPT, DATA_METADATA } from './data.prompt.js';
+import { CODEX_REVIEWER_SYSTEM_PROMPT, CODEX_REVIEWER_METADATA } from './codex-reviewer.prompt.js';
+import { BLANK_SYSTEM_PROMPT, BLANK_METADATA } from './blank.prompt.js';
+import { DEBATE_MODERATOR_SYSTEM_PROMPT, DEBATE_MODERATOR_METADATA } from './debate-moderator.prompt.js';
 import type { ExpertRegistry } from '../metadata/expert-metadata.js';
 
 /**
@@ -115,6 +168,20 @@ export const EXPERT_REGISTRY: ExpertRegistry = {
   metis: METIS_METADATA,
   momus: MOMUS_METADATA,
   librarian: LIBRARIAN_METADATA,
+  // New specialized experts
+  security: SECURITY_METADATA,
+  tester: TESTER_METADATA,
+  data: DATA_METADATA,
+  codex_reviewer: CODEX_REVIEWER_METADATA,
+  // Blank experts (share same metadata)
+  gpt_blank_1: BLANK_METADATA,
+  gpt_blank_2: BLANK_METADATA,
+  claude_blank_1: BLANK_METADATA,
+  claude_blank_2: BLANK_METADATA,
+  gemini_blank_1: BLANK_METADATA,
+  gemini_blank_2: BLANK_METADATA,
+  // Debate moderator
+  debate_moderator: DEBATE_MODERATOR_METADATA,
 };
 
 /**
@@ -132,6 +199,20 @@ export const EXPERT_PROMPTS: Record<string, string> = {
   metis: METIS_SYSTEM_PROMPT,
   momus: MOMUS_SYSTEM_PROMPT,
   librarian: LIBRARIAN_SYSTEM_PROMPT,
+  // New specialized experts
+  security: SECURITY_SYSTEM_PROMPT,
+  tester: TESTER_SYSTEM_PROMPT,
+  data: DATA_SYSTEM_PROMPT,
+  codex_reviewer: CODEX_REVIEWER_SYSTEM_PROMPT,
+  // Blank experts (share same minimal prompt)
+  gpt_blank_1: BLANK_SYSTEM_PROMPT,
+  gpt_blank_2: BLANK_SYSTEM_PROMPT,
+  claude_blank_1: BLANK_SYSTEM_PROMPT,
+  claude_blank_2: BLANK_SYSTEM_PROMPT,
+  gemini_blank_1: BLANK_SYSTEM_PROMPT,
+  gemini_blank_2: BLANK_SYSTEM_PROMPT,
+  // Debate moderator
+  debate_moderator: DEBATE_MODERATOR_SYSTEM_PROMPT,
 };
 
 /**

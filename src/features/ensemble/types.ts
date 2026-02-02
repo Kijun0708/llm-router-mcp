@@ -235,6 +235,107 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
       aggregation: 'concatenate'
     },
     useCases: ['빠른 확인', '간단한 질문', '사실 확인']
+  },
+
+  // === New Presets ===
+
+  {
+    id: 'dynamic_debate_3',
+    name: '동적 페르소나 토론 (3명)',
+    description: '각 프로바이더 1명씩 사용자 정의 페르소나 토론 (dynamic_debate 도구 사용 권장)',
+    config: {
+      strategy: 'debate',
+      participants: [
+        { expertId: 'gpt_blank_1', role: '사용자 지정' },
+        { expertId: 'claude_blank_1', role: '사용자 지정' },
+        { expertId: 'gemini_blank_1', role: '사용자 지정' }
+      ],
+      aggregation: 'synthesize',
+      maxRounds: 2
+    },
+    useCases: ['커스텀 페르소나 토론', '도메인 특화 토론', '다양한 AI 관점']
+  },
+  {
+    id: 'dynamic_debate_6',
+    name: '동적 페르소나 토론 (6명)',
+    description: '각 프로바이더 2명씩 확장 토론 (dynamic_debate 도구 사용 권장)',
+    config: {
+      strategy: 'debate',
+      participants: [
+        { expertId: 'gpt_blank_1', role: '사용자 지정' },
+        { expertId: 'gpt_blank_2', role: '사용자 지정' },
+        { expertId: 'claude_blank_1', role: '사용자 지정' },
+        { expertId: 'claude_blank_2', role: '사용자 지정' },
+        { expertId: 'gemini_blank_1', role: '사용자 지정' },
+        { expertId: 'gemini_blank_2', role: '사용자 지정' }
+      ],
+      aggregation: 'synthesize',
+      maxRounds: 2
+    },
+    useCases: ['대규모 토론', '복잡한 의사결정', '심층 분석']
+  },
+  {
+    id: 'security_debate',
+    name: '보안 검토 토론',
+    description: '보안 전문가 + 리뷰어 + 전략가 토론',
+    config: {
+      strategy: 'debate',
+      participants: [
+        { expertId: 'security', role: '보안 분석가' },
+        { expertId: 'reviewer', role: '코드 품질 검토자' },
+        { expertId: 'strategist', role: '아키텍처 관점' }
+      ],
+      aggregation: 'synthesize',
+      synthesizer: 'security',
+      maxRounds: 2
+    },
+    useCases: ['보안 감사', '취약점 분석', 'OWASP 검토']
+  },
+  {
+    id: 'multi_review',
+    name: '다중 관점 코드리뷰',
+    description: 'Gemini + GPT Codex 코드리뷰',
+    config: {
+      strategy: 'parallel',
+      participants: [
+        { expertId: 'reviewer', role: 'Gemini 관점' },
+        { expertId: 'codex_reviewer', role: 'GPT Codex 관점' }
+      ],
+      aggregation: 'concatenate'
+    },
+    useCases: ['다각적 코드리뷰', '리팩토링 제안', 'PR 검토']
+  },
+  {
+    id: 'tdd_review',
+    name: 'TDD 검토 앙상블',
+    description: '테스트 전문가 + 리뷰어 협력',
+    config: {
+      strategy: 'parallel',
+      participants: [
+        { expertId: 'tester', role: '테스트 전략가' },
+        { expertId: 'reviewer', role: '코드 품질' }
+      ],
+      aggregation: 'synthesize',
+      synthesizer: 'tester'
+    },
+    useCases: ['테스트 커버리지 분석', 'TDD 전략 수립', '테스트 케이스 설계']
+  },
+  {
+    id: 'data_architecture',
+    name: '데이터 아키텍처 검토',
+    description: '데이터 전문가 + 전략가 + 보안 전문가',
+    config: {
+      strategy: 'debate',
+      participants: [
+        { expertId: 'data', role: '데이터 아키텍트' },
+        { expertId: 'strategist', role: '시스템 아키텍트' },
+        { expertId: 'security', role: '보안 관점' }
+      ],
+      aggregation: 'synthesize',
+      synthesizer: 'data',
+      maxRounds: 2
+    },
+    useCases: ['DB 설계 검토', '쿼리 최적화', '데이터 보안']
   }
 ];
 
@@ -248,5 +349,19 @@ export const EXPERT_PROVIDERS: Record<string, string> = {
   frontend: 'Google (Gemini)',
   writer: 'Google (Gemini)',
   explorer: 'Google (Gemini)',
-  multimodal: 'Google (Gemini)'
+  multimodal: 'Google (Gemini)',
+  // New specialized experts
+  security: 'Anthropic (Claude)',
+  tester: 'Anthropic (Claude)',
+  data: 'OpenAI (GPT)',
+  codex_reviewer: 'OpenAI (GPT Codex)',
+  // Blank experts
+  gpt_blank_1: 'OpenAI (GPT 5.2)',
+  gpt_blank_2: 'OpenAI (GPT Codex)',
+  claude_blank_1: 'Anthropic (Claude Opus)',
+  claude_blank_2: 'Anthropic (Claude Sonnet)',
+  gemini_blank_1: 'Google (Gemini Pro)',
+  gemini_blank_2: 'Google (Gemini Flash)',
+  // Debate moderator
+  debate_moderator: 'Anthropic (Claude Sonnet)'
 };

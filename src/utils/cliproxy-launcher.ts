@@ -34,7 +34,7 @@ async function isPortAvailable(port: number, host: string = '127.0.0.1'): Promis
 /**
  * 사용 가능한 포트 찾기
  */
-async function findAvailablePort(startPort: number = 8787, maxAttempts: number = 20): Promise<number | null> {
+async function findAvailablePort(startPort: number, maxAttempts: number = 20): Promise<number | null> {
   for (let i = 0; i < maxAttempts; i++) {
     const port = startPort + i;
     if (await isPortAvailable(port)) {
@@ -50,7 +50,11 @@ async function findAvailablePort(startPort: number = 8787, maxAttempts: number =
 async function isCliproxyRunning(port?: number): Promise<boolean> {
   return new Promise((resolve) => {
     const url = new URL(config.cliproxyUrl);
-    const targetPort = port || parseInt(url.port) || 8787;
+    const targetPort = port || parseInt(url.port);
+    if (!targetPort) {
+      resolve(false);
+      return;
+    }
     const host = url.hostname || '127.0.0.1';
 
     const socket = new net.Socket();
@@ -164,7 +168,7 @@ async function waitForCliproxy(port: number, maxAttempts: number = 10, delayMs: 
 /**
  * config.yaml에서 현재 설정된 포트 읽기
  */
-function getConfigPort(cliproxyDir: string): number {
+function getConfigPort(cliproxyDir: string): number | null {
   const configPath = path.join(cliproxyDir, 'config.yaml');
   if (fs.existsSync(configPath)) {
     const content = fs.readFileSync(configPath, 'utf-8');
@@ -173,7 +177,18 @@ function getConfigPort(cliproxyDir: string): number {
       return parseInt(match[1]);
     }
   }
-  return 8787; // 기본 포트
+  // CLIPROXY_URL 환경변수에서 포트 추출 시도
+  if (config.cliproxyUrl) {
+    try {
+      const url = new URL(config.cliproxyUrl);
+      if (url.port) {
+        return parseInt(url.port);
+      }
+    } catch {
+      // URL 파싱 실패 시 null 반환
+    }
+  }
+  return null;
 }
 
 /**
@@ -195,6 +210,10 @@ export async function ensureCliproxyRunning(): Promise<boolean> {
 
   // 3. 현재 설정된 포트 확인
   let targetPort = getConfigPort(cliproxyDir);
+  if (!targetPort) {
+    logger.error('포트가 설정되지 않았습니다. CLIPROXY_URL 환경변수 또는 config.yaml을 확인하세요.');
+    return false;
+  }
   logger.info({ port: targetPort }, 'Checking configured port...');
 
   // 4. 이미 실행 중인지 확인

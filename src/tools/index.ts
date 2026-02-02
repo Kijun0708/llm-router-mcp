@@ -158,3 +158,12 @@ export {
   todoClearTool, todoClearSchema, handleTodoClear,
   getTodoStats, resetTodoState
 } from './todo-manager.js';
+
+// Dynamic Persona Debate Tools
+export {
+  dynamicDebateTool, dynamicDebateSchema, handleDynamicDebate
+} from './dynamic-debate.js';
+
+export {
+  autoDebateTool, autoDebateSchema, handleAutoDebate
+} from './auto-debate.js';
