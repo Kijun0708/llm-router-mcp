@@ -201,16 +201,31 @@ export async function startProviderAuth(provider: string): Promise<{ success: bo
   logger.info({ provider, cliproxyPath, initialAuthCount }, 'Starting provider authentication');
 
   // MCP는 stdio로 통신하므로, 자식 프로세스는 stdio를 완전히 분리
-  const proc = spawn(cliproxyPath, [loginFlag], {
-    stdio: 'ignore',  // 모든 stdio 무시
-    detached: true,   // 독립 프로세스로 실행
-    shell: false,
-    windowsHide: false
-  });
+  // Windows에서는 start 명령으로 새 창에서 실행해야 브라우저가 열림
+  const isWindows = process.platform === 'win32';
+  const cliproxyDir = dirname(cliproxyPath);
+
+  let proc;
+  if (isWindows) {
+    // Windows: start /B 로 새 창에서 실행
+    proc = spawn('cmd.exe', ['/c', 'start', '', cliproxyPath, loginFlag], {
+      cwd: cliproxyDir,
+      stdio: 'ignore',
+      detached: true,
+      windowsHide: false
+    });
+  } else {
+    // Unix: 직접 실행
+    proc = spawn(cliproxyPath, [loginFlag], {
+      cwd: cliproxyDir,
+      stdio: 'ignore',
+      detached: true
+    });
+  }
 
   // 에러 핸들링
   proc.on('error', (error) => {
-    logger.error({ error, provider }, 'Auth process spawn failed');
+    logger.error({ error, provider, isWindows }, 'Auth process spawn failed');
   });
 
   // 부모 프로세스와 완전히 분리
