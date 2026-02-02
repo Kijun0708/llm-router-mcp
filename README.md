@@ -8,7 +8,7 @@
 
 ## 개요
 
-LLM Router MCP는 [oh-my-opencode](https://github.com/nicepkg/oh-my-opencode) 프로젝트에서 영감을 받아 개발된 MCP 서버입니다. Claude Code가 팀 리더 역할을 하며, 특정 작업에 맞는 AI 전문가에게 업무를 위임합니다.
+LLM Router MCP는 [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode) 프로젝트에서 영감을 받아 개발된 MCP 서버입니다. Claude Code가 팀 리더 역할을 하며, 특정 작업에 맞는 AI 전문가에게 업무를 위임합니다.
 
 ### 주요 특징
 
