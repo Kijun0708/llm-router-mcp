@@ -34,16 +34,49 @@ node dist/index.js
 
 ### Expert System
 
-Six AI experts with specialized roles and automatic fallback chains:
+22 AI experts with specialized roles and automatic fallback chains:
+
+#### 기본 전문가 (11명)
 
 | Expert | Model | Role | Fallbacks |
 |--------|-------|------|-----------|
-| `strategist` | GPT 5.2 | Architecture, design, debugging strategy | researcher → reviewer |
-| `researcher` | Claude Sonnet | Documentation analysis, codebase exploration | reviewer → explorer |
-| `reviewer` | Gemini Pro | Code review, bug detection, security analysis | explorer |
-| `frontend` | Gemini Pro | UI/UX, component design, accessibility | writer → explorer |
-| `writer` | Gemini Flash | Technical documentation, README, API docs | explorer |
-| `explorer` | Gemini Flash | Quick file search, pattern matching, simple queries | none |
+| `strategist` | GPT 5.2 | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
+| `researcher` | Claude Sonnet | 문서 분석, 코드베이스 탐색 | reviewer → explorer |
+| `reviewer` | Gemini Pro | 코드 리뷰, 보안 분석 | explorer → codex_reviewer |
+| `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | writer → explorer |
+| `writer` | Gemini Flash | 기술 문서 작성 | explorer |
+| `explorer` | Gemini Flash | 빠른 검색, 간단한 쿼리 | - |
+| `multimodal` | GPT 5.2 | 이미지 분석, 시각적 콘텐츠 | strategist → researcher |
+| `librarian` | Claude Sonnet | 지식 관리, 세션 히스토리 검색 | researcher → explorer |
+| `metis` | GPT 5.2 | 전략적 계획, 복잡한 문제 분해 | strategist → researcher |
+| `momus` | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → explorer |
+| `prometheus` | Claude Sonnet | 창의적 솔루션, 혁신적 접근 | strategist → researcher |
+
+#### 특화 전문가 (4명)
+
+| Expert | Model | Role | Fallbacks |
+|--------|-------|------|-----------|
+| `security` | Claude Sonnet | OWASP/CWE 보안 취약점 분석 | reviewer → strategist |
+| `tester` | Claude Sonnet | TDD/테스트 전략 설계 | reviewer → researcher |
+| `data` | GPT 5.2 | DB 설계, 쿼리 최적화 | strategist → researcher |
+| `codex_reviewer` | GPT Codex | GPT 관점 코드 리뷰 | reviewer → strategist |
+
+#### 동적 페르소나 전문가 (6명) - 토론용
+
+| Expert | Model | Description |
+|--------|-------|-------------|
+| `gpt_blank_1` | GPT 5.2 | OpenAI 범용 모델 |
+| `gpt_blank_2` | GPT Codex | OpenAI 코드 특화 |
+| `claude_blank_1` | Claude Opus | Anthropic 최고 성능 |
+| `claude_blank_2` | Claude Sonnet | Anthropic 빠른 모델 |
+| `gemini_blank_1` | Gemini Pro | Google 고성능 |
+| `gemini_blank_2` | Gemini Flash | Google 빠른 응답 |
+
+#### 토론 조정자 (1명)
+
+| Expert | Model | Role |
+|--------|-------|------|
+| `debate_moderator` | Claude Sonnet | 토론 주제 분석 → 자동 페르소나 할당 |
 
 ### MCP Tools
 

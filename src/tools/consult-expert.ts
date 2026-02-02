@@ -6,8 +6,13 @@ import { callExpertWithFallback, callExpertWithToolsAndFallback } from "../servi
 import { sessionMemory } from "../services/session-memory.js";
 
 export const consultExpertSchema = z.object({
-  expert: z.enum(["strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal"])
-    .describe("자문할 전문가"),
+  expert: z.enum([
+    // 기본 전문가 (11명)
+    "strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
+    "librarian", "metis", "momus", "prometheus",
+    // 특화 전문가 (4명)
+    "security", "tester", "data", "codex_reviewer"
+  ]).describe("자문할 전문가"),
 
   question: z.string()
     .min(10, "질문은 최소 10자 이상")
@@ -67,10 +72,48 @@ export const consultExpertTool = {
 - 역할: 빠른 코드베이스 탐색, 패턴 매칭, 간단한 질문
 - 사용 시점: 파일 찾기, 빠른 답변, 구조 파악
 
-### multimodal (Gemini 2.5 Pro)
+### multimodal (GPT 5.2)
 - 역할: 이미지/시각적 콘텐츠 분석, 스크린샷 해석, 다이어그램 이해
 - 사용 시점: 스크린샷 분석, UI 목업 리뷰, 다이어그램 해석, 에러 메시지 이미지 읽기
 - **이미지 전달**: image_path 파라미터로 로컬 파일 경로 또는 URL 전달
+
+### librarian (Claude Sonnet)
+- 역할: 지식 관리, 세션 히스토리 검색, 컨텍스트 정리
+- 사용 시점: 이전 대화 참조, 세션 간 정보 연결, 지식 베이스 관리
+
+### metis (GPT 5.2)
+- 역할: 전략적 계획, 복잡한 문제 분해, 단계별 실행 계획
+- 사용 시점: 복잡한 프로젝트 계획, 문제 분해, 실행 로드맵 작성
+
+### momus (Gemini Pro)
+- 역할: 비판적 분석, 품질 평가, 약점 발견
+- 사용 시점: 솔루션 비평, 품질 검증, 잠재적 문제점 도출
+
+### prometheus (Claude Sonnet)
+- 역할: 창의적 솔루션, 혁신적 접근, 새로운 아이디어
+- 사용 시점: 브레인스토밍, 창의적 문제 해결, 대안 탐색
+
+---
+
+## 특화 전문가
+
+### security (Claude Sonnet)
+- 역할: OWASP/CWE 보안 취약점 분석, 보안 감사
+- 사용 시점: 보안 코드 리뷰, 취약점 분석, 보안 모범 사례 자문
+
+### tester (Claude Sonnet)
+- 역할: TDD/테스트 전략 설계, 테스트 케이스 작성
+- 사용 시점: 테스트 계획, 테스트 코드 작성, 커버리지 분석
+
+### data (GPT 5.2)
+- 역할: DB 설계, 쿼리 최적화, 데이터 모델링
+- 사용 시점: 스키마 설계, SQL 최적화, 데이터 아키텍처 자문
+
+### codex_reviewer (GPT Codex)
+- 역할: GPT 관점 코드 리뷰, 코드 품질 분석
+- 사용 시점: OpenAI 관점의 코드 리뷰, reviewer와 다른 시각 필요 시
+
+---
 
 ## Rate Limit 자동 처리
 - 전문가가 한도 초과 시 자동으로 대체 전문가로 폴백
