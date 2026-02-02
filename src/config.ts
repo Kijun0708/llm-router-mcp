@@ -51,9 +51,9 @@ export function loadConfig(overridePort?: number): Config {
         google: parseInt(process.env.CONCURRENCY_GOOGLE || '10')
       },
       byModel: {
-        'claude-opus-4-5': 2,
+        'claude-opus-4-5-20251101': 2,
         'gpt-5.2': 3,
-        'gemini-3.0-flash': 10
+        'gemini-2.5-flash': 10
       }
     },
 
@@ -78,10 +78,10 @@ export function loadConfig(overridePort?: number): Config {
       // Blank 전문가 (동적 페르소나 토론용 - 다양한 모델)
       gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || 'gpt-5.2',
       gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.2-codex',
-      claude_blank_1: process.env.MODEL_CLAUDE_BLANK_1 || 'claude-opus-4-5-20250929',
+      claude_blank_1: process.env.MODEL_CLAUDE_BLANK_1 || 'claude-opus-4-5-20251101',
       claude_blank_2: process.env.MODEL_CLAUDE_BLANK_2 || 'claude-sonnet-4-5-20250929',
-      gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || 'gemini-3.0-pro',
-      gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || 'gemini-3.0-flash',
+      gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || 'gemini-2.5-pro',
+      gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || 'gemini-2.5-flash',
       // 페르소나 할당 전문가
       debate_moderator: process.env.MODEL_DEBATE_MODERATOR || 'claude-sonnet-4-5-20250929'
     }
