@@ -28,8 +28,8 @@ LLM Router MCP는 [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencod
 ### 1. 저장소 클론 및 빌드
 
 ```bash
-git clone https://github.com/Kijun0708/custommcp.git
-cd custommcp
+git clone https://github.com/Kijun0708/llm-router-mcp.git
+cd llm-router-mcp
 npm install
 npm run build
 ```
@@ -58,7 +58,7 @@ CONTEXT7_API_KEY=your_context7_api_key
   "mcpServers": {
     "llm-router": {
       "command": "node",
-      "args": ["/path/to/custommcp/dist/index.js"],
+      "args": ["/path/to/llm-router-mcp/dist/index.js"],
       "env": {
         "CLIPROXY_URL": "http://127.0.0.1:8317",
         "EXA_API_KEY": "your_exa_api_key"
@@ -575,7 +575,7 @@ CONCURRENCY_GOOGLE=5            # Google API 동시 요청 수
   "mcpServers": {
     "llm-router": {
       "command": "node",
-      "args": ["/path/to/custommcp/dist/index.js"],
+      "args": ["/path/to/llm-router-mcp/dist/index.js"],
       "env": {
         "CLIPROXY_URL": "http://127.0.0.1:8317",
         "EXA_API_KEY": "your_api_key"
@@ -590,7 +590,7 @@ CONCURRENCY_GOOGLE=5            # Google API 동시 요청 수
 ## 프로젝트 구조
 
 ```
-custommcp/
+llm-router-mcp/
 ├── src/
 │   ├── index.ts              # MCP 서버 진입점
 │   ├── experts/              # 전문가 정의
@@ -658,7 +658,7 @@ custommcp/
 - Worker Preamble Protocol (oh-my-claudecode)
 
 ### 차이점
-| 항목 | oh-my-opencode | oh-my-claudecode | custommcp |
+| 항목 | oh-my-opencode | oh-my-claudecode | llm-router-mcp |
 |------|----------------|-----------------|-----------|
 | 아키텍처 | Claude Code 플러그인 | Claude Code 플러그인 | MCP 서버 |
 | 런타임 | Bun | TypeScript/Agent SDK | Node.js |
