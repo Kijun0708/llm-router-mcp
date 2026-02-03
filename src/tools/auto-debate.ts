@@ -174,18 +174,38 @@ ${blankExperts.map((id, i) => `${i + 1}. ${id} (${getProviderName(id)})`).join('
   try {
     const result = await callExpertWithFallback('debate_moderator', prompt, undefined, true);
 
-    // JSON 파싱
-    const jsonMatch = result.response.match(/```json\s*([\s\S]*?)\s*```/);
-    if (!jsonMatch) {
+    // JSON 추출 (여러 형식 지원)
+    let jsonStr: string | null = null;
+
+    // 1. ```json ... ``` 코드 블록 (대소문자 무관)
+    const codeBlockMatch = result.response.match(/```(?:json|JSON)\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
+      jsonStr = codeBlockMatch[1];
+    }
+
+    // 2. 코드 블록 없이 { ... } 형태의 JSON
+    if (!jsonStr) {
+      const jsonObjectMatch = result.response.match(/\{[\s\S]*"(?:assignments|personas)"[\s\S]*\}/);
+      if (jsonObjectMatch) {
+        jsonStr = jsonObjectMatch[0];
+      }
+    }
+
+    if (!jsonStr) {
+      logger.error({ response: result.response.substring(0, 500) }, 'Failed to extract JSON from response');
       throw new Error('페르소나 할당 결과에서 JSON을 찾을 수 없습니다.');
     }
 
-    const parsed = JSON.parse(jsonMatch[1]);
-    if (!parsed.assignments || !Array.isArray(parsed.assignments)) {
-      throw new Error('유효하지 않은 페르소나 할당 형식입니다.');
+    const parsed = JSON.parse(jsonStr);
+
+    // assignments 또는 personas 키 모두 지원
+    const personaArray = parsed.assignments || parsed.personas;
+    if (!personaArray || !Array.isArray(personaArray)) {
+      logger.error({ parsedKeys: Object.keys(parsed) }, 'Invalid persona assignment format');
+      throw new Error('유효하지 않은 페르소나 할당 형식입니다. (assignments 또는 personas 키 필요)');
     }
 
-    return parsed.assignments.map((a: any) => ({
+    return personaArray.map((a: any) => ({
       expertId: a.expert_id,
       personaName: a.persona_name,
       personaDescription: a.persona_description,
