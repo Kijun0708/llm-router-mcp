@@ -42,9 +42,13 @@ const participantSchema = z.object({
     .describe('역할 설명 (토론 모드용)')
 });
 
+/** 쿼리 최대 길이 (토큰 비용 보호) */
+const MAX_QUERY_LENGTH = 50000;
+
 export const ensembleQuerySchema = z.object({
   query: z.string()
     .min(5, '쿼리는 최소 5자 이상')
+    .max(MAX_QUERY_LENGTH, `쿼리는 최대 ${MAX_QUERY_LENGTH}자`)
     .describe('앙상블로 실행할 쿼리'),
 
   strategy: z.enum(['parallel', 'synthesize', 'debate', 'vote', 'best_of_n', 'chain'])
@@ -59,35 +63,115 @@ export const ensembleQuerySchema = z.object({
 
   synthesizer: z.enum(allExpertIds)
     .optional()
-    .describe('합성 담당 전문가 (synthesize 전략용)'),
+    .describe('합성 담당 전문가 (synthesize 전략용, synthesize/debate 전략에서 필수)'),
 
   context: z.string()
+    .max(100000, '컨텍스트는 최대 100000자')
     .optional()
     .describe('추가 컨텍스트'),
 
-  vote_options: z.array(z.string())
+  vote_options: z.array(z.string().min(1).max(500))
+    .min(2, '투표 옵션은 최소 2개 필요')
+    .max(10, '투표 옵션은 최대 10개')
     .optional()
-    .describe('투표 선택지 (vote 전략용)'),
+    .describe('투표 선택지 (vote 전략에서 필수)'),
 
   max_rounds: z.number()
     .min(1)
     .max(5)
     .default(2)
-    .optional()
     .describe('최대 토론 라운드 (debate 전략용)'),
 
   n: z.number()
     .min(2)
     .max(5)
     .default(3)
-    .optional()
     .describe('실행 횟수 (best_of_n 전략용)'),
 
   skip_cache: z.boolean()
     .default(false)
-    .optional()
     .describe('캐시 사용 안 함')
 }).strict();
+
+// ============================================================================
+// Strategy Validation (별도 함수로 분리 - .shape 호환성 유지)
+// ============================================================================
+
+export interface StrategyValidationError {
+  field: string;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
+/**
+ * 전략별 파라미터 검증 함수
+ * - ZodEffects 대신 별도 함수로 분리하여 .shape 호환성 유지
+ * - handleEnsembleQuery 내에서 호출
+ */
+export function validateEnsembleStrategy(
+  data: z.infer<typeof ensembleQuerySchema>
+): StrategyValidationError[] {
+  const errors: StrategyValidationError[] = [];
+
+  // synthesize 전략: synthesizer 필수
+  if (data.strategy === 'synthesize' && !data.synthesizer) {
+    errors.push({
+      field: 'synthesizer',
+      message: 'synthesize 전략에서는 synthesizer 파라미터가 필수입니다.',
+      severity: 'error'
+    });
+  }
+
+  // debate 전략: synthesizer 권장 (최종 정리용)
+  if (data.strategy === 'debate' && !data.synthesizer) {
+    errors.push({
+      field: 'synthesizer',
+      message: 'debate 전략에서는 synthesizer를 지정하면 토론 결과를 정리해줍니다.',
+      severity: 'warning'
+    });
+  }
+
+  // vote 전략: vote_options 필수
+  if (data.strategy === 'vote' && (!data.vote_options || data.vote_options.length < 2)) {
+    errors.push({
+      field: 'vote_options',
+      message: 'vote 전략에서는 vote_options에 최소 2개 이상의 선택지가 필요합니다.',
+      severity: 'error'
+    });
+  }
+
+  // best_of_n 전략: experts가 1개이고 n >= 2 확인
+  if (data.strategy === 'best_of_n') {
+    if (data.experts && data.experts.length > 1) {
+      errors.push({
+        field: 'experts',
+        message: 'best_of_n 전략에서는 단일 전문가만 지정해야 합니다. (동일 전문가를 n번 실행)',
+        severity: 'error'
+      });
+    }
+  }
+
+  // chain 전략: experts가 2개 이상 필요
+  if (data.strategy === 'chain' && data.experts && data.experts.length < 2) {
+    errors.push({
+      field: 'experts',
+      message: 'chain 전략에서는 최소 2명 이상의 전문가가 필요합니다.',
+      severity: 'error'
+    });
+  }
+
+  // parallel/synthesize: experts가 2개 이상 권장
+  if ((data.strategy === 'parallel' || data.strategy === 'synthesize') &&
+      data.experts && data.experts.length < 2) {
+    errors.push({
+      field: 'experts',
+      message: `${data.strategy} 전략에서는 2명 이상의 전문가를 권장합니다.`,
+      severity: 'warning'
+    });
+  }
+
+  return errors;
+}
 
 export const ensemblePresetSchema = z.object({
   preset: z.string()
@@ -220,6 +304,23 @@ export async function handleEnsembleQuery(
   params: z.infer<typeof ensembleQuerySchema>
 ): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
   try {
+    // 전략별 파라미터 검증
+    const validationErrors = validateEnsembleStrategy(params);
+    const criticalErrors = validationErrors.filter(e => e.severity === 'error');
+
+    if (criticalErrors.length > 0) {
+      const errorMessages = criticalErrors.map(e => `- **${e.field}**: ${e.message}`).join('\n');
+      return {
+        content: [{
+          type: 'text',
+          text: `## ⚠️ 앙상블 파라미터 오류\n\n${errorMessages}\n\n전략: \`${params.strategy}\`에 맞는 파라미터를 확인해주세요.`
+        }]
+      };
+    }
+
+    // 경고는 로그로 기록 (실행은 계속)
+    const warnings = validationErrors.filter(e => e.severity === 'warning');
+
     const participants = params.experts.map(expertId => ({
       expertId,
       weight: 1.0
@@ -245,6 +346,15 @@ export async function handleEnsembleQuery(
     response += `**참여자**: ${result.responses.map(r => r.expertId).filter((v, i, a) => a.indexOf(v) === i).join(', ')}\n`;
     response += `**소요 시간**: ${result.totalLatencyMs}ms\n`;
     response += `**성공/실패**: ${result.successCount}/${result.failureCount}\n\n`;
+
+    // 경고 메시지 표시
+    if (warnings.length > 0) {
+      response += `⚠️ **주의사항**:\n`;
+      for (const w of warnings) {
+        response += `- ${w.message}\n`;
+      }
+      response += `\n`;
+    }
 
     if (result.synthesizedBy) {
       response += `**합성 by**: ${result.synthesizedBy}\n\n`;

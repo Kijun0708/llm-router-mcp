@@ -71,7 +71,23 @@ interface DoomLoopStats {
   currentPatternLength: number;
 }
 
+// ============================================================================
+// Constants
+// ============================================================================
+
+/** 히스토리 최대 크기 (메모리 보호) */
+const MAX_HISTORY_SIZE = 100;
+
+/** 유사도 검사 시 최근 N개만 검사 (성능 최적화) */
+const SIMILARITY_CHECK_LIMIT = 20;
+
+/** 히스토리 정리 주기 (매 N번째 호출마다) */
+const CLEANUP_INTERVAL = 10;
+
+// ============================================================================
 // State
+// ============================================================================
+
 let config: DoomLoopConfig = {
   enabled: true,
   maxIdenticalCalls: 3,
@@ -94,71 +110,183 @@ let callHistory: ToolCallRecord[] = [];
 let consecutiveErrors = 0;
 let lastBreakTime = 0;
 let lastErrorToolName = '';
+let callCount = 0; // 정리 주기 추적용
+
+// ============================================================================
+// Hash & Similarity Functions (Optimized)
+// ============================================================================
 
 /**
- * Generates a hash of tool input for comparison
+ * JSON 객체의 키를 정렬하여 정규화 (해시 일관성 보장)
+ */
+function sortObjectKeys(obj: unknown): unknown {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(sortObjectKeys);
+  }
+
+  const sorted: Record<string, unknown> = {};
+  const keys = Object.keys(obj as Record<string, unknown>).sort();
+  for (const key of keys) {
+    sorted[key] = sortObjectKeys((obj as Record<string, unknown>)[key]);
+  }
+  return sorted;
+}
+
+/**
+ * Generates a normalized hash of tool input for comparison
+ * (키 순서와 관계없이 동일한 해시 생성)
  */
 function hashInput(input: unknown): string {
   try {
-    return JSON.stringify(input);
+    const normalized = sortObjectKeys(input);
+    return JSON.stringify(normalized);
   } catch {
     return String(input);
   }
 }
 
 /**
- * Calculates similarity between two strings (simple Jaccard)
+ * Calculates similarity between two strings (optimized Jaccard)
+ * - 긴 문자열은 토큰 수 제한으로 성능 보호
  */
 function calculateSimilarity(a: string, b: string): number {
   if (a === b) return 1;
   if (!a || !b) return 0;
 
-  const setA = new Set(a.split(/\s+/));
-  const setB = new Set(b.split(/\s+/));
+  // 토큰 수 제한 (긴 입력 성능 보호)
+  const MAX_TOKENS = 100;
+  const tokensA = a.split(/\s+/).slice(0, MAX_TOKENS);
+  const tokensB = b.split(/\s+/).slice(0, MAX_TOKENS);
 
-  const intersection = new Set([...setA].filter(x => setB.has(x)));
-  const union = new Set([...setA, ...setB]);
+  const setA = new Set(tokensA);
+  const setB = new Set(tokensB);
 
-  return intersection.size / union.size;
+  let intersectionSize = 0;
+  for (const item of setA) {
+    if (setB.has(item)) intersectionSize++;
+  }
+
+  const unionSize = setA.size + setB.size - intersectionSize;
+  return unionSize === 0 ? 0 : intersectionSize / unionSize;
 }
 
+// ============================================================================
+// History Management (Memory Optimized)
+// ============================================================================
+
 /**
- * Cleans old records from history
+ * Cleans old records from history (시간 기반 + 크기 기반)
+ * - 시간창 초과 레코드 제거
+ * - 최대 크기 초과 시 오래된 것부터 제거
  */
 function cleanHistory(): void {
-  const cutoff = Date.now() - config.detectionWindowMs;
-  callHistory = callHistory.filter(r => r.timestamp > cutoff);
+  const now = Date.now();
+  const cutoff = now - config.detectionWindowMs;
+
+  // 시간창 기반 정리 (최적화: 앞에서부터 찾아서 splice)
+  let removeCount = 0;
+  for (let i = 0; i < callHistory.length; i++) {
+    if (callHistory[i].timestamp > cutoff) {
+      break;
+    }
+    removeCount++;
+  }
+
+  if (removeCount > 0) {
+    callHistory.splice(0, removeCount);
+  }
+
+  // 최대 크기 제한 (추가 안전장치)
+  if (callHistory.length > MAX_HISTORY_SIZE) {
+    const excessCount = callHistory.length - MAX_HISTORY_SIZE;
+    callHistory.splice(0, excessCount);
+    logger.debug({ removed: excessCount }, 'History trimmed due to max size');
+  }
 }
 
 /**
- * Detects identical call patterns
+ * 주기적 정리 트리거 (매 호출마다 실행하지 않음)
+ */
+function maybeCleanHistory(): void {
+  callCount++;
+  if (callCount % CLEANUP_INTERVAL === 0) {
+    cleanHistory();
+  }
+}
+
+// ============================================================================
+// Detection Functions (Optimized)
+// ============================================================================
+
+/**
+ * Detects identical call patterns (시간창 내에서만 검사)
  */
 function detectIdenticalCalls(toolName: string, inputHash: string): boolean {
-  const identicalCalls = callHistory.filter(
-    r => r.toolName === toolName && r.inputHash === inputHash
-  );
+  const now = Date.now();
+  const cutoff = now - config.detectionWindowMs;
 
-  return identicalCalls.length >= config.maxIdenticalCalls;
+  let count = 0;
+  // 역순 순회 (최신 것부터, 시간창 벗어나면 중단)
+  for (let i = callHistory.length - 1; i >= 0; i--) {
+    const record = callHistory[i];
+    if (record.timestamp < cutoff) break; // 시간창 벗어남
+
+    if (record.toolName === toolName && record.inputHash === inputHash) {
+      count++;
+      if (count >= config.maxIdenticalCalls) return true;
+    }
+  }
+
+  return false;
 }
 
 /**
- * Detects similar call patterns (fuzzy)
+ * Detects similar call patterns (최근 N개만 검사, 성능 최적화)
  */
 function detectSimilarCalls(toolName: string, inputHash: string): boolean {
-  const recentCalls = callHistory.filter(r => r.toolName === toolName);
+  const now = Date.now();
+  const cutoff = now - config.detectionWindowMs;
 
-  const similarCount = recentCalls.filter(
-    r => calculateSimilarity(r.inputHash, inputHash) >= config.similarityThreshold
-  ).length;
+  // 최근 SIMILARITY_CHECK_LIMIT개만 검사 (성능 최적화)
+  const startIdx = Math.max(0, callHistory.length - SIMILARITY_CHECK_LIMIT);
+  let similarCount = 0;
 
-  return similarCount >= config.maxIdenticalCalls;
+  for (let i = callHistory.length - 1; i >= startIdx; i--) {
+    const record = callHistory[i];
+    if (record.timestamp < cutoff) break; // 시간창 벗어남
+
+    if (record.toolName === toolName) {
+      const similarity = calculateSimilarity(record.inputHash, inputHash);
+      if (similarity >= config.similarityThreshold) {
+        similarCount++;
+        if (similarCount >= config.maxIdenticalCalls) return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 /**
- * Detects excessive call volume
+ * Detects excessive call volume (시간창 내 호출 수 검사)
  */
 function detectExcessiveCalls(): boolean {
-  return callHistory.length >= config.maxCallsInWindow;
+  const now = Date.now();
+  const cutoff = now - config.detectionWindowMs;
+
+  // 시간창 내 호출 수 계산 (역순 순회로 최적화)
+  let count = 0;
+  for (let i = callHistory.length - 1; i >= 0; i--) {
+    if (callHistory[i].timestamp < cutoff) break;
+    count++;
+    if (count >= config.maxCallsInWindow) return true;
+  }
+
+  return false;
 }
 
 /**
@@ -226,7 +354,8 @@ const detectOnToolCallHook: HookDefinition<OnToolCallContext> = {
   handler: async (context): Promise<HookResult> => {
     if (!config.enabled) return { decision: 'continue' };
 
-    cleanHistory();
+    // 주기적 히스토리 정리 (매 호출이 아닌 N번째마다)
+    maybeCleanHistory();
 
     const inputHash = hashInput(context.toolInput);
     let detectedType: string | null = null;
@@ -382,12 +511,22 @@ export function getDoomLoopDetectorStats(): DoomLoopStats & {
   config: DoomLoopConfig;
   consecutiveErrors: number;
   historySize: number;
+  memoryInfo: {
+    maxHistorySize: number;
+    currentSize: number;
+    utilizationPercent: number;
+  };
 } {
   return {
     ...stats,
     config,
     consecutiveErrors,
-    historySize: callHistory.length
+    historySize: callHistory.length,
+    memoryInfo: {
+      maxHistorySize: MAX_HISTORY_SIZE,
+      currentSize: callHistory.length,
+      utilizationPercent: Math.round((callHistory.length / MAX_HISTORY_SIZE) * 100)
+    }
   };
 }
 
@@ -405,6 +544,8 @@ export function resetDoomLoopDetectorState(): void {
   consecutiveErrors = 0;
   lastBreakTime = 0;
   lastErrorToolName = '';
+  callCount = 0;
+  logger.debug('Doom loop detector state reset');
 }
 
 /**

@@ -128,6 +128,34 @@ export class ExpertCallError extends Error {
   }
 }
 
+export class TimeoutError extends Error {
+  constructor(
+    public expertId: string,
+    public model: string,
+    public timeoutMs: number
+  ) {
+    super(
+      `Request timed out for ${expertId} (${model}) after ${Math.round(timeoutMs / 1000)}s. ` +
+      `The model may be overloaded or the request was too complex.`
+    );
+    this.name = 'TimeoutError';
+  }
+}
+
+/** 최대 응답 크기 (5MB) */
+const MAX_RESPONSE_SIZE = 5 * 1024 * 1024;
+
+/**
+ * AbortError를 TimeoutError로 변환
+ */
+function wrapTimeoutError(error: Error, expertId: string, model: string, timeoutMs: number): Error {
+  if (error.name === 'AbortError' || error.name === 'TimeoutError' ||
+      error.message.includes('aborted') || error.message.includes('timed out')) {
+    return new TimeoutError(expertId, model, timeoutMs);
+  }
+  return error;
+}
+
 export interface CallExpertOptions {
   context?: string;
   skipCache?: boolean;
@@ -212,48 +240,79 @@ export async function callExpert(
   const timeoutMs = getModelTimeout(expert.model);
   expertLogger.debug({ model: expert.model, timeoutMs }, 'Calling CLIProxyAPI');
 
-  // 4. API 호출 (재시도 로직 포함)
-  const response = await withRetry(
-    async () => {
-      const res = await fetch(`${config.cliproxyUrl}/v1/chat/completions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(request),
-        signal: AbortSignal.timeout(timeoutMs)
-      });
+  // 4. API 호출 (재시도 로직 포함 + 향상된 타임아웃 처리)
+  let response: ChatResponse;
 
-      // Rate Limit 체크
-      if (res.status === 429) {
-        const retryAfter = parseRetryAfter(res.headers) || 60000;
-        markRateLimited(expert.model, retryAfter);
-        throw new RateLimitExceededError(expert.id, expert.model, retryAfter);
-      }
+  try {
+    response = await withRetry(
+      async () => {
+        let res: Response;
 
-      if (!res.ok) {
-        const errorText = await res.text();
+        try {
+          res = await fetch(`${config.cliproxyUrl}/v1/chat/completions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(request),
+            signal: AbortSignal.timeout(timeoutMs)
+          });
+        } catch (fetchError) {
+          // AbortError를 명확한 TimeoutError로 변환
+          throw wrapTimeoutError(fetchError as Error, expert.id, expert.model, timeoutMs);
+        }
 
-        // 응답 텍스트에서 Rate Limit 패턴 체크
-        if (isRateLimitError(null, errorText)) {
-          const retryAfter = 60000; // 기본 1분
+        // Rate Limit 체크
+        if (res.status === 429) {
+          const retryAfter = parseRetryAfter(res.headers) || 60000;
           markRateLimited(expert.model, retryAfter);
           throw new RateLimitExceededError(expert.id, expert.model, retryAfter);
         }
 
-        throw new Error(`API error (${res.status}): ${errorText}`);
-      }
+        if (!res.ok) {
+          const errorText = await res.text();
 
-      return res.json() as Promise<ChatResponse>;
-    },
-    {
-      maxRetries: config.retry.maxRetries,
-      shouldRetry: (error) => {
-        // Rate Limit 에러는 재시도하지 않음 (폴백으로 처리)
-        if (error instanceof RateLimitExceededError) return false;
-        // 네트워크 에러나 5xx는 재시도
-        return true;
+          // 응답 텍스트에서 Rate Limit 패턴 체크
+          if (isRateLimitError(null, errorText)) {
+            const retryAfter = 60000; // 기본 1분
+            markRateLimited(expert.model, retryAfter);
+            throw new RateLimitExceededError(expert.id, expert.model, retryAfter);
+          }
+
+          throw new Error(`API error (${res.status}): ${errorText}`);
+        }
+
+        // 응답 크기 체크 (메모리 보호)
+        const contentLength = res.headers.get('content-length');
+        if (contentLength && parseInt(contentLength, 10) > MAX_RESPONSE_SIZE) {
+          throw new Error(
+            `Response too large (${Math.round(parseInt(contentLength, 10) / 1024 / 1024)}MB). ` +
+            `Maximum allowed: ${MAX_RESPONSE_SIZE / 1024 / 1024}MB`
+          );
+        }
+
+        return res.json() as Promise<ChatResponse>;
+      },
+      {
+        maxRetries: config.retry.maxRetries,
+        shouldRetry: (error) => {
+          // Rate Limit 에러는 재시도하지 않음 (폴백으로 처리)
+          if (error instanceof RateLimitExceededError) return false;
+          // 타임아웃 에러는 재시도하지 않음 (폴백으로 처리)
+          if (error instanceof TimeoutError) return false;
+          // 네트워크 에러나 5xx는 재시도
+          return true;
+        }
       }
-    }
-  );
+    );
+  } catch (error) {
+    // 최종 에러 로깅
+    expertLogger.error({
+      error: (error as Error).message,
+      errorType: (error as Error).name,
+      timeoutMs,
+      model: expert.model
+    }, 'Expert API call failed');
+    throw error;
+  }
 
   const choice = response.choices[0];
   const content = choice.message.content;

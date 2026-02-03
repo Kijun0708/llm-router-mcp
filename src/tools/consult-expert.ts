@@ -1,9 +1,116 @@
 // src/tools/consult-expert.ts
 
 import { z } from "zod";
+import { existsSync } from "fs";
+import { resolve, normalize, isAbsolute } from "path";
 import { experts } from "../experts/index.js";
 import { callExpertWithFallback, callExpertWithToolsAndFallback } from "../services/expert-router.js";
 import { sessionMemory } from "../services/session-memory.js";
+
+// ============================================================================
+// Security: Image Path Validation (LFI/SSRF Prevention)
+// ============================================================================
+
+/** 허용된 이미지 확장자 */
+const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+
+/** 허용된 로컬 디렉토리 (상대 경로) */
+const ALLOWED_LOCAL_DIRECTORIES = ['./uploads', './images', './screenshots', './assets'];
+
+/** 차단된 내부 IP 패턴 (SSRF 방지) */
+const BLOCKED_IP_PATTERNS = [
+  /^https?:\/\/localhost/i,
+  /^https?:\/\/127\./,
+  /^https?:\/\/10\./,
+  /^https?:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\./,
+  /^https?:\/\/192\.168\./,
+  /^https?:\/\/0\./,
+  /^https?:\/\/\[::1\]/,
+  /^https?:\/\/\[fc/i,
+  /^https?:\/\/\[fd/i,
+];
+
+/**
+ * 이미지 경로 검증 (LFI/SSRF 방지)
+ */
+function validateImagePath(imagePath: string): { valid: boolean; error?: string } {
+  // URL인 경우
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    // HTTP는 보안상 차단 (HTTPS만 허용)
+    if (imagePath.startsWith('http://')) {
+      return { valid: false, error: 'HTTP URL은 보안상 허용되지 않습니다. HTTPS를 사용하세요.' };
+    }
+
+    // 내부 IP/localhost 차단 (SSRF 방지)
+    for (const pattern of BLOCKED_IP_PATTERNS) {
+      if (pattern.test(imagePath)) {
+        return { valid: false, error: '내부 네트워크 주소는 허용되지 않습니다.' };
+      }
+    }
+
+    // URL 형식 검증
+    try {
+      const url = new URL(imagePath);
+      // 허용된 프로토콜 확인
+      if (url.protocol !== 'https:') {
+        return { valid: false, error: 'HTTPS URL만 허용됩니다.' };
+      }
+    } catch {
+      return { valid: false, error: '유효하지 않은 URL 형식입니다.' };
+    }
+
+    return { valid: true };
+  }
+
+  // 로컬 파일 경로인 경우
+  // 경로 탈출 시도 차단 (../ 등)
+  if (imagePath.includes('..')) {
+    return { valid: false, error: '상위 디렉토리 접근(..)은 허용되지 않습니다.' };
+  }
+
+  // 절대 경로 차단 (보안상 상대 경로만 허용)
+  if (isAbsolute(imagePath)) {
+    return { valid: false, error: '절대 경로는 허용되지 않습니다. 상대 경로를 사용하세요.' };
+  }
+
+  // 정규화된 경로 확인
+  const normalizedPath = normalize(imagePath);
+
+  // 허용된 디렉토리 내 파일인지 확인
+  const isInAllowedDir = ALLOWED_LOCAL_DIRECTORIES.some(dir => {
+    const normalizedDir = normalize(dir);
+    return normalizedPath.startsWith(normalizedDir) ||
+           normalizedPath.startsWith(normalizedDir.replace('./', ''));
+  });
+
+  if (!isInAllowedDir) {
+    return {
+      valid: false,
+      error: `허용된 디렉토리만 접근 가능합니다: ${ALLOWED_LOCAL_DIRECTORIES.join(', ')}`
+    };
+  }
+
+  // 확장자 검증
+  const ext = normalizedPath.toLowerCase().slice(normalizedPath.lastIndexOf('.'));
+  if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
+    return {
+      valid: false,
+      error: `허용된 이미지 형식만 가능합니다: ${ALLOWED_IMAGE_EXTENSIONS.join(', ')}`
+    };
+  }
+
+  // 파일 존재 여부 확인
+  const fullPath = resolve(process.cwd(), normalizedPath);
+  if (!existsSync(fullPath)) {
+    return { valid: false, error: `파일을 찾을 수 없습니다: ${normalizedPath}` };
+  }
+
+  return { valid: true };
+}
+
+// ============================================================================
+// Schema
+// ============================================================================
 
 export const consultExpertSchema = z.object({
   expert: z.enum([
@@ -26,16 +133,26 @@ export const consultExpertSchema = z.object({
 
   image_path: z.string()
     .optional()
-    .describe("분석할 이미지 파일 경로 또는 URL (multimodal 전문가용)"),
+    .refine(
+      (path) => {
+        if (!path) return true; // optional이므로 빈 값 허용
+        const result = validateImagePath(path);
+        return result.valid;
+      },
+      (path) => {
+        if (!path) return { message: '' };
+        const result = validateImagePath(path);
+        return { message: result.error || '유효하지 않은 이미지 경로입니다.' };
+      }
+    )
+    .describe("분석할 이미지 파일 경로 또는 URL (multimodal 전문가용). 로컬: ./uploads/, ./images/ 내 파일만 허용. URL: HTTPS만 허용."),
 
   skip_cache: z.boolean()
     .default(false)
-    .optional()
     .describe("캐시 무시하고 새로 호출"),
 
   use_tools: z.boolean()
     .default(true)
-    .optional()
     .describe("전문가가 웹 검색, 문서 조회 등 도구를 사용할 수 있게 함 (기본: true)")
 }).strict();
 

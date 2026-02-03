@@ -100,15 +100,77 @@ node dist/index.js
 
 ### Key Services
 
-- `src/services/cliproxy-client.ts` - CLIProxyAPI client with rate limit detection
-- `src/services/expert-router.ts` - Expert selection and fallback routing
-- `src/services/background-manager.ts` - Async task queue with concurrency control
+- `src/services/cliproxy-client.ts` - CLIProxyAPI client with rate limit detection, model-specific timeouts
+- `src/services/expert-router.ts` - Expert selection and fallback routing with error classification
+- `src/services/background-manager.ts` - Async task queue with concurrency control and JSON persistence
 
 ### Utilities
 
 - `src/utils/rate-limit.ts` - Rate limit detection and tracking per model/provider
 - `src/utils/retry.ts` - Exponential backoff with jitter
 - `src/utils/cache.ts` - LRU cache with TTL for response caching
+
+### Security Features
+
+**Image Path Validation (LFI/SSRF Prevention)** - `src/tools/consult-expert.ts`
+- HTTPS URL만 허용 (HTTP 차단)
+- 내부 IP/localhost 차단 (SSRF 방지)
+- 상대 경로만 허용, 경로 탈출(..) 차단 (LFI 방지)
+- 허용된 디렉토리: `./uploads`, `./images`, `./screenshots`, `./assets`
+- 허용된 확장자: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.svg`
+
+### Memory & Performance
+
+**Doom Loop Detector** - `src/hooks/builtin/doom-loop-detector.ts`
+- 슬라이딩 윈도우 히스토리 (최대 100개)
+- 유사도 검사 제한 (최근 20개만)
+- 주기적 정리 (매 10번째 호출)
+- JSON 키 정렬로 일관된 해시 생성
+
+### Persistence
+
+**Background Task Persistence** - `src/services/background-manager.ts`
+- 저장 위치: `.llm-router-data/background-tasks.json`
+- 자동 저장 간격: 5초
+- 프로세스 재시작 시 작업 상태 복원
+- running 상태였던 작업은 pending으로 복원
+- 최대 복원 가능 작업 나이: 1시간
+
+### Model-Specific Timeouts
+
+| Model | Timeout | Reason |
+|-------|---------|--------|
+| GPT 5.x / Codex | 5분 | Deep thinking 모드 |
+| Claude Opus | 3분 | Deep thinking 모드 |
+| Claude Sonnet/Haiku | 2분 | 일반 추론 |
+| Gemini | 1.5분 | 빠른 응답 |
+| 기타 | 1분 | 기본값 |
+
+### Error Classification for Fallback
+
+폴백 시도 여부 결정 기준 - `src/services/expert-router.ts`
+
+| 에러 유형 | 폴백 시도 | 이유 |
+|----------|----------|------|
+| Rate Limit (429) | ✅ | 다른 모델로 대체 가능 |
+| Timeout | ✅ | 다른 모델이 더 빠를 수 있음 |
+| Server Error (5xx) | ✅ | 일시적 문제 가능성 |
+| Overloaded | ✅ | 다른 모델로 분산 |
+| Auth Error (401/403) | ❌ | 폴백해도 동일 문제 |
+| Bad Request (400) | ❌ | 요청 자체 문제 |
+
+### Ensemble Strategy Validation
+
+전략별 필수 파라미터 검증 - `src/tools/ensemble.ts`
+
+| 전략 | 필수 조건 | 심각도 |
+|------|----------|--------|
+| synthesize | synthesizer 필수 | error |
+| debate | synthesizer 권장 | warning |
+| vote | vote_options 2개 이상 | error |
+| best_of_n | experts 1개만 | error |
+| chain | experts 2개 이상 | error |
+| parallel/synthesize | experts 2개 이상 권장 | warning |
 
 ## Configuration
 
