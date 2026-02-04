@@ -12,6 +12,7 @@ import { callExpertWithFallback } from '../services/expert-router.js';
 import { experts } from '../experts/index.js';
 import { buildBlankPromptWithPersona } from '../prompts/experts/index.js';
 import { EXPERT_PROVIDERS } from '../features/ensemble/types.js';
+import { startBackgroundWorkflow } from '../services/background-manager.js';
 
 // ============================================================================
 // Types
@@ -174,29 +175,78 @@ ${blankExperts.map((id, i) => `${i + 1}. ${id} (${getProviderName(id)})`).join('
   try {
     const result = await callExpertWithFallback('debate_moderator', prompt, undefined, true);
 
-    // JSON 추출 (여러 형식 지원)
-    let jsonStr: string | null = null;
+    // JSON 추출 및 파싱 (여러 방법 시도)
+    let parsed: any = null;
+    let lastError: Error | null = null;
 
-    // 1. ```json ... ``` 코드 블록 (대소문자 무관)
-    const codeBlockMatch = result.response.match(/```(?:json|JSON)\s*([\s\S]*?)\s*```/);
+    // 방법 1: ```json ... ``` 코드 블록 (greedy하게 마지막 ```까지)
+    const codeBlockMatch = result.response.match(/```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```/);
     if (codeBlockMatch) {
-      jsonStr = codeBlockMatch[1];
-    }
-
-    // 2. 코드 블록 없이 { ... } 형태의 JSON
-    if (!jsonStr) {
-      const jsonObjectMatch = result.response.match(/\{[\s\S]*"(?:assignments|personas)"[\s\S]*\}/);
-      if (jsonObjectMatch) {
-        jsonStr = jsonObjectMatch[0];
+      try {
+        const jsonStr = codeBlockMatch[1].trim();
+        parsed = JSON.parse(jsonStr);
+      } catch (e) {
+        lastError = e as Error;
+        logger.debug({ error: (e as Error).message }, 'Code block JSON parse failed, trying next method');
       }
     }
 
-    if (!jsonStr) {
-      logger.error({ response: result.response.substring(0, 500) }, 'Failed to extract JSON from response');
-      throw new Error('페르소나 할당 결과에서 JSON을 찾을 수 없습니다.');
+    // 방법 2: { "assignments": [...] } 또는 { "personas": [...] } 패턴 찾기
+    if (!parsed) {
+      // assignments나 personas 배열의 시작을 찾고, 균형 잡힌 괄호로 끝 찾기
+      const arrayStartMatch = result.response.match(/\{\s*"(?:assignments|personas)"\s*:\s*\[/);
+      if (arrayStartMatch && arrayStartMatch.index !== undefined) {
+        const startIdx = arrayStartMatch.index;
+        let depth = 0;
+        let endIdx = startIdx;
+
+        for (let i = startIdx; i < result.response.length; i++) {
+          const char = result.response[i];
+          if (char === '{' || char === '[') depth++;
+          else if (char === '}' || char === ']') {
+            depth--;
+            if (depth === 0) {
+              endIdx = i + 1;
+              break;
+            }
+          }
+        }
+
+        if (endIdx > startIdx) {
+          try {
+            const jsonStr = result.response.substring(startIdx, endIdx);
+            parsed = JSON.parse(jsonStr);
+          } catch (e) {
+            lastError = e as Error;
+            logger.debug({ error: (e as Error).message }, 'Bracket-balanced JSON parse failed, trying next method');
+          }
+        }
+      }
     }
 
-    const parsed = JSON.parse(jsonStr);
+    // 방법 3: 전체 응답에서 JSON 객체 추출 시도 (첫 번째 { 부터 마지막 } 까지)
+    if (!parsed) {
+      const firstBrace = result.response.indexOf('{');
+      const lastBrace = result.response.lastIndexOf('}');
+
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        try {
+          const jsonStr = result.response.substring(firstBrace, lastBrace + 1);
+          parsed = JSON.parse(jsonStr);
+        } catch (e) {
+          lastError = e as Error;
+          logger.debug({ error: (e as Error).message }, 'Full range JSON parse failed');
+        }
+      }
+    }
+
+    if (!parsed) {
+      logger.error({
+        response: result.response.substring(0, 1000),
+        lastError: lastError?.message
+      }, 'Failed to extract JSON from response');
+      throw new Error(`페르소나 할당 결과에서 JSON을 파싱할 수 없습니다: ${lastError?.message || 'JSON not found'}`);
+    }
 
     // assignments 또는 personas 키 모두 지원
     const personaArray = parsed.assignments || parsed.personas;
@@ -218,40 +268,35 @@ ${blankExperts.map((id, i) => `${i + 1}. ${id} (${getProviderName(id)})`).join('
   }
 }
 
-export async function handleAutoDebate(
+/**
+ * 실제 토론 실행 로직 (백그라운드에서 실행됨)
+ */
+async function executeAutoDebate(
   params: z.infer<typeof autoDebateSchema>
-): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
+): Promise<string> {
   const debateId = generateDebateId();
   const startTime = Date.now();
 
+  // 1. 페르소나 자동 할당
+  const assignments = await generatePersonaAssignments(
+    params.topic,
+    params.participant_count,
+    params.context
+  );
+
   logger.info({
     debateId,
-    topic: params.topic,
-    participantCount: params.participant_count,
-    maxRounds: params.max_rounds
-  }, 'Starting auto persona debate');
+    assignedPersonas: assignments.map(a => a.personaName)
+  }, 'Persona assignments generated');
 
-  try {
-    // 1. 페르소나 자동 할당
-    const assignments = await generatePersonaAssignments(
-      params.topic,
-      params.participant_count,
-      params.context
-    );
+  // 2. 토론 실행
+  const debateHistory: DebateRound[] = [];
+  let successCount = 0;
+  let failureCount = 0;
 
-    logger.info({
-      debateId,
-      assignedPersonas: assignments.map(a => a.personaName)
-    }, 'Persona assignments generated');
-
-    // 2. 토론 실행
-    const debateHistory: DebateRound[] = [];
-    let successCount = 0;
-    let failureCount = 0;
-
-    // Round 0: 첫 번째 발언자
-    const firstAssignment = assignments[0];
-    const initialPrompt = `
+  // Round 0: 첫 번째 발언자
+  const firstAssignment = assignments[0];
+  const initialPrompt = `
 [토론 시작]
 주제: ${params.topic}
 ${params.context ? `\n컨텍스트: ${params.context}` : ''}
@@ -266,39 +311,33 @@ ${firstAssignment.keyArguments.map((arg, i) => `${i + 1}. ${arg}`).join('\n')}
 이 주제에 대한 당신의 의견을 ${firstAssignment.personaName}의 관점에서 제시해주세요.
 `.trim();
 
-    const initialSystemPrompt = buildBlankPromptWithPersona(
-      `${firstAssignment.personaName}: ${firstAssignment.personaDescription}`,
-      params.context
-    );
+  const initialSystemPrompt = buildBlankPromptWithPersona(
+    `${firstAssignment.personaName}: ${firstAssignment.personaDescription}`,
+    params.context
+  );
 
-    try {
-      const firstResult = await callExpertWithFallback(
-        firstAssignment.expertId,
-        initialPrompt,
-        initialSystemPrompt,
-        !params.skip_cache
-      );
+  const firstResult = await callExpertWithFallback(
+    firstAssignment.expertId,
+    initialPrompt,
+    initialSystemPrompt,
+    !params.skip_cache
+  );
 
-      debateHistory.push({
-        round: 0,
-        speaker: firstAssignment.expertId,
-        persona: firstAssignment.personaName,
-        content: firstResult.response
-      });
-      successCount++;
-    } catch (error) {
-      logger.error({ error, participant: firstAssignment.expertId }, 'First speaker failed');
-      failureCount++;
-      throw new Error(`첫 번째 발언자 호출 실패: ${(error as Error).message}`);
-    }
+  debateHistory.push({
+    round: 0,
+    speaker: firstAssignment.expertId,
+    persona: firstAssignment.personaName,
+    content: firstResult.response
+  });
+  successCount++;
 
-    // 토론 라운드
-    for (let round = 1; round <= params.max_rounds; round++) {
-      for (let i = 1; i < assignments.length; i++) {
-        const assignment = assignments[i];
-        const previousRound = debateHistory[debateHistory.length - 1];
+  // 토론 라운드
+  for (let round = 1; round <= params.max_rounds; round++) {
+    for (let i = 1; i < assignments.length; i++) {
+      const assignment = assignments[i];
+      const previousRound = debateHistory[debateHistory.length - 1];
 
-        const debatePrompt = `
+      const debatePrompt = `
 [토론 라운드 ${round}]
 주제: ${params.topic}
 
@@ -316,38 +355,38 @@ ${previousRound.content}
 동의하는 점과 보완/반박할 점을 명확히 구분해서 작성하세요.
 `.trim();
 
-        const systemPrompt = buildBlankPromptWithPersona(
-          `${assignment.personaName}: ${assignment.personaDescription}`,
-          params.context
+      const systemPrompt = buildBlankPromptWithPersona(
+        `${assignment.personaName}: ${assignment.personaDescription}`,
+        params.context
+      );
+
+      try {
+        const result = await callExpertWithFallback(
+          assignment.expertId,
+          debatePrompt,
+          systemPrompt,
+          !params.skip_cache
         );
 
-        try {
-          const result = await callExpertWithFallback(
-            assignment.expertId,
-            debatePrompt,
-            systemPrompt,
-            !params.skip_cache
-          );
-
-          debateHistory.push({
-            round,
-            speaker: assignment.expertId,
-            persona: assignment.personaName,
-            content: result.response,
-            responseTo: previousRound.speaker
-          });
-          successCount++;
-        } catch (error) {
-          logger.warn({ error, participant: assignment.expertId }, 'Debate participant failed');
-          failureCount++;
-        }
+        debateHistory.push({
+          round,
+          speaker: assignment.expertId,
+          persona: assignment.personaName,
+          content: result.response,
+          responseTo: previousRound.speaker
+        });
+        successCount++;
+      } catch (error) {
+        logger.warn({ error, participant: assignment.expertId }, 'Debate participant failed');
+        failureCount++;
       }
+    }
 
-      // 첫 번째 참여자가 반론 (마지막 라운드가 아닌 경우)
-      if (round < params.max_rounds && debateHistory.length > 1) {
-        const lastResponse = debateHistory[debateHistory.length - 1];
+    // 첫 번째 참여자가 반론 (마지막 라운드가 아닌 경우)
+    if (round < params.max_rounds && debateHistory.length > 1) {
+      const lastResponse = debateHistory[debateHistory.length - 1];
 
-        const rebuttalPrompt = `
+      const rebuttalPrompt = `
 [토론 라운드 ${round} - 반론]
 주제: ${params.topic}
 
@@ -361,85 +400,113 @@ ${lastResponse.content}
 이에 대한 반론 또는 수정된 의견을 ${firstAssignment.personaName}의 관점에서 제시해주세요.
 `.trim();
 
-        const rebuttalSystemPrompt = buildBlankPromptWithPersona(
-          `${firstAssignment.personaName}: ${firstAssignment.personaDescription}`,
-          params.context
+      const rebuttalSystemPrompt = buildBlankPromptWithPersona(
+        `${firstAssignment.personaName}: ${firstAssignment.personaDescription}`,
+        params.context
+      );
+
+      try {
+        const result = await callExpertWithFallback(
+          firstAssignment.expertId,
+          rebuttalPrompt,
+          rebuttalSystemPrompt,
+          !params.skip_cache
         );
 
-        try {
-          const result = await callExpertWithFallback(
-            firstAssignment.expertId,
-            rebuttalPrompt,
-            rebuttalSystemPrompt,
-            !params.skip_cache
-          );
-
-          debateHistory.push({
-            round,
-            speaker: firstAssignment.expertId,
-            persona: firstAssignment.personaName,
-            content: result.response,
-            responseTo: lastResponse.speaker
-          });
-          successCount++;
-        } catch (error) {
-          logger.warn({ error }, 'Rebuttal failed');
-          failureCount++;
-        }
+        debateHistory.push({
+          round,
+          speaker: firstAssignment.expertId,
+          persona: firstAssignment.personaName,
+          content: result.response,
+          responseTo: lastResponse.speaker
+        });
+        successCount++;
+      } catch (error) {
+        logger.warn({ error }, 'Rebuttal failed');
+        failureCount++;
       }
     }
-
-    // 결과 포맷팅
-    const totalLatencyMs = Date.now() - startTime;
-
-    let response = `## 🤖 자동 페르소나 토론 결과\n\n`;
-    response += `**주제**: ${params.topic}\n`;
-    response += `**참여자 수**: ${params.participant_count}명\n`;
-    response += `**라운드 수**: ${params.max_rounds}\n`;
-    response += `**소요 시간**: ${totalLatencyMs}ms\n`;
-    response += `**성공/실패**: ${successCount}/${failureCount}\n\n`;
-
-    // AI가 할당한 페르소나 정보
-    response += `### 🎭 AI가 설계한 페르소나\n\n`;
-    response += `| 전문가 | 모델 | 페르소나 | 입장 |\n`;
-    response += `|--------|------|----------|------|\n`;
-    for (const a of assignments) {
-      const model = experts[a.expertId]?.model || 'unknown';
-      response += `| ${a.expertId} | ${model} | **${a.personaName}** | ${a.debateStance.substring(0, 50)}... |\n`;
-    }
-
-    response += `\n#### 페르소나 상세\n\n`;
-    for (const a of assignments) {
-      response += `**${a.personaName}** (${getProviderName(a.expertId)})\n`;
-      response += `- 설명: ${a.personaDescription}\n`;
-      response += `- 입장: ${a.debateStance}\n`;
-      response += `- 핵심 논점: ${a.keyArguments.join(' / ')}\n\n`;
-    }
-
-    response += `---\n\n`;
-    response += `### 💬 토론 내용\n\n`;
-
-    // 토론 내용
-    for (const round of debateHistory) {
-      const providerName = getProviderName(round.speaker);
-      const responseTag = round.responseTo ? ` → 응답 대상: ${getPersonaByExpert(assignments, round.responseTo)}` : '';
-      response += `#### 라운드 ${round.round} - ${round.persona} (${providerName})${responseTag}\n\n`;
-      response += `${round.content}\n\n`;
-      response += `---\n\n`;
-    }
-
-    return {
-      content: [{ type: 'text', text: response }]
-    };
-
-  } catch (error) {
-    return {
-      content: [{
-        type: 'text',
-        text: `## ⚠️ 자동 토론 실행 실패\n\n**오류**: ${(error as Error).message}`
-      }]
-    };
   }
+
+  // 결과 포맷팅
+  const totalLatencyMs = Date.now() - startTime;
+
+  let response = `## 🤖 자동 페르소나 토론 결과\n\n`;
+  response += `**주제**: ${params.topic}\n`;
+  response += `**참여자 수**: ${params.participant_count}명\n`;
+  response += `**라운드 수**: ${params.max_rounds}\n`;
+  response += `**소요 시간**: ${totalLatencyMs}ms\n`;
+  response += `**성공/실패**: ${successCount}/${failureCount}\n\n`;
+
+  // AI가 할당한 페르소나 정보
+  response += `### 🎭 AI가 설계한 페르소나\n\n`;
+  response += `| 전문가 | 모델 | 페르소나 | 입장 |\n`;
+  response += `|--------|------|----------|------|\n`;
+  for (const a of assignments) {
+    const model = experts[a.expertId]?.model || 'unknown';
+    response += `| ${a.expertId} | ${model} | **${a.personaName}** | ${a.debateStance.substring(0, 50)}... |\n`;
+  }
+
+  response += `\n#### 페르소나 상세\n\n`;
+  for (const a of assignments) {
+    response += `**${a.personaName}** (${getProviderName(a.expertId)})\n`;
+    response += `- 설명: ${a.personaDescription}\n`;
+    response += `- 입장: ${a.debateStance}\n`;
+    response += `- 핵심 논점: ${a.keyArguments.join(' / ')}\n\n`;
+  }
+
+  response += `---\n\n`;
+  response += `### 💬 토론 내용\n\n`;
+
+  // 토론 내용
+  for (const round of debateHistory) {
+    const providerName = getProviderName(round.speaker);
+    const responseTag = round.responseTo ? ` → 응답 대상: ${getPersonaByExpert(assignments, round.responseTo)}` : '';
+    response += `#### 라운드 ${round.round} - ${round.persona} (${providerName})${responseTag}\n\n`;
+    response += `${round.content}\n\n`;
+    response += `---\n\n`;
+  }
+
+  return response;
+}
+
+/**
+ * 자동 토론 핸들러 (백그라운드 실행)
+ */
+export function handleAutoDebate(
+  params: z.infer<typeof autoDebateSchema>
+): { content: Array<{ type: 'text'; text: string }> } {
+  const debateId = generateDebateId();
+
+  logger.info({
+    debateId,
+    topic: params.topic,
+    participantCount: params.participant_count,
+    maxRounds: params.max_rounds
+  }, 'Starting auto persona debate in background');
+
+  // 백그라운드에서 실행
+  const task = startBackgroundWorkflow(
+    `auto_debate:${params.topic.substring(0, 30)}`,
+    () => executeAutoDebate(params),
+    debateId
+  );
+
+  return {
+    content: [{
+      type: 'text',
+      text: `## 🚀 자동 토론 백그라운드 시작\n\n` +
+            `**주제**: ${params.topic}\n` +
+            `**참여자 수**: ${params.participant_count}명\n` +
+            `**라운드 수**: ${params.max_rounds}\n` +
+            `**작업 ID**: \`${task.id}\`\n\n` +
+            `### 결과 조회 방법\n` +
+            `\`\`\`\n` +
+            `background_expert_result(task_id="${task.id}")\n` +
+            `\`\`\`\n\n` +
+            `💡 토론이 완료되면 위 명령으로 결과를 확인하세요. (예상 소요 시간: 5-15분)`
+    }]
+  };
 }
 
 function getProviderName(expertId: string): string {

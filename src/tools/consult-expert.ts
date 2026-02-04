@@ -6,6 +6,8 @@ import { resolve, normalize, isAbsolute } from "path";
 import { experts } from "../experts/index.js";
 import { callExpertWithFallback, callExpertWithToolsAndFallback } from "../services/expert-router.js";
 import { sessionMemory } from "../services/session-memory.js";
+import { startBackgroundTask } from "../services/background-manager.js";
+import { TimeoutError } from "../services/cliproxy-client.js";
 
 // ============================================================================
 // Security: Image Path Validation (LFI/SSRF Prevention)
@@ -323,6 +325,30 @@ export async function handleConsultExpert(params: z.infer<typeof consultExpertSc
     };
 
   } catch (error) {
+    // 타임아웃 발생 시 자동으로 백그라운드로 전환
+    if (error instanceof TimeoutError) {
+      const fullContext = params.context || '';
+      const task = startBackgroundTask(
+        params.expert,
+        params.question,
+        fullContext || undefined
+      );
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: `## ⏱️ 타임아웃 → 백그라운드 전환\n\n` +
+                `**요청 전문가**: ${params.expert}\n` +
+                `**상황**: 응답 시간이 길어 백그라운드로 자동 전환되었습니다.\n\n` +
+                `### 결과 조회 방법\n` +
+                `\`\`\`\n` +
+                `background_expert_result(task_id="${task.id}")\n` +
+                `\`\`\`\n\n` +
+                `💡 다른 작업을 진행하면서 나중에 결과를 확인하세요.`
+        }]
+      };
+    }
+
     return {
       content: [{
         type: "text" as const,

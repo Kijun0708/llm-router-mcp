@@ -372,6 +372,57 @@ export function startBackgroundTask(
   return task;
 }
 
+/**
+ * 커스텀 비동기 함수를 백그라운드에서 실행
+ * 토론, 워크플로우 등 복잡한 작업용
+ */
+export function startBackgroundWorkflow(
+  workflowName: string,
+  executor: () => Promise<string>,
+  taskId?: string
+): BackgroundTask {
+  const id = taskId || crypto.randomUUID();
+
+  const task: BackgroundTask = {
+    id,
+    expert: workflowName,
+    status: 'running',
+    startedAt: new Date()
+  };
+
+  tasks.set(id, task);
+  markDirty();
+
+  logger.info({ taskId: id, workflow: workflowName }, 'Background workflow started');
+
+  // 즉시 백그라운드에서 실행
+  executor()
+    .then((result) => {
+      const updatedTask: BackgroundTask = {
+        ...task,
+        status: 'completed',
+        result,
+        completedAt: new Date()
+      };
+      tasks.set(id, updatedTask);
+      markDirty();
+      logger.info({ taskId: id, workflow: workflowName }, 'Background workflow completed');
+    })
+    .catch((error) => {
+      const updatedTask: BackgroundTask = {
+        ...task,
+        status: 'failed',
+        error: (error as Error).message,
+        completedAt: new Date()
+      };
+      tasks.set(id, updatedTask);
+      markDirty();
+      logger.error({ taskId: id, workflow: workflowName, error: (error as Error).message }, 'Background workflow failed');
+    });
+
+  return task;
+}
+
 export function getTaskStatus(taskId: string): BackgroundTask | null {
   return tasks.get(taskId) || null;
 }

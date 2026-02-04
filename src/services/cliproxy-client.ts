@@ -13,7 +13,7 @@ import { withRetry } from '../utils/retry.js';
 // GPT: deep thinking으로 오래 걸림, Claude: 중간, Gemini: 빠름
 function getModelTimeout(model: string): number {
   if (model.includes('gpt-5') || model.includes('codex')) {
-    return 300000;  // 5분 - GPT 5.x는 deep thinking으로 오래 걸림
+    return 600000;  // 10분 - GPT 5.x는 deep thinking으로 오래 걸림
   }
   if (model.includes('claude') && model.includes('opus')) {
     return 180000;  // 3분 - Opus도 deep thinking
