@@ -172,6 +172,23 @@ node dist/index.js
 | chain | experts 2개 이상 | error |
 | parallel/synthesize | experts 2개 이상 권장 | warning |
 
+## Scripts
+
+### CLIProxyAPI 업데이트
+
+```powershell
+# 최신 버전 확인 및 업데이트
+.\scripts\update-cliproxy.ps1
+
+# 강제 재설치
+.\scripts\update-cliproxy.ps1 -Force
+```
+
+- GitHub Release에서 최신 Windows 바이너리 자동 다운로드
+- `vendor/cliproxy/cli-proxy-api.exe` 교체
+- `config.yaml`은 보존
+- `.version` 파일로 현재 버전 추적
+
 ## Configuration
 
 Environment variables (see `.env.example`):

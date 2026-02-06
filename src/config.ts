@@ -74,11 +74,11 @@ export function loadConfig(overridePort?: number): Config {
       security: process.env.MODEL_SECURITY || 'claude-sonnet-4-5-20250929',  // 보안 취약점 분석
       tester: process.env.MODEL_TESTER || 'claude-sonnet-4-5-20250929',  // TDD/테스트 전략
       data: process.env.MODEL_DATA || 'gpt-5.2',  // DB 설계/쿼리 최적화
-      codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.2-codex',  // GPT 코드리뷰
+      codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.3-codex',  // GPT 코드리뷰
       // Blank 전문가 (동적 페르소나 토론용 - 다양한 모델)
       gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || 'gpt-5.2',
-      gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.2-codex',
-      claude_blank_1: process.env.MODEL_CLAUDE_BLANK_1 || 'claude-opus-4-5-20251101',
+      gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.3-codex',
+      claude_blank_1: process.env.MODEL_CLAUDE_BLANK_1 || 'claude-opus-4-6',
       claude_blank_2: process.env.MODEL_CLAUDE_BLANK_2 || 'claude-sonnet-4-5-20250929',
       gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || 'gemini-3-pro-preview',
       gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || 'gemini-3-flash-preview',
