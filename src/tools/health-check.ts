@@ -72,28 +72,6 @@ export async function handleHealthCheck(params: z.infer<typeof healthCheckSchema
     cleanedTasks = cleanupOldTasks();
   }
 
-  // CLIProxyAPI 연결 테스트
-  let apiStatus = 'unknown';
-  try {
-    const res = await fetch(`${config.cliproxyUrl}/v1/models`, {
-      signal: AbortSignal.timeout(5000)
-    });
-    if (res.ok) {
-      const body = await res.json() as { data?: unknown[] };
-      if (body.data && body.data.length > 0) {
-        apiStatus = '✅ 연결됨';
-      } else {
-        apiStatus = '⚠️ 연결됨 (인증 필요)';
-      }
-    } else if (res.status === 401) {
-      apiStatus = '⚠️ 연결됨 (인증 필요)';
-    } else {
-      apiStatus = `❌ 응답 오류 (${res.status})`;
-    }
-  } catch {
-    apiStatus = '❌ 연결 실패';
-  }
-
   // 통계 수집
   const rateLimitStatus = getRateLimitStatus();
   const cacheStats = getCacheStats();
@@ -107,8 +85,7 @@ export async function handleHealthCheck(params: z.infer<typeof healthCheckSchema
   }
 
   output += `### CLIProxyAPI\n`;
-  output += `- URL: \`${config.cliproxyUrl}\`\n`;
-  output += `- 상태: ${apiStatus}\n\n`;
+  output += `- URL: \`${config.cliproxyUrl}\`\n\n`;
 
   output += `### 전문가 (${Object.keys(experts).length}명)\n`;
   for (const [id, expert] of Object.entries(experts)) {
@@ -135,8 +112,14 @@ export async function handleHealthCheck(params: z.infer<typeof healthCheckSchema
   }
 
   if (params.include_details) {
+    // 민감 정보 마스킹
+    const safeConfig = {
+      ...config,
+      exaApiKey: config.exaApiKey ? '***' : undefined,
+      context7ApiKey: config.context7ApiKey ? '***' : undefined,
+    };
     output += `\n### 상세 설정\n`;
-    output += `\`\`\`json\n${JSON.stringify(config, null, 2)}\n\`\`\``;
+    output += `\`\`\`json\n${JSON.stringify(safeConfig, null, 2)}\n\`\`\``;
   }
 
   return {

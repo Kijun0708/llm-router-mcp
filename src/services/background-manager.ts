@@ -282,7 +282,9 @@ function processQueue(): void {
 
     pendingQueue.shift();
     processed = true;
-    executeTask(next.taskId, next.expertId, next.prompt, next.context);
+    // 동시성 카운트를 즉시 증가시켜 race condition 방지
+    incrementRunning(next.model);
+    executeTask(next.taskId, next.expertId, next.model, next.prompt, next.context);
   }
 
   // 큐 변경 시 저장
@@ -294,15 +296,18 @@ function processQueue(): void {
 async function executeTask(
   taskId: string,
   expertId: string,
+  preAllocatedModel: string | null,
   prompt: string,
   context?: string
 ): Promise<void> {
   const task = tasks.get(taskId);
-  if (!task || task.status === 'cancelled') return;
+  const model = preAllocatedModel || experts[expertId]?.model || 'gemini-3.0-flash';
 
-  const expert = experts[expertId];
-  const model = expert?.model || 'gemini-3.0-flash';
-  incrementRunning(model);
+  if (!task || task.status === 'cancelled') {
+    // 이미 할당된 동시성 카운트 반환
+    decrementRunning(model);
+    return;
+  }
 
   task.status = 'running';
   tasks.set(taskId, task);
@@ -362,7 +367,8 @@ export function startBackgroundTask(
   const model = expert?.model || 'gemini-3.0-flash';
 
   if (canStartTask(model)) {
-    executeTask(id, expertId, prompt, context);
+    incrementRunning(model);
+    executeTask(id, expertId, model, prompt, context);  // model 전달 = 이미 할당됨
   } else {
     pendingQueue.push({ taskId: id, expertId, model, prompt, context });
     saveQueue(pendingQueue); // 큐 변경 즉시 저장

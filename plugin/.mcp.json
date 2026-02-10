@@ -2,8 +2,10 @@
   "mcpServers": {
     "llm-router": {
       "command": "node",
-      "args": ["REPLACE_WITH_ABSOLUTE_PATH/dist/index.js"],
-      "env": {}
+      "args": ["c:/Users/GJ.PARK/Desktop/auto/custommcp/dist/index.js"],
+      "env": {
+        "CLIPROXY_URL": "http://127.0.0.1:8788"
+      }
     }
   }
 }

@@ -150,33 +150,39 @@ export async function callExpertWithFallback(
 
     return result;
   } catch (error) {
-    // Rate Limit이 아닌 에러는 그대로 throw
-    if (!(error instanceof RateLimitExceededError)) {
-      // Execute onError hook for non-rate-limit errors
+    const primaryError = error as Error;
+    const { shouldFallback: primaryShouldFallback, reason: primaryReason } = shouldAttemptFallback(primaryError);
+
+    // 폴백 불가능한 에러는 즉시 throw (인증 에러, 잘못된 요청 등)
+    if (!primaryShouldFallback) {
       await executeHooks('onError', {
-        errorMessage: (error as Error).message,
+        errorMessage: primaryError.message,
         source: `expert:${expertId}`,
-        recoverable: false
+        recoverable: false,
+        errorType: primaryReason
       });
       throw error;
     }
 
-    // Execute onRateLimit hook
-    const fallbacks = FALLBACK_CHAIN[expertId] || [];
-    await executeHooks('onRateLimit', {
-      provider: getProviderFromModel(expert.model),
-      model: expert.model,
-      expertId,
-      fallbackAvailable: fallbacks.length > 0
-    });
+    // Rate Limit인 경우 onRateLimit 훅 실행
+    if (primaryError instanceof RateLimitExceededError) {
+      const fallbacks = FALLBACK_CHAIN[expertId] || [];
+      await executeHooks('onRateLimit', {
+        provider: getProviderFromModel(expert.model),
+        model: expert.model,
+        expertId,
+        fallbackAvailable: fallbacks.length > 0
+      });
+    }
 
-    logger.warn({ expertId, error: error.message }, 'Primary expert failed, trying fallbacks');
+    const fallbacks = FALLBACK_CHAIN[expertId] || [];
+    logger.warn({ expertId, error: primaryError.message, reason: primaryReason }, 'Primary expert failed, trying fallbacks');
 
     // 폴백 시도 기록
     const fallbackAttempts: FallbackAttempt[] = [{
       expertId,
-      error,
-      reason: shouldAttemptFallback(error).reason,
+      error: primaryError,
+      reason: primaryReason,
       timestamp: Date.now()
     }];
 
@@ -398,33 +404,39 @@ export async function callExpertWithToolsAndFallback(
 
     return result;
   } catch (error) {
-    // Rate Limit이 아닌 에러는 그대로 throw
-    if (!(error instanceof RateLimitExceededError)) {
-      // Execute onError hook for non-rate-limit errors
+    const primaryError = error as Error;
+    const { shouldFallback: primaryShouldFallback, reason: primaryReason } = shouldAttemptFallback(primaryError);
+
+    // 폴백 불가능한 에러는 즉시 throw (인증 에러, 잘못된 요청 등)
+    if (!primaryShouldFallback) {
       await executeHooks('onError', {
-        errorMessage: (error as Error).message,
+        errorMessage: primaryError.message,
         source: `expert:${expertId}`,
-        recoverable: false
+        recoverable: false,
+        errorType: primaryReason
       });
       throw error;
     }
 
-    // Execute onRateLimit hook
-    const fallbacks = FALLBACK_CHAIN[expertId] || [];
-    await executeHooks('onRateLimit', {
-      provider: getProviderFromModel(expert.model),
-      model: expert.model,
-      expertId,
-      fallbackAvailable: fallbacks.length > 0
-    });
+    // Rate Limit인 경우 onRateLimit 훅 실행
+    if (primaryError instanceof RateLimitExceededError) {
+      const fallbacks = FALLBACK_CHAIN[expertId] || [];
+      await executeHooks('onRateLimit', {
+        provider: getProviderFromModel(expert.model),
+        model: expert.model,
+        expertId,
+        fallbackAvailable: fallbacks.length > 0
+      });
+    }
 
-    logger.warn({ expertId, error: error.message }, 'Primary expert failed, trying fallbacks');
+    const fallbacks = FALLBACK_CHAIN[expertId] || [];
+    logger.warn({ expertId, error: primaryError.message, reason: primaryReason }, 'Primary expert failed, trying fallbacks');
 
     // 폴백 시도 기록
     const fallbackAttempts: FallbackAttempt[] = [{
       expertId,
-      error,
-      reason: shouldAttemptFallback(error).reason,
+      error: primaryError,
+      reason: primaryReason,
       timestamp: Date.now()
     }];
 
