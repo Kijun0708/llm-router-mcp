@@ -48,18 +48,19 @@ claude --plugin-dir /path/to/llm-router-mcp/plugin
 - **Node.js** 18+
 - **CLIProxyAPI** — MCP 서버 시작 시 자동으로 감지/실행됩니다 (`vendor/cliproxy/`에 번들됨)
 
-## 포함된 Skills (11개)
+## 포함된 Skills (12개)
 
 ### 자동 호출 (Claude가 상황에 맞게 자동으로 로드)
 
 | 스킬 | 설명 |
 |------|------|
 | `consult-expert` | 23명의 AI 전문가 상담 라우팅 |
-| `code-review` | GPT + Gemini 교차 검증 코드 리뷰 |
+| `code-review` | GPT + Gemini 교차 검증 코드 리뷰 → plan 모드로 수정 계획 |
 | `deep-analyze` | 아키텍처/시스템 깊은 분석 |
 | `security-audit` | OWASP Top 10 보안 감사 |
 | `research-topic` | API/라이브러리/기술 리서치 |
 | `cross-verify` | 서로 다른 LLM 교차 검증 |
+| `code-validate` | 빌드 체크, 변수 참조 오류, 타입 에러 자동 탐지 |
 
 ### 수동 호출 (`/llm-router:스킬명`)
 

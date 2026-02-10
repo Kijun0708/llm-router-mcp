@@ -100,6 +100,15 @@ user-invocable: false
 | "문서 작성해줘" | `writer` |
 | "빠르게 알려줘" | `explorer` |
 
+### 워크플로우 가이드
+
+| 워크플로우 | 스킬 | 동작 |
+|-----------|------|------|
+| 설계 → 구현 | `design-workflow` | 전문가 설계 → plan 모드 → 승인 → 구현 |
+| 코드 리뷰 → 수정 | `code-review` | 교차 검증 리뷰 → plan 모드 → 승인 → 자동 수정 |
+| TDD 개발 | `tdd-workflow` | 테스트 전략 → Red-Green-Refactor |
+| 코드 검증 | `code-validate` | 빌드 체크, 변수 참조 확인, 타입 검증 |
+
 ### 에러 처리
 
 - **Rate Limit (429)**: 자동으로 폴백 전문가로 전환
