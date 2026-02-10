@@ -17,8 +17,10 @@ export const categoryTaskSchema = z.object({
     .optional()
     .describe("추가 컨텍스트"),
 
-  override_expert: z.enum(["strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal"])
-    .optional()
+  override_expert: z.enum([
+    "strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
+    "librarian", "metis", "momus", "prometheus", "security", "tester", "data", "codex_reviewer", "devops"
+  ]).optional()
     .describe("카테고리 기본 전문가 대신 사용할 전문가")
 }).strict();
 

@@ -147,6 +147,7 @@ export interface Config {
     tester: string;
     data: string;
     codex_reviewer: string;
+    devops: string;
     // Blank 전문가 (동적 페르소나 토론용)
     gpt_blank_1: string;
     gpt_blank_2: string;

@@ -118,6 +118,14 @@ export {
   type CodexReviewDepth,
 } from './codex-reviewer.prompt.js';
 
+// DevOps (CI/CD, Docker, Kubernetes)
+export {
+  DEVOPS_SYSTEM_PROMPT,
+  DEVOPS_METADATA,
+  buildDevOpsPrompt,
+  type DevOpsDepth,
+} from './devops.prompt.js';
+
 // Blank (Dynamic Persona)
 export {
   BLANK_SYSTEM_PROMPT,
@@ -149,6 +157,7 @@ import { SECURITY_SYSTEM_PROMPT, SECURITY_METADATA } from './security.prompt.js'
 import { TESTER_SYSTEM_PROMPT, TESTER_METADATA } from './tester.prompt.js';
 import { DATA_SYSTEM_PROMPT, DATA_METADATA } from './data.prompt.js';
 import { CODEX_REVIEWER_SYSTEM_PROMPT, CODEX_REVIEWER_METADATA } from './codex-reviewer.prompt.js';
+import { DEVOPS_SYSTEM_PROMPT, DEVOPS_METADATA } from './devops.prompt.js';
 import { BLANK_SYSTEM_PROMPT, BLANK_METADATA } from './blank.prompt.js';
 import { DEBATE_MODERATOR_SYSTEM_PROMPT, DEBATE_MODERATOR_METADATA } from './debate-moderator.prompt.js';
 import type { ExpertRegistry } from '../metadata/expert-metadata.js';
@@ -173,6 +182,7 @@ export const EXPERT_REGISTRY: ExpertRegistry = {
   tester: TESTER_METADATA,
   data: DATA_METADATA,
   codex_reviewer: CODEX_REVIEWER_METADATA,
+  devops: DEVOPS_METADATA,
   // Blank experts (share same metadata)
   gpt_blank_1: BLANK_METADATA,
   gpt_blank_2: BLANK_METADATA,
@@ -204,6 +214,7 @@ export const EXPERT_PROMPTS: Record<string, string> = {
   tester: TESTER_SYSTEM_PROMPT,
   data: DATA_SYSTEM_PROMPT,
   codex_reviewer: CODEX_REVIEWER_SYSTEM_PROMPT,
+  devops: DEVOPS_SYSTEM_PROMPT,
   // Blank experts (share same minimal prompt)
   gpt_blank_1: BLANK_SYSTEM_PROMPT,
   gpt_blank_2: BLANK_SYSTEM_PROMPT,

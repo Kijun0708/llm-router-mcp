@@ -1,0 +1,23 @@
+{
+  "name": "llm-router",
+  "owner": {
+    "name": "Kijun0708"
+  },
+  "metadata": {
+    "description": "Multi-LLM Expert Collaboration - GPT, Gemini, Claude 전문가 23명을 통한 코드 리뷰, 보안 감사, 아키텍처 설계, 리서치",
+    "version": "2.0.0"
+  },
+  "plugins": [
+    {
+      "name": "llm-router",
+      "source": "./plugin",
+      "description": "GPT, Gemini, Claude 전문가 팀을 통한 코드 리뷰, 보안 감사, 아키텍처 설계, 리서치를 Claude Code에서 자동으로 사용",
+      "version": "2.0.0",
+      "author": {
+        "name": "GJ.PARK"
+      },
+      "keywords": ["llm", "routing", "mcp", "expert-system", "multi-model", "code-review", "security-audit"],
+      "category": "development"
+    }
+  ]
+}

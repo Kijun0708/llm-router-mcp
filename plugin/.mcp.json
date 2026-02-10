@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "llm-router": {
+      "command": "node",
+      "args": ["REPLACE_WITH_ABSOLUTE_PATH/dist/index.js"],
+      "env": {}
+    }
+  }
+}

@@ -4,7 +4,10 @@ import { z } from "zod";
 import { config } from "../config.js";
 import { experts } from "../experts/index.js";
 
-const expertIds = ["strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal"] as const;
+const expertIds = [
+  "strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
+  "librarian", "metis", "momus", "prometheus", "security", "tester", "data", "codex_reviewer", "devops"
+] as const;
 
 export const setExpertModelSchema = z.object({
   expert: z.enum(expertIds)

@@ -17,6 +17,7 @@ import { security, SECURITY_METADATA } from './security.js';
 import { tester, TESTER_METADATA } from './tester.js';
 import { data, DATA_METADATA } from './data.js';
 import { codexReviewer, CODEX_REVIEWER_METADATA } from './codex-reviewer.js';
+import { devops, DEVOPS_METADATA } from './devops.js';
 // Blank experts for dynamic persona debates
 import { gptBlank1 } from './gpt-blank-1.js';
 import { gptBlank2 } from './gpt-blank-2.js';
@@ -46,6 +47,7 @@ export const experts: Record<string, Expert> = {
   tester,
   data,
   codex_reviewer: codexReviewer,
+  devops,
   // Blank experts for dynamic persona debates
   gpt_blank_1: gptBlank1,
   gpt_blank_2: gptBlank2,
@@ -77,6 +79,7 @@ export const FALLBACK_CHAIN: Record<string, string[]> = {
   tester: ['reviewer', 'researcher'],
   data: ['strategist', 'researcher'],
   codex_reviewer: ['reviewer', 'strategist'],
+  devops: ['strategist', 'researcher'],
   // Blank experts (same provider first, then cross-provider)
   gpt_blank_1: ['gpt_blank_2', 'claude_blank_1'],
   gpt_blank_2: ['gpt_blank_1', 'claude_blank_2'],
@@ -92,7 +95,7 @@ export const FALLBACK_CHAIN: Record<string, string[]> = {
 export {
   strategist, researcher, reviewer, frontend, writer, explorer, multimodal,
   prometheus, metis, momus, librarian,
-  security, tester, data, codexReviewer,
+  security, tester, data, codexReviewer, devops,
   gptBlank1, gptBlank2, claudeBlank1, claudeBlank2, geminiBlank1, geminiBlank2,
   debateModerator
 };
@@ -114,6 +117,7 @@ export {
   TESTER_METADATA,
   DATA_METADATA,
   CODEX_REVIEWER_METADATA,
+  DEVOPS_METADATA,
   BLANK_METADATA,
   DEBATE_MODERATOR_METADATA
 };
@@ -138,6 +142,7 @@ export const EXPERT_METADATA_REGISTRY: Record<string, ExpertPromptMetadata> = {
   tester: TESTER_METADATA,
   data: DATA_METADATA,
   codex_reviewer: CODEX_REVIEWER_METADATA,
+  devops: DEVOPS_METADATA,
   // Blank experts (shared metadata)
   gpt_blank_1: BLANK_METADATA,
   gpt_blank_2: BLANK_METADATA,

@@ -75,6 +75,7 @@ export function loadConfig(overridePort?: number): Config {
       tester: process.env.MODEL_TESTER || 'claude-sonnet-4-5-20250929',  // TDD/테스트 전략
       data: process.env.MODEL_DATA || 'gpt-5.2',  // DB 설계/쿼리 최적화
       codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.3-codex',  // GPT 코드리뷰
+      devops: process.env.MODEL_DEVOPS || 'gpt-5.2',  // DevOps/인프라 자동화
       // Blank 전문가 (동적 페르소나 토론용 - 다양한 모델)
       gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || 'gpt-5.2',
       gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.3-codex',

@@ -34,7 +34,7 @@ node dist/index.js
 
 ### Expert System
 
-22 AI experts with specialized roles and automatic fallback chains:
+23 AI experts with specialized roles and automatic fallback chains:
 
 #### 기본 전문가 (11명)
 
@@ -52,7 +52,7 @@ node dist/index.js
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → explorer |
 | `prometheus` | Claude Sonnet | 창의적 솔루션, 혁신적 접근 | strategist → researcher |
 
-#### 특화 전문가 (4명)
+#### 특화 전문가 (5명)
 
 | Expert | Model | Role | Fallbacks |
 |--------|-------|------|-----------|
@@ -60,6 +60,7 @@ node dist/index.js
 | `tester` | Claude Sonnet | TDD/테스트 전략 설계 | reviewer → researcher |
 | `data` | GPT 5.2 | DB 설계, 쿼리 최적화 | strategist → researcher |
 | `codex_reviewer` | GPT Codex | GPT 관점 코드 리뷰 | reviewer → strategist |
+| `devops` | GPT 5.2 | CI/CD, Docker, K8s, 인프라 자동화 | strategist → researcher |
 
 #### 동적 페르소나 전문가 (6명) - 토론용
 

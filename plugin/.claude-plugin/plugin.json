@@ -1,0 +1,8 @@
+{
+  "name": "llm-router",
+  "description": "Multi-LLM expert collaboration - GPT, Gemini, Claude 전문가 팀을 통한 코드 리뷰, 보안 감사, 아키텍처 설계, 리서치",
+  "version": "2.0.0",
+  "author": {
+    "name": "GJ.PARK"
+  }
+}

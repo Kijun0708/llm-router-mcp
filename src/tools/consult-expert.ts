@@ -119,8 +119,8 @@ export const consultExpertSchema = z.object({
     // 기본 전문가 (11명)
     "strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
     "librarian", "metis", "momus", "prometheus",
-    // 특화 전문가 (4명)
-    "security", "tester", "data", "codex_reviewer"
+    // 특화 전문가 (5명)
+    "security", "tester", "data", "codex_reviewer", "devops"
   ]).describe("자문할 전문가"),
 
   question: z.string()
