@@ -6,7 +6,7 @@
  * 특정 키워드/패턴 감지 시 자동으로 적절한 expert로 라우팅하는 시스템
  */
 
-export type ExpertId = 'strategist' | 'researcher' | 'reviewer' | 'frontend' | 'writer' | 'explorer' | 'multimodal';
+export type ExpertId = 'strategist' | 'researcher' | 'reviewer' | 'frontend' | 'writer' | 'explorer' | 'multimodal' | 'librarian' | 'metis' | 'momus' | 'prometheus' | 'security' | 'tester' | 'data' | 'codex_reviewer' | 'devops';
 
 /**
  * 키워드 매칭 타입
@@ -218,5 +218,77 @@ export const DEFAULT_KEYWORD_RULES: Omit<KeywordRule, 'id' | 'createdAt' | 'upda
     priority: 60,
     enabled: true,
     description: '파일/코드 검색 요청을 explorer로 라우팅'
+  },
+
+  // Security Expert 키워드 (reviewer의 일반 보안 키워드보다 높은 우선순위)
+  {
+    name: 'Security Expert Keywords',
+    keywords: ['OWASP', 'CWE', '보안 감사', 'security audit', '취약점 분석', '인증 검토', '인가 검토', '침투 테스트', 'penetration'],
+    matchType: 'contains',
+    caseSensitive: false,
+    targetExpert: 'security',
+    priority: 95,
+    enabled: true,
+    description: '전문 보안 분석 요청을 security 전문가로 라우팅'
+  },
+
+  // DevOps 키워드
+  {
+    name: 'DevOps Keywords',
+    keywords: ['CI/CD', 'Docker', 'Kubernetes', 'K8s', '배포', 'deploy', '파이프라인', 'pipeline', '인프라', 'infrastructure', 'Terraform', 'GitHub Actions'],
+    matchType: 'contains',
+    caseSensitive: false,
+    targetExpert: 'devops',
+    priority: 80,
+    enabled: true,
+    description: 'CI/CD, 컨테이너, 인프라 관련 요청을 devops 전문가로 라우팅'
+  },
+
+  // Testing 키워드
+  {
+    name: 'Testing Keywords',
+    keywords: ['테스트 전략', 'test strategy', 'TDD', '테스트 설계', 'test design', '테스트 커버리지', 'test coverage', '목킹', 'mocking'],
+    matchType: 'contains',
+    caseSensitive: false,
+    targetExpert: 'tester',
+    priority: 80,
+    enabled: true,
+    description: '테스트 전략 및 TDD 관련 요청을 tester 전문가로 라우팅'
+  },
+
+  // Database 키워드
+  {
+    name: 'Database Keywords',
+    keywords: ['DB 설계', 'database design', '쿼리 최적화', 'query optimization', '인덱스', 'index', '스키마', 'schema', 'SQL 튜닝', 'N+1'],
+    matchType: 'contains',
+    caseSensitive: false,
+    targetExpert: 'data',
+    priority: 80,
+    enabled: true,
+    description: '데이터베이스 설계 및 쿼리 최적화 요청을 data 전문가로 라우팅'
+  },
+
+  // Multimodal 키워드
+  {
+    name: 'Multimodal Keywords',
+    keywords: ['이미지 분석', 'image analysis', '스크린샷', 'screenshot', '시각적', 'visual', '다이어그램', 'diagram', 'UI 캡처'],
+    matchType: 'contains',
+    caseSensitive: false,
+    targetExpert: 'multimodal',
+    priority: 85,
+    enabled: true,
+    description: '이미지 및 시각적 콘텐츠 분석 요청을 multimodal 전문가로 라우팅'
+  },
+
+  // Critical Analysis 키워드
+  {
+    name: 'Critical Analysis Keywords',
+    keywords: ['비판적 검토', '약점', 'weakness', '문제점 지적', '개선점', '단점', '한계'],
+    matchType: 'contains',
+    caseSensitive: false,
+    targetExpert: 'momus',
+    priority: 70,
+    enabled: true,
+    description: '비판적 분석 및 품질 평가 요청을 momus 전문가로 라우팅'
   }
 ];

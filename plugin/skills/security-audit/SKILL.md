@@ -1,6 +1,6 @@
 ---
 name: security-audit
-description: "보안 감사 - OWASP Top 10 기반 취약점 분석, CWE 분류, 보안 취약점 탐지, 인증/인가 검토, 인젝션 탐지"
+description: "보안 감사 - OWASP Top 10 기반 취약점 분석, CWE 분류, 보안 취약점 탐지, 인증/인가 검토, 인젝션 탐지. '보안 점검', '취약점 있어?', '해킹 가능성', '보안 괜찮아?', 'XSS/SQL injection 확인' 같은 요청에 반응합니다"
 argument-hint: "<감사 대상 모듈/API/시스템>"
 ---
 

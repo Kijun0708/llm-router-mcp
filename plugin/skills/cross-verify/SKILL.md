@@ -1,6 +1,6 @@
 ---
 name: cross-verify
-description: "교차 검증 - 서로 다른 LLM(GPT, Gemini, Claude)으로 결과를 교차 검증합니다. 코드 분석, 설계 결정, 기술 판단의 정확성을 높입니다"
+description: "교차 검증 - 서로 다른 LLM(GPT, Gemini, Claude)으로 결과를 교차 검증합니다. '확실해?', '다른 AI도 확인해봐', '검증해줘', '정말 맞아?', '이거 신뢰할 수 있어?' 같은 요청에 반응합니다"
 argument-hint: "<검증할 코드/분석/결정 사항>"
 ---
 

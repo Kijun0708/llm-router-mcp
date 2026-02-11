@@ -14,8 +14,8 @@ LLM Router MCP는 Claude Code가 팀 리더 역할을 하며, 특정 작업에 �
 |------|------|
 | MCP 도구 | 108개 |
 | 내장 훅 | 38개 |
-| AI 전문가 | 22개 |
-| 내장 스킬 | 10개 |
+| AI 전문가 | 23개 |
+| 내장 스킬 | 12개 |
 
 ### 주요 특징
 
@@ -100,7 +100,7 @@ cd vendor/cliproxy
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → explorer |
 | `prometheus` | Claude Sonnet | 창의적 솔루션, 혁신적 접근 | strategist → researcher |
 
-### 특화 전문가 (4명)
+### 특화 전문가 (5명)
 
 | 전문가 | 모델 | 역할 | 폴백 |
 |--------|------|------|------|
@@ -108,6 +108,7 @@ cd vendor/cliproxy
 | `tester` | Claude Sonnet | TDD/테스트 전략 설계 | reviewer → researcher |
 | `data` | GPT 5.2 | DB 설계, 쿼리 최적화 | strategist → researcher |
 | `codex_reviewer` | GPT Codex | GPT 관점 코드 리뷰 | reviewer → strategist |
+| `devops` | GPT 5.2 | CI/CD, Docker, K8s, 인프라 자동화 | strategist → researcher |
 
 ### 동적 페르소나 전문가 (6명)
 
@@ -227,20 +228,22 @@ cd vendor/cliproxy
 
 ## 스킬 시스템
 
-10개 내장 스킬이 적합한 전문가에게 자동 라우팅:
+12개 내장 스킬이 자연어 요청을 인식하여 자동으로 호출됩니다:
 
-| 스킬 | 전문가 | 용도 |
-|------|--------|------|
-| `deep-analyze` | strategist | 아키텍처/시스템 심층 분석 |
-| `quick-search` | explorer | 빠른 파일/패턴 검색 |
-| `code-review` | reviewer | 코드 리뷰 및 품질 분석 |
-| `security-audit` | reviewer | 보안 취약점 감사 |
-| `doc-writer` | writer | 기술 문서 작성 |
-| `api-explore` | researcher | API/라이브러리 탐색 |
-| `ui-design` | frontend | UI/UX 설계 |
-| `git-workflow` | strategist | Git 전략 관리 |
-| `test-runner` | researcher | 테스트 실행/분석 |
-| `ensemble-debate` | (멀티) | 다중 전문가 토론 |
+| 스킬 | 설명 | 호출 방식 |
+|------|------|----------|
+| `consult-expert` | 23명의 AI 전문가 상담 라우팅 | 자동 |
+| `code-review` | GPT + Gemini 교차 검증 코드 리뷰 | 자동 |
+| `deep-analyze` | 아키텍처/시스템 깊은 분석 | 자동 |
+| `security-audit` | OWASP Top 10 보안 감사 | 자동 |
+| `research-topic` | API/라이브러리/기술 리서치 | 자동 |
+| `cross-verify` | 서로 다른 LLM 교차 검증 | 자동 |
+| `code-validate` | 빌드/타입/참조 오류 자동 탐지 | 자동 |
+| `design-workflow` | 다중 전문가 설계 워크플로우 | 자동 (확인 후) |
+| `ensemble-debate` | 멀티 전문가 토론 및 비교 분석 | 자동 (확인 후) |
+| `tdd-workflow` | TDD 테스트 주도 개발 | 자동 (확인 후) |
+| `background-task` | 백그라운드 비동기 전문가 실행 | 자동 (확인 후) |
+| `llm-router-guide` | 시스템 레퍼런스 (Claude 전용) | 자동 참조 |
 
 ---
 

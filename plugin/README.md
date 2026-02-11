@@ -115,9 +115,9 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 → auto_debate 호출 → 3명 전문가가 각각 분석 → 토론 → 합의안 도출
 ```
 
-### 슬래시 커맨드 (수동 호출)
+### 슬래시 커맨드 (선택 사항)
 
-특정 워크플로우를 직접 실행할 때:
+자연어로 요청하면 자동 호출되지만, 직접 실행할 수도 있습니다:
 
 ```
 /llm-router:ensemble-debate 마이크로서비스 vs 모놀리스
@@ -179,26 +179,21 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 
 ## 포함된 Skills (12개)
 
-### 자동 호출 (Claude가 상황에 맞게 자동으로 로드)
+### 자동 호출 (Claude가 자연어 요청을 인식하여 자동 실행)
 
-| 스킬 | 설명 |
-|------|------|
-| `consult-expert` | 23명의 AI 전문가 상담 라우팅 |
-| `code-review` | GPT + Gemini 교차 검증 코드 리뷰 → plan 모드로 수정 계획 |
-| `deep-analyze` | 아키텍처/시스템 깊은 분석 |
-| `security-audit` | OWASP Top 10 보안 감사 |
-| `research-topic` | API/라이브러리/기술 리서치 |
-| `cross-verify` | 서로 다른 LLM 교차 검증 |
-| `code-validate` | 빌드 체크, 변수 참조 오류, 타입 에러 자동 탐지 |
-
-### 수동 호출 (`/llm-router:스킬명`)
-
-| 스킬 | 사용법 |
-|------|-------|
-| `ensemble-debate` | `/llm-router:ensemble-debate 마이크로서비스 vs 모놀리스` |
-| `design-workflow` | `/llm-router:design-workflow 사용자 인증 시스템` |
-| `background-task` | `/llm-router:background-task 아키텍처 분석` |
-| `tdd-workflow` | `/llm-router:tdd-workflow 사용자 등록 기능` |
+| 스킬 | 설명 | 비고 |
+|------|------|------|
+| `consult-expert` | 23명의 AI 전문가 상담 라우팅 | |
+| `code-review` | GPT + Gemini 교차 검증 코드 리뷰 → plan 모드로 수정 계획 | |
+| `deep-analyze` | 아키텍처/시스템 깊은 분석 | |
+| `security-audit` | OWASP Top 10 보안 감사 | |
+| `research-topic` | API/라이브러리/기술 리서치 | |
+| `cross-verify` | 서로 다른 LLM 교차 검증 | |
+| `code-validate` | 빌드 체크, 변수 참조 오류, 타입 에러 자동 탐지 | |
+| `design-workflow` | 다중 전문가 설계 워크플로우 | 사용자 확인 후 실행 |
+| `ensemble-debate` | 멀티 전문가 토론 및 비교 분석 | 사용자 확인 후 실행 |
+| `tdd-workflow` | TDD 테스트 주도 개발 | 사용자 확인 후 실행 |
+| `background-task` | 백그라운드 비동기 전문가 실행 | 사용자 확인 후 실행 |
 
 ### Claude 전용 (자동 참조)
 
