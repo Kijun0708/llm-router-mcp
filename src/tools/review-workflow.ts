@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { callExpertWithFallback, callExpertsParallel } from "../services/expert-router.js";
+import { wrapMcpResponse } from "../utils/response-saver.js";
 
 export const reviewCodeSchema = z.object({
   code: z.string()
@@ -112,9 +113,11 @@ ${params.code}
       output += `### 🎯 GPT Strategist (설계 관점)\n${gptReview}`;
     }
 
-    return {
-      content: [{ type: "text" as const, text: output }]
-    };
+    return wrapMcpResponse(output, {
+      toolName: 'review_code',
+      isWorkflow: params.include_strategist,
+      expertInfo: { name: 'Code Review' }
+    });
 
   } catch (error) {
     return {

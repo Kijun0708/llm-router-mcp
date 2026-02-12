@@ -158,4 +158,11 @@ export interface Config {
     // 페르소나 할당 전문가
     debate_moderator: string;
   };
+  hybrid: {
+    enabled: boolean;
+    inlineThresholdChars: number;
+    alwaysSaveWorkflows: boolean;
+    cleanupMaxAgeMs: number;
+    previewLines: number;
+  };
 }

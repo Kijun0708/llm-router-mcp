@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { callExpertWithFallback, callExpertsParallel } from "../services/expert-router.js";
+import { wrapMcpResponse } from "../utils/response-saver.js";
 
 export const designWorkflowSchema = z.object({
   topic: z.string()
@@ -130,9 +131,11 @@ ${strategy}
       output += `\n\n⚠️ 일부 전문가가 한도 초과로 대체되었습니다.`;
     }
 
-    return {
-      content: [{ type: "text" as const, text: output }]
-    };
+    return wrapMcpResponse(output, {
+      toolName: 'design_with_experts',
+      isWorkflow: true,
+      expertInfo: { name: 'Design Workflow', fellBack }
+    });
 
   } catch (error) {
     return {

@@ -8,6 +8,7 @@ import { callExpertWithFallback, callExpertWithToolsAndFallback } from "../servi
 import { sessionMemory } from "../services/session-memory.js";
 import { startBackgroundTask } from "../services/background-manager.js";
 import { TimeoutError } from "../services/cliproxy-client.js";
+import { wrapMcpResponse } from "../utils/response-saver.js";
 
 // ============================================================================
 // Security: Image Path Validation (LFI/SSRF Prevention)
@@ -317,12 +318,18 @@ export async function handleConsultExpert(params: z.infer<typeof consultExpertSc
       response += `\n\n_🖼️ 이미지 분석: ${params.image_path}_`;
     }
 
-    return {
-      content: [{
-        type: "text" as const,
-        text: response
-      }]
-    };
+    return wrapMcpResponse(response, {
+      expertId: params.expert,
+      toolName: 'consult_expert',
+      isWorkflow: false,
+      expertInfo: {
+        name: actualExpert.name,
+        model: actualExpert.model,
+        fellBack: result.fellBack,
+        cached: result.cached,
+        actualExpert: result.actualExpert,
+      }
+    });
 
   } catch (error) {
     // 타임아웃 발생 시 자동으로 백그라운드로 전환

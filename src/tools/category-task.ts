@@ -4,6 +4,7 @@ import { z } from "zod";
 import { categories } from "../categories.js";
 import { experts } from "../experts/index.js";
 import { callExpertWithFallback } from "../services/expert-router.js";
+import { wrapMcpResponse } from "../utils/response-saver.js";
 
 export const categoryTaskSchema = z.object({
   category: z.enum(["visual", "business-logic", "research", "quick", "review", "documentation"])
@@ -94,15 +95,21 @@ export async function handleCategoryTask(params: z.infer<typeof categoryTaskSche
 
     const expert = experts[result.actualExpert];
 
-    return {
-      content: [{
-        type: "text" as const,
-        text: `## ${expert.name} 응답\n` +
-              `_카테고리: ${category.description}_\n\n` +
-              `${result.response}` +
-              (result.fellBack ? `\n\n---\n⚠️ 폴백: ${expertId} → ${result.actualExpert}` : '')
-      }]
-    };
+    const responseText = `## ${expert.name} 응답\n` +
+          `_카테고리: ${category.description}_\n\n` +
+          `${result.response}` +
+          (result.fellBack ? `\n\n---\n⚠️ 폴백: ${expertId} → ${result.actualExpert}` : '');
+
+    return wrapMcpResponse(responseText, {
+      expertId: result.actualExpert,
+      toolName: 'route_by_category',
+      isWorkflow: false,
+      expertInfo: {
+        name: expert.name,
+        fellBack: result.fellBack,
+        actualExpert: result.actualExpert,
+      }
+    });
   } catch (error) {
     return {
       content: [{

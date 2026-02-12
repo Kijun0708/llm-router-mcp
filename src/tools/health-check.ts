@@ -6,6 +6,7 @@ import { getRateLimitStatus } from "../utils/rate-limit.js";
 import { getCacheStats, clearCache } from "../utils/cache.js";
 import { getStats as getBackgroundStats, cleanupOldTasks } from "../services/background-manager.js";
 import { experts } from "../experts/index.js";
+import { cleanupOldResponses } from "../utils/response-saver.js";
 
 export const healthCheckSchema = z.object({
   include_details: z.boolean()
@@ -68,8 +69,10 @@ export async function handleHealthCheck(params: z.infer<typeof healthCheckSchema
 
   // 오래된 작업 정리
   let cleanedTasks = 0;
+  let cleanedResponses = 0;
   if (params.cleanup_tasks) {
     cleanedTasks = cleanupOldTasks();
+    cleanedResponses = cleanupOldResponses();
   }
 
   // 통계 수집
@@ -109,6 +112,9 @@ export async function handleHealthCheck(params: z.infer<typeof healthCheckSchema
   output += `- 실패: ${backgroundStats.failed}\n`;
   if (params.cleanup_tasks && cleanedTasks > 0) {
     output += `- ✅ ${cleanedTasks}개 작업 정리됨\n`;
+  }
+  if (params.cleanup_tasks && cleanedResponses > 0) {
+    output += `- ✅ ${cleanedResponses}개 응답 파일 정리됨\n`;
   }
 
   if (params.include_details) {

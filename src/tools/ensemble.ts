@@ -15,6 +15,7 @@ import {
   EnsembleStrategy,
   AggregationMethod
 } from '../features/ensemble/index.js';
+import { wrapMcpResponse } from '../utils/response-saver.js';
 
 // ============================================================================
 // Tool Schemas
@@ -380,9 +381,11 @@ export async function handleEnsembleQuery(
       }
     }
 
-    return {
-      content: [{ type: 'text', text: response }]
-    };
+    return wrapMcpResponse(response, {
+      toolName: 'ensemble_query',
+      isWorkflow: true,
+      expertInfo: { name: `Ensemble (${getStrategyLabel(result.strategy)})` }
+    });
   } catch (error) {
     return {
       content: [{
@@ -424,9 +427,11 @@ export async function handleEnsemblePreset(
     response += `---\n\n`;
     response += result.finalResult;
 
-    return {
-      content: [{ type: 'text', text: response }]
-    };
+    return wrapMcpResponse(response, {
+      toolName: 'ensemble_preset',
+      isWorkflow: true,
+      expertInfo: { name: `Preset: ${preset.name}` }
+    });
   } catch (error) {
     return {
       content: [{

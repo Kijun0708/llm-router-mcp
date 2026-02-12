@@ -8,6 +8,7 @@ import {
   listTasks,
   getStats
 } from "../services/background-manager.js";
+import { wrapMcpResponse } from "../utils/response-saver.js";
 
 // 백그라운드 시작
 export const backgroundStartSchema = z.object({
@@ -127,12 +128,10 @@ export function handleBackgroundResult(params: z.infer<typeof backgroundResultSc
   }
 
   if (result.status === 'completed') {
-    return {
-      content: [{
-        type: "text" as const,
-        text: `## ✅ 작업 완료\n\n${result.result}`
-      }]
-    };
+    return wrapMcpResponse(`## ✅ 작업 완료\n\n${result.result}`, {
+      toolName: 'background_expert_result',
+      isWorkflow: false,
+    });
   }
 
   if (result.status === 'failed') {

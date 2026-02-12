@@ -23,6 +23,7 @@ import {
   RalphLoopResult
 } from '../features/ralph-loop/index.js';
 import { logger } from '../utils/logger.js';
+import { wrapMcpResponse } from '../utils/response-saver.js';
 
 // Expert selection by intent for Ralph Loop mode
 const INTENT_TO_EXPERT: Record<string, string> = {
@@ -194,12 +195,11 @@ export async function handleOrchestrateTask(
     // Format output
     const output = formatWorkflowResult(result, request);
 
-    return {
-      content: [{
-        type: 'text' as const,
-        text: output
-      }]
-    };
+    return wrapMcpResponse(output, {
+      toolName: 'orchestrate_task',
+      isWorkflow: true,
+      expertInfo: { name: 'Orchestrated Workflow' }
+    });
   } catch (error) {
     logger.error({ error }, 'Orchestrated task failed');
 
@@ -269,12 +269,11 @@ async function handleRalphLoopMode(
     });
 
     // Format and return result
-    return {
-      content: [{
-        type: 'text' as const,
-        text: formatRalphLoopResult(result, request)
-      }]
-    };
+    return wrapMcpResponse(formatRalphLoopResult(result, request), {
+      toolName: 'orchestrate_task',
+      isWorkflow: true,
+      expertInfo: { name: 'Ralph Loop' }
+    });
   } catch (error) {
     logger.error({ error, taskId }, 'Ralph Loop mode failed');
 

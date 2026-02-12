@@ -1,5 +1,6 @@
 // src/config.ts
 
+import { config as dotenvConfig } from 'dotenv';
 import { Config } from './types.js';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -8,6 +9,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, '..');
+
+// 프로젝트 루트의 .env 파일에서 환경변수 로드 (어떤 cwd에서 실행해도 동작)
+dotenvConfig({ path: join(projectRoot, '.env') });
 
 // 기본 CLIProxyAPI 경로 (번들된 실행파일)
 const defaultCliproxyPath = join(projectRoot, 'vendor', 'cliproxy', 'cli-proxy-api.exe');
@@ -85,6 +89,14 @@ export function loadConfig(overridePort?: number): Config {
       gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || 'gemini-3-flash-preview',
       // 페르소나 할당 전문가
       debate_moderator: process.env.MODEL_DEBATE_MODERATOR || 'claude-sonnet-4-5-20250929'
+    },
+
+    hybrid: {
+      enabled: process.env.HYBRID_RESPONSE_ENABLED !== 'false',
+      inlineThresholdChars: parseInt(process.env.HYBRID_THRESHOLD_CHARS || '2000'),
+      alwaysSaveWorkflows: process.env.HYBRID_ALWAYS_SAVE_WORKFLOWS !== 'false',
+      cleanupMaxAgeMs: parseInt(process.env.HYBRID_CLEANUP_MAX_AGE_MS || '86400000'),
+      previewLines: parseInt(process.env.HYBRID_PREVIEW_LINES || '5'),
     }
   };
 }

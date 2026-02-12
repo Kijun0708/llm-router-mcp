@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { callExpertWithFallback } from "../services/expert-router.js";
+import { wrapMcpResponse } from "../utils/response-saver.js";
 
 export const researchTopicSchema = z.object({
   topic: z.string()
@@ -67,14 +68,19 @@ ${params.context ? `\n컨텍스트:\n${params.context}` : ""}
   try {
     const result = await callExpertWithFallback('researcher', researchPrompt, params.context);
 
-    return {
-      content: [{
-        type: "text" as const,
-        text: `## 조사 결과: ${params.topic}\n\n` +
-              `### 📚 Claude Researcher\n${result.response}` +
-              (result.fellBack ? `\n\n⚠️ 폴백: researcher → ${result.actualExpert}` : '')
-      }]
-    };
+    const responseText = `## 조사 결과: ${params.topic}\n\n` +
+          `### 📚 Claude Researcher\n${result.response}` +
+          (result.fellBack ? `\n\n⚠️ 폴백: researcher → ${result.actualExpert}` : '');
+
+    return wrapMcpResponse(responseText, {
+      expertId: 'researcher',
+      toolName: 'research_topic',
+      isWorkflow: false,
+      expertInfo: {
+        fellBack: result.fellBack,
+        actualExpert: result.actualExpert,
+      }
+    });
   } catch (error) {
     return {
       content: [{
