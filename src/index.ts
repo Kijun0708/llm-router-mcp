@@ -1,6 +1,6 @@
 // src/index.ts
 
-import 'dotenv/config';  // 환경변수 로드
+import 'dotenv/config';  // 환경변수 로드 (fallback, config.ts에서 이미 절대경로로 로드됨)
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
