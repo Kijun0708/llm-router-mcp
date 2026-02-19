@@ -13,27 +13,15 @@ const projectRoot = join(__dirname, '..');
 // 프로젝트 루트의 .env 파일에서 환경변수 로드 (어떤 cwd에서 실행해도 동작)
 dotenvConfig({ path: join(projectRoot, '.env') });
 
-// 기본 CLIProxyAPI 경로 (번들된 실행파일)
-const defaultCliproxyPath = join(projectRoot, 'vendor', 'cliproxy', 'cli-proxy-api.exe');
-
-export function loadConfig(overridePort?: number): Config {
-  // CLIPROXY_URL은 환경변수로 반드시 설정해야 함
-  const baseUrl = process.env.CLIPROXY_URL;
-  if (!baseUrl && !overridePort) {
-    throw new Error(
-      'CLIPROXY_URL 환경변수가 설정되지 않았습니다. ' +
-      '.env 파일 또는 환경변수에 CLIPROXY_URL=http://127.0.0.1:<PORT>를 설정하세요.'
-    );
-  }
-  const cliproxyUrl = overridePort
-    ? `http://127.0.0.1:${overridePort}`
-    : baseUrl!;
-
+export function loadConfig(): Config {
   return {
-    cliproxyUrl,
-    cliproxyPath: process.env.CLIPROXY_PATH || defaultCliproxyPath,  // CLIProxyAPI 실행 파일 경로
-    exaApiKey: process.env.EXA_API_KEY,       // Exa AI 검색 API 키
-    context7ApiKey: process.env.CONTEXT7_API_KEY, // Context7 문서 API 키
+    cli: {
+      geminiPath: process.env.CLI_GEMINI_PATH || 'gemini',
+      claudePath: process.env.CLI_CLAUDE_PATH || 'claude',
+      codexPath: process.env.CLI_CODEX_PATH || 'codex',
+    },
+    exaApiKey: process.env.EXA_API_KEY,
+    context7ApiKey: process.env.CONTEXT7_API_KEY,
 
     cache: {
       enabled: process.env.CACHE_ENABLED !== 'false',
@@ -62,24 +50,24 @@ export function loadConfig(overridePort?: number): Config {
     },
 
     models: {
-      strategist: process.env.MODEL_STRATEGIST || 'gpt-5.2',  // GPT 5.2 사용
+      strategist: process.env.MODEL_STRATEGIST || 'gpt-5.2',
       researcher: process.env.MODEL_RESEARCHER || 'claude-sonnet-4-5-20250929',
       reviewer: process.env.MODEL_REVIEWER || 'gemini-3-pro-preview',
       frontend: process.env.MODEL_FRONTEND || 'gemini-3-pro-preview',
       writer: process.env.MODEL_WRITER || 'gemini-3-flash-preview',
       explorer: process.env.MODEL_EXPLORER || 'gemini-3-flash-preview',
-      multimodal: process.env.MODEL_MULTIMODAL || 'gemini-3-pro-preview',  // Multimodal analysis
+      multimodal: process.env.MODEL_MULTIMODAL || 'gemini-3-pro-preview',
       // Planning Agents
-      prometheus: process.env.MODEL_PROMETHEUS || 'claude-sonnet-4-5-20250929',  // Strategic planning
-      metis: process.env.MODEL_METIS || 'gpt-5.2',  // Pre-planning analysis
-      momus: process.env.MODEL_MOMUS || 'gemini-3-pro-preview',  // Plan validation
-      librarian: process.env.MODEL_LIBRARIAN || 'claude-sonnet-4-5-20250929',  // Multi-repo analysis
+      prometheus: process.env.MODEL_PROMETHEUS || 'claude-sonnet-4-5-20250929',
+      metis: process.env.MODEL_METIS || 'gpt-5.2',
+      momus: process.env.MODEL_MOMUS || 'gemini-3-pro-preview',
+      librarian: process.env.MODEL_LIBRARIAN || 'claude-sonnet-4-5-20250929',
       // 특화 전문가
-      security: process.env.MODEL_SECURITY || 'claude-sonnet-4-5-20250929',  // 보안 취약점 분석
-      tester: process.env.MODEL_TESTER || 'claude-sonnet-4-5-20250929',  // TDD/테스트 전략
-      data: process.env.MODEL_DATA || 'gpt-5.2',  // DB 설계/쿼리 최적화
-      codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.3-codex',  // GPT 코드리뷰
-      devops: process.env.MODEL_DEVOPS || 'gpt-5.2',  // DevOps/인프라 자동화
+      security: process.env.MODEL_SECURITY || 'claude-sonnet-4-5-20250929',
+      tester: process.env.MODEL_TESTER || 'claude-sonnet-4-5-20250929',
+      data: process.env.MODEL_DATA || 'gpt-5.2',
+      codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.3-codex',
+      devops: process.env.MODEL_DEVOPS || 'gpt-5.2',
       // Blank 전문가 (동적 페르소나 토론용 - 다양한 모델)
       gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || 'gpt-5.2',
       gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.3-codex',
@@ -104,8 +92,8 @@ export function loadConfig(overridePort?: number): Config {
 export let config = loadConfig();
 
 /**
- * 런타임에 config 재로드 (포트 변경 시 사용)
+ * 런타임에 config 재로드
  */
-export function reloadConfig(overridePort?: number): void {
-  config = loadConfig(overridePort);
+export function reloadConfig(): void {
+  config = loadConfig();
 }

@@ -6,11 +6,11 @@ import { extname } from 'path';
 import { config } from '../config.js';
 import { logger, createExpertLogger } from '../utils/logger.js';
 import { getCached, setCache } from '../utils/cache.js';
-import { isRateLimitError, parseRetryAfter, markRateLimited, isCurrentlyLimited } from '../utils/rate-limit.js';
+import { isRateLimitError, markRateLimited, isCurrentlyLimited, detectProvider } from '../utils/rate-limit.js';
 import { withRetry } from '../utils/retry.js';
+import { getProvider, getProviderSemaphore } from './providers/index.js';
 
 // 모델별 타임아웃 설정 (ms)
-// GPT: deep thinking으로 오래 걸림, Claude: 중간, Gemini: 빠름
 function getModelTimeout(model: string): number {
   if (model.includes('gpt-5') || model.includes('codex')) {
     return 600000;  // 10분 - GPT 5.x는 deep thinking으로 오래 걸림
@@ -25,15 +25,6 @@ function getModelTimeout(model: string): number {
     return 90000;   // 1.5분 - Gemini
   }
   return 60000;     // 기본 1분
-}
-
-interface ChatRequest {
-  model: string;
-  messages: Array<{ role: string; content: MessageContent | null; tool_calls?: ToolCall[]; tool_call_id?: string }>;
-  temperature: number;
-  max_tokens: number;
-  tools?: ToolDefinition[];
-  tool_choice?: "auto" | "required" | "none";
 }
 
 // Helper: Get MIME type from file extension
@@ -92,16 +83,6 @@ export function buildMultimodalContent(text: string, imagePath?: string): Messag
   return content;
 }
 
-interface ChatResponse {
-  choices: Array<{
-    message: {
-      content: string | null;
-      tool_calls?: ToolCall[];
-    };
-    finish_reason: "stop" | "tool_calls" | "length";
-  }>;
-}
-
 // 커스텀 에러 클래스
 export class RateLimitExceededError extends Error {
   constructor(
@@ -146,14 +127,72 @@ export class TimeoutError extends Error {
 const MAX_RESPONSE_SIZE = 5 * 1024 * 1024;
 
 /**
- * AbortError를 TimeoutError로 변환
+ * CLI 에러를 적절한 커스텀 에러로 변환
  */
-function wrapTimeoutError(error: Error, expertId: string, model: string, timeoutMs: number): Error {
-  if (error.name === 'AbortError' || error.name === 'TimeoutError' ||
-      error.message.includes('aborted') || error.message.includes('timed out')) {
+function classifyCliError(error: Error, expertId: string, model: string, timeoutMs: number): Error {
+  const message = error.message;
+
+  // 타임아웃 에러
+  if (message.includes('timeout') || message.includes('timed out') || message.includes('CLI timeout')) {
     return new TimeoutError(expertId, model, timeoutMs);
   }
-  return error;
+
+  // Rate Limit 에러
+  if (isRateLimitError(null, message)) {
+    const retryAfter = 60000; // 기본 1분
+    markRateLimited(model, retryAfter);
+    return new RateLimitExceededError(expertId, model, retryAfter);
+  }
+
+  // 인증 에러 (폴백 불가)
+  if (message.includes('unauthorized') || message.includes('not authenticated') ||
+      message.includes('login') || message.includes('auth')) {
+    return new ExpertCallError(expertId, error, false);
+  }
+
+  // CLI 실행 실패 (명령어 없음 등 - 폴백 가능)
+  if (message.includes('spawn failed') || message.includes('ENOENT')) {
+    return new ExpertCallError(expertId, error, true);
+  }
+
+  // 기타 에러 (폴백 가능)
+  return new ExpertCallError(expertId, error, true);
+}
+
+/**
+ * ChatMessage 배열을 텍스트로 직렬화 (Tool Loop 계속용)
+ */
+function serializeMessages(messages: ChatMessage[]): { prompt: string; systemPrompt?: string } {
+  let systemPrompt: string | undefined;
+  let prompt = '';
+
+  for (const msg of messages) {
+    const content = typeof msg.content === 'string'
+      ? msg.content
+      : (msg.content ? JSON.stringify(msg.content) : '');
+
+    switch (msg.role) {
+      case 'system':
+        systemPrompt = content;
+        break;
+      case 'user':
+        prompt += `${content}\n\n`;
+        break;
+      case 'assistant':
+        if (content) {
+          prompt += `[이전 응답]\n${content}\n\n`;
+        }
+        if (msg.tool_calls) {
+          prompt += `[이전 도구 호출]\n${JSON.stringify(msg.tool_calls, null, 2)}\n\n`;
+        }
+        break;
+      case 'tool':
+        prompt += `[도구 결과 (${msg.tool_call_id})]\n${content}\n\n`;
+        break;
+    }
+  }
+
+  return { prompt: prompt.trim(), systemPrompt };
 }
 
 export interface CallExpertOptions {
@@ -180,7 +219,7 @@ export async function callExpert(
     throw new RateLimitExceededError(expert.id, expert.model, 0);
   }
 
-  // 2. 캐시 체크 (이미지가 없는 경우만 - 이미지 포함 요청은 캐시하지 않음)
+  // 2. 캐시 체크 (이미지가 없는 경우만)
   if (!skipCache && !imagePath) {
     const cached = getCached(expert.id, prompt, context);
     if (cached) {
@@ -194,143 +233,108 @@ export async function callExpert(
     }
   }
 
-  // 3. 메시지 구성
-  let requestMessages: ChatRequest['messages'];
+  // 3. 프롬프트 구성
+  let effectivePrompt: string;
+  let effectiveSystemPrompt: string | undefined;
 
   if (messages && messages.length > 0) {
-    // Tool Loop 계속: 기존 대화 이력 사용
-    requestMessages = messages.map(m => ({
-      role: m.role,
-      content: m.content,
-      tool_calls: m.tool_calls,
-      tool_call_id: m.tool_call_id
-    }));
+    // Tool Loop 계속: 기존 대화 이력을 텍스트로 직렬화
+    const serialized = serializeMessages(messages);
+    effectivePrompt = serialized.prompt;
+    effectiveSystemPrompt = serialized.systemPrompt;
   } else {
-    // 새 대화: 시스템 프롬프트 + 사용자 메시지
-    const fullPrompt = context
+    // 새 대화
+    effectivePrompt = context
       ? `${prompt}\n\n[컨텍스트]\n${context}`
       : prompt;
-
-    // Build user content (with optional image for multimodal)
-    const userContent = buildMultimodalContent(fullPrompt, imagePath);
-
-    requestMessages = [
-      { role: "system", content: expert.systemPrompt },
-      { role: "user", content: userContent }
-    ];
+    effectiveSystemPrompt = expert.systemPrompt;
 
     if (imagePath) {
-      expertLogger.debug({ imagePath }, 'Including image in request');
+      effectivePrompt += `\n\n[이미지 첨부: ${imagePath}]`;
+      expertLogger.debug({ imagePath }, 'Including image reference in prompt');
     }
   }
 
-  const request: ChatRequest = {
-    model: expert.model,
-    messages: requestMessages,
-    temperature: expert.temperature,
-    max_tokens: expert.maxTokens
-  };
-
-  // tools 추가
-  if (tools && tools.length > 0) {
-    request.tools = tools;
-    request.tool_choice = toolChoice || "auto";
-  }
-
   const timeoutMs = getModelTimeout(expert.model);
-  expertLogger.debug({ model: expert.model, timeoutMs }, 'Calling CLIProxyAPI');
+  const provider = getProvider(expert.model);
+  const providerType = detectProvider(expert.model);
 
-  // 4. API 호출 (재시도 로직 포함 + 향상된 타임아웃 처리)
-  let response: ChatResponse;
+  expertLogger.debug({
+    model: expert.model,
+    provider: provider.name,
+    timeoutMs,
+    promptLength: effectivePrompt.length,
+  }, 'Calling CLI provider');
+
+  // 4. CLI 호출 (재시도 로직 + 동시성 제어)
+  const semaphore = getProviderSemaphore(providerType, config.concurrency.byProvider);
+  let content: string;
 
   try {
-    response = await withRetry(
-      async () => {
-        let res: Response;
+    await semaphore.acquire();
 
-        try {
-          res = await fetch(`${config.cliproxyUrl}/v1/chat/completions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(request),
-            signal: AbortSignal.timeout(timeoutMs)
+    try {
+      content = await withRetry(
+        async () => {
+          const result = await provider.call({
+            prompt: effectivePrompt,
+            systemPrompt: effectiveSystemPrompt,
+            model: expert.model,
+            timeoutMs,
+            imagePath,
           });
-        } catch (fetchError) {
-          // AbortError를 명확한 TimeoutError로 변환
-          throw wrapTimeoutError(fetchError as Error, expert.id, expert.model, timeoutMs);
-        }
 
-        // Rate Limit 체크
-        if (res.status === 429) {
-          const retryAfter = parseRetryAfter(res.headers) || 60000;
-          markRateLimited(expert.model, retryAfter);
-          throw new RateLimitExceededError(expert.id, expert.model, retryAfter);
-        }
-
-        if (!res.ok) {
-          const errorText = await res.text();
-
-          // 응답 텍스트에서 Rate Limit 패턴 체크
-          if (isRateLimitError(null, errorText)) {
-            const retryAfter = 60000; // 기본 1분
-            markRateLimited(expert.model, retryAfter);
-            throw new RateLimitExceededError(expert.id, expert.model, retryAfter);
+          // 응답 크기 체크
+          if (result.content.length > MAX_RESPONSE_SIZE) {
+            throw new Error(
+              `Response too large (${Math.round(result.content.length / 1024 / 1024)}MB). ` +
+              `Maximum allowed: ${MAX_RESPONSE_SIZE / 1024 / 1024}MB`
+            );
           }
 
-          throw new Error(`API error (${res.status}): ${errorText}`);
+          return result.content;
+        },
+        {
+          maxRetries: config.retry.maxRetries,
+          shouldRetry: (error) => {
+            if (error instanceof RateLimitExceededError) return false;
+            if (error instanceof TimeoutError) return false;
+            // ExpertCallError의 retryable 필드 확인
+            if (error instanceof ExpertCallError) return error.retryable;
+            return true;
+          }
         }
-
-        // 응답 크기 체크 (메모리 보호)
-        const contentLength = res.headers.get('content-length');
-        if (contentLength && parseInt(contentLength, 10) > MAX_RESPONSE_SIZE) {
-          throw new Error(
-            `Response too large (${Math.round(parseInt(contentLength, 10) / 1024 / 1024)}MB). ` +
-            `Maximum allowed: ${MAX_RESPONSE_SIZE / 1024 / 1024}MB`
-          );
-        }
-
-        return res.json() as Promise<ChatResponse>;
-      },
-      {
-        maxRetries: config.retry.maxRetries,
-        shouldRetry: (error) => {
-          // Rate Limit 에러는 재시도하지 않음 (폴백으로 처리)
-          if (error instanceof RateLimitExceededError) return false;
-          // 타임아웃 에러는 재시도하지 않음 (폴백으로 처리)
-          if (error instanceof TimeoutError) return false;
-          // 네트워크 에러나 5xx는 재시도
-          return true;
-        }
-      }
-    );
+      );
+    } finally {
+      semaphore.release();
+    }
   } catch (error) {
-    // 최종 에러 로깅
+    // CLI 에러를 적절한 커스텀 에러로 변환
+    const classified = classifyCliError(error as Error, expert.id, expert.model, timeoutMs);
+
     expertLogger.error({
-      error: (error as Error).message,
-      errorType: (error as Error).name,
+      error: (classified as Error).message,
+      errorType: (classified as Error).name,
       timeoutMs,
-      model: expert.model
-    }, 'Expert API call failed');
-    throw error;
+      model: expert.model,
+      provider: provider.name,
+    }, 'Expert CLI call failed');
+
+    throw classified;
   }
 
-  const choice = response.choices[0];
-  const content = choice.message.content;
-  const toolCalls = choice.message.tool_calls;
-  // tool_calls가 있으면 "tool_calls", 없으면 "stop"
-  const finishReason = (toolCalls && toolCalls.length > 0) ? "tool_calls" : "stop";
   const latencyMs = Date.now() - startTime;
 
-  // 5. 캐시 저장 (도구 호출이 없는 경우만)
-  if (!toolCalls && content) {
+  // 5. 캐시 저장 (CLI 모드에서는 toolCalls가 없으므로 항상 캐시 가능)
+  if (content) {
     setCache(expert.id, prompt, content, context);
   }
 
   expertLogger.info({
     latencyMs,
-    finishReason,
-    hasToolCalls: !!toolCalls
-  }, 'Expert call completed');
+    provider: provider.name,
+    contentLength: content.length,
+  }, 'Expert CLI call completed');
 
   return {
     response: content || "",
@@ -338,7 +342,8 @@ export async function callExpert(
     fellBack: false,
     cached: false,
     latencyMs,
-    toolCalls,
-    finishReason
+    // CLI 모드에서는 tool_calls 미지원 → 항상 undefined
+    toolCalls: undefined,
+    finishReason: "stop",
   };
 }

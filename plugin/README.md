@@ -8,7 +8,7 @@ GPT, Gemini, Claude 전문가 23명을 통한 코드 리뷰, 보안 감사, 아�
 
 - **Node.js** 18+
 - **Claude Code** (CLI 또는 VSCode 익스텐션)
-- **LLM API 키** — GPT, Gemini, Claude 중 사용할 모델의 API 키
+- **CLI 도구** — gemini, claude, codex 중 사용할 CLI가 터미널에 인증된 상태
 
 ### Step 1: 저장소 클론 및 빌드
 
@@ -28,20 +28,21 @@ npm run build
   "mcpServers": {
     "llm-router": {
       "command": "node",
-      "args": ["c:/your/actual/path/to/llm-router-mcp/dist/index.js"],
-      "env": {
-        "CLIPROXY_URL": "http://127.0.0.1:8788"
-      }
+      "args": ["c:/your/actual/path/to/llm-router-mcp/dist/index.js"]
     }
   }
 }
 ```
 
-> `CLIPROXY_URL`은 CLIProxyAPI가 실행되는 포트입니다. MCP 서버 시작 시 자동으로 CLIProxyAPI를 감지/실행하며, 포트를 자동 탐색합니다.
+### Step 3: CLI 도구 인증 확인
 
-### Step 3: CLIProxyAPI API 키 설정
+터미널에서 사용할 LLM CLI 도구가 인증된 상태인지 확인합니다:
 
-`vendor/cliproxy/config.yaml`에서 사용할 LLM의 API 키를 설정합니다.
+```bash
+gemini --version    # Google Gemini CLI
+claude --version    # Anthropic Claude CLI
+codex --version     # OpenAI Codex CLI
+```
 
 ### Step 4: 플러그인 로드
 
@@ -75,7 +76,7 @@ LLM Router 서버 상태 확인해줘
 |------|------|------|
 | MCP 서버 시작 실패 | `npm run build` 미실행 | `npm run build` 실행 |
 | `REPLACE_WITH_ABSOLUTE_PATH` 에러 | `.mcp.json` 경로 미수정 | 실제 절대 경로로 변경 |
-| 전문가 호출 시 401/403 | API 키 미설정 | `vendor/cliproxy/config.yaml` 확인 |
+| 전문가 호출 실패 | CLI 도구 미인증 | 각 CLI 도구에서 인증 실행 |
 | 스킬이 안 보임 | 이전 세션에서 설정 | 새 대화 시작 (MCP는 세션 시작 시 로드) |
 
 ---

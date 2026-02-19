@@ -17,11 +17,6 @@ export {
   libraryDocsTool, libraryDocsSchema, handleLibraryDocs,
   searchLibrariesTool, searchLibrariesSchema, handleSearchLibraries
 } from './library-docs.js';
-export {
-  authStatusTool, authStatusSchema, handleAuthStatus,
-  authGptTool, authClaudeTool, authGeminiTool, authProviderSchema,
-  handleAuthGpt, handleAuthClaude, handleAuthGemini
-} from './auth-provider.js';
 export { setExpertModelTool, setExpertModelSchema, handleSetExpertModel } from './set-expert-model.js';
 export {
   memoryAddTool, memoryAddSchema, handleMemoryAdd,

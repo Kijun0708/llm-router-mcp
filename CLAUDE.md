@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-LLM Router MCP is a Model Context Protocol (MCP) server that enables multi-LLM collaboration via CLIProxyAPI. It allows Claude Code to orchestrate GPT, Gemini, and other Claude instances as team members, with automatic rate limit handling and fallback routing.
+LLM Router MCP is a Model Context Protocol (MCP) server that enables multi-LLM collaboration via terminal CLI tools (gemini, codex, claude). It allows Claude Code to orchestrate GPT, Gemini, and other Claude instances as team members, with automatic rate limit handling and fallback routing.
 
 **Core Concept**: Claude Code acts as the team leader, delegating specialized tasks to different LLM "experts" based on their strengths.
 
@@ -101,7 +101,8 @@ node dist/index.js
 
 ### Key Services
 
-- `src/services/cliproxy-client.ts` - CLIProxyAPI client with rate limit detection, model-specific timeouts
+- `src/services/cliproxy-client.ts` - CLI tool orchestrator (child_process.spawn) with rate limit detection, model-specific timeouts
+- `src/services/providers/` - CLI provider adapters (Gemini, Claude, Codex)
 - `src/services/expert-router.ts` - Expert selection and fallback routing with error classification
 - `src/services/background-manager.ts` - Async task queue with concurrency control and JSON persistence
 
@@ -173,29 +174,21 @@ node dist/index.js
 | chain | experts 2개 이상 | error |
 | parallel/synthesize | experts 2개 이상 권장 | warning |
 
-## Scripts
-
-### CLIProxyAPI 업데이트
-
-```powershell
-# 최신 버전 확인 및 업데이트
-.\scripts\update-cliproxy.ps1
-
-# 강제 재설치
-.\scripts\update-cliproxy.ps1 -Force
-```
-
-- GitHub Release에서 최신 Windows 바이너리 자동 다운로드
-- `vendor/cliproxy/cli-proxy-api.exe` 교체
-- `config.yaml`은 보존
-- `.version` 파일로 현재 버전 추적
-
 ## Configuration
 
 Environment variables (see `.env.example`):
 
 ```bash
-CLIPROXY_URL=http://127.0.0.1:<PORT>  # CLIProxyAPI endpoint (필수 - 실제 포트로 설정)
+# CLI 도구 경로 (PATH에 있으면 생략 가능)
+CLI_GEMINI_PATH=gemini
+CLI_CLAUDE_PATH=claude
+CLI_CODEX_PATH=codex
+
+# 선택적 API 키
+EXA_API_KEY=your_key                   # Exa 웹 검색
+CONTEXT7_API_KEY=your_key              # 라이브러리 문서
+
+# 캐시/재시도 설정
 CACHE_ENABLED=true                     # Response caching
 CACHE_TTL_MS=1800000                   # 30 minute cache TTL
 RETRY_MAX=3                            # Max retry attempts
@@ -205,7 +198,7 @@ CONCURRENCY_ANTHROPIC=3                # Concurrent requests per provider
 ## Rate Limit Handling
 
 The system automatically:
-1. Detects rate limits from HTTP 429 and error message patterns
+1. Detects rate limits from CLI stderr patterns and error messages
 2. Marks models as limited with retry-after tracking
 3. Routes to fallback experts when primary is rate limited
 4. Uses exponential backoff with jitter for retries

@@ -111,8 +111,11 @@ export interface Category {
 }
 
 export interface Config {
-  cliproxyUrl: string;
-  cliproxyPath?: string;  // CLIProxyAPI 실행 파일 경로 (자동 시작용)
+  cli: {
+    geminiPath: string;   // Gemini CLI 경로 (default: 'gemini')
+    claudePath: string;   // Claude CLI 경로 (default: 'claude')
+    codexPath: string;    // Codex CLI 경로 (default: 'codex')
+  };
   exaApiKey?: string;     // Exa AI 검색 API 키
   context7ApiKey?: string; // Context7 문서 API 키
   cache: {

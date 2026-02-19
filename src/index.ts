@@ -6,7 +6,6 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 
 import { logger } from "./utils/logger.js";
 
-import { ensureCliproxyRunning } from "./utils/cliproxy-launcher.js";
 import { setupHookSystem } from "./hooks/index.js";
 import { initializeHud, shutdownHud } from "./hud/index.js";
 
@@ -30,9 +29,6 @@ import {
   webSearchTool, webSearchSchema, handleWebSearch,
   libraryDocsTool, libraryDocsSchema, handleLibraryDocs,
   searchLibrariesTool, searchLibrariesSchema, handleSearchLibraries,
-  authStatusTool, authStatusSchema, handleAuthStatus,
-  authGptTool, authClaudeTool, authGeminiTool, authProviderSchema,
-  handleAuthGpt, handleAuthClaude, handleAuthGemini,
   setExpertModelTool, setExpertModelSchema, handleSetExpertModel,
   memoryAddTool, memoryAddSchema, handleMemoryAdd,
   memoryListTool, memoryListSchema, handleMemoryList,
@@ -228,35 +224,7 @@ function registerTools() {
     (args) => handleSearchLibraries(searchLibrariesSchema.parse(args))
   );
 
-  // 14. auth_status
-  server.tool(
-    authStatusTool.name,
-    authStatusSchema.shape,
-    () => handleAuthStatus()
-  );
-
-  // 15. auth_gpt
-  server.tool(
-    authGptTool.name,
-    authProviderSchema.shape,
-    () => handleAuthGpt()
-  );
-
-  // 16. auth_claude
-  server.tool(
-    authClaudeTool.name,
-    authProviderSchema.shape,
-    () => handleAuthClaude()
-  );
-
-  // 17. auth_gemini
-  server.tool(
-    authGeminiTool.name,
-    authProviderSchema.shape,
-    () => handleAuthGemini()
-  );
-
-  // 18. set_expert_model
+  // 14. set_expert_model
   server.tool(
     setExpertModelTool.name,
     setExpertModelSchema.shape,
@@ -914,9 +882,6 @@ async function main() {
 
   // HUD 상태 표시 시스템 초기화
   initializeHud();
-
-  // CLIProxyAPI 자동 시작
-  await ensureCliproxyRunning();
 
   // 도구 등록
   registerTools();

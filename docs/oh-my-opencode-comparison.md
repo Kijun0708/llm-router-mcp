@@ -477,8 +477,8 @@ oh-my-opencode/
 
 ### ✅ 더 많은 훅 (38개 vs 23개)
 
-### ✅ CLIProxyAPI 통합
-- 여러 LLM 프로바이더 통합 관리
+### ✅ CLI 직접 호출
+- 터미널 CLI 도구(gemini, claude, codex) 직접 호출로 프로바이더 통합
 
 ### ✅ Node.js 호환성
 - Bun 없이도 실행 가능

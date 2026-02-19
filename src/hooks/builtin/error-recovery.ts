@@ -90,7 +90,7 @@ function suggestRecoveryAction(errorMessage: string, source: string): string[] {
   if (lowerError.includes('network') || lowerError.includes('fetch') ||
       lowerError.includes('connection') || lowerError.includes('timeout')) {
     suggestions.push('Check network connectivity');
-    suggestions.push('CLIProxyAPI may need restart');
+    suggestions.push('CLI tool may be unavailable');
     suggestions.push('Try again after a brief delay');
   }
 

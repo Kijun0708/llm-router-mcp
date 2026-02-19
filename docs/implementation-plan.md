@@ -488,10 +488,7 @@ async function addMcpConfiguration(config: InstallConfig) {
   settings.mcpServers = settings.mcpServers || {};
   settings.mcpServers['llm-router'] = {
     command: 'node',
-    args: [path.join(__dirname, '..', '..', 'dist', 'index.js')],
-    env: {
-      CLIPROXY_URL: config.cliproxyUrl || 'http://localhost:8787'
-    }
+    args: [path.join(__dirname, '..', '..', 'dist', 'index.js')]
   };
 
   fs.mkdirSync(path.dirname(settingsPath), { recursive: true });

@@ -38,7 +38,15 @@ npm install
 npm run build
 ```
 
-### 2. 환경변수 설정
+### 2. CLI 도구 준비
+
+터미널에서 사용할 LLM CLI 도구가 인증된 상태여야 합니다:
+
+- `gemini` — Google Gemini CLI
+- `claude` — Anthropic Claude CLI
+- `codex` — OpenAI Codex CLI
+
+### 3. 환경변수 설정 (선택)
 
 ```bash
 cp .env.example .env
@@ -46,12 +54,11 @@ cp .env.example .env
 
 `.env` 파일 편집:
 ```bash
-CLIPROXY_URL=http://127.0.0.1:8319  # CLIProxyAPI 포트
 EXA_API_KEY=your_exa_api_key        # 선택: 웹 검색
 CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 ```
 
-### 3. Claude Code 연동
+### 4. Claude Code 연동
 
 `~/.claude/settings.local.json`:
 
@@ -60,25 +67,11 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
   "mcpServers": {
     "llm-router": {
       "command": "node",
-      "args": ["/path/to/llm-router-mcp/dist/index.js"],
-      "env": {
-        "CLIPROXY_URL": "http://127.0.0.1:8319"
-      }
+      "args": ["/path/to/llm-router-mcp/dist/index.js"]
     }
   }
 }
 ```
-
-### 4. CLIProxyAPI 실행
-
-```bash
-cd vendor/cliproxy
-./cli-proxy-api.exe -c config.yaml
-```
-
-### 5. AI 프로바이더 인증
-
-브라우저에서 `http://127.0.0.1:8319` 접속 후 관리 패널에서 인증
 
 ---
 
@@ -319,68 +312,52 @@ llm-router-mcp/
 │   │   └── boulder-state/    # 볼더 상태 관리
 │   ├── services/             # 핵심 서비스
 │   │   ├── expert-router.ts  # 전문가 라우팅
-│   │   ├── cliproxy-client.ts # CLIProxyAPI 클라이언트
+│   │   ├── cliproxy-client.ts # CLI 도구 오케스트레이터
+│   │   ├── providers/         # CLI 프로바이더 (Gemini/Claude/Codex)
 │   │   └── background-manager.ts # 백그라운드 작업 관리
 │   └── utils/                # 유틸리티
 ├── skills/                   # 내장 스킬 (10개)
-├── vendor/cliproxy/          # CLIProxyAPI 바이너리
 └── dist/                     # 빌드 출력
 ```
 
 ---
 
-## CLIProxyAPI
+## CLI 도구 연동
 
-LLM Router MCP는 [CLIProxyAPI](https://github.com/anthropics/cli-proxy-api)를 통해 여러 LLM 프로바이더에 연결합니다.
+터미널에 설치된 CLI 도구를 `child_process.spawn()`으로 직접 호출합니다.
 
-### 지원 프로바이더
+### 지원 CLI 도구
 
-- **Gemini**: OAuth 또는 API Key
-- **Claude**: OAuth 또는 API Key
-- **OpenAI Codex**: OAuth
-- **Qwen**: OAuth
-- **OpenAI 호환**: OpenRouter 등
+- `gemini` — Gemini Pro/Flash 모델
+- `claude` — Claude Opus/Sonnet/Haiku 모델
+- `codex` — GPT 5.2/Codex 모델
 
-### 인증 파일 위치
+### 사전 요구사항
 
+각 CLI 도구가 터미널에서 인증 완료된 상태여야 합니다.
+CLI 도구 경로는 `.env`에서 설정 가능합니다 (PATH에 있으면 생략 가능):
+
+```bash
+CLI_GEMINI_PATH=gemini
+CLI_CLAUDE_PATH=claude
+CLI_CODEX_PATH=codex
 ```
-~/.cli-proxy-api/
-├── claude-{email}.json
-├── codex-{email}.json
-└── {email}-gen-lang-client-{id}.json
-```
-
-### 원격 배포
-
-Linux 서버에 배포 시:
-1. Linux 바이너리 다운로드 (`linux-amd64` 또는 `linux-arm64`)
-2. 로컬 인증 파일을 서버로 복사
-3. config.yaml에서 `allow-remote: true` 설정
 
 ---
 
 ## 문제 해결
 
-### CLIProxyAPI 연결 실패
+### CLI 도구 연결 실패
 
 ```bash
-# 1. CLIProxyAPI 실행 확인
-tasklist | grep cli-proxy
+# CLI 도구 설치 확인
+gemini --version
+claude --version
+codex --version
 
-# 2. 포트 확인
-cat vendor/cliproxy/config.yaml | grep port
-
-# 3. 환경변수 설정
-CLIPROXY_URL=http://127.0.0.1:8319
-```
-
-### 인증 문제
-
-```
-auth_status     # 현재 인증 상태 확인
-auth_gemini     # Gemini 재인증
-auth_claude     # Claude 재인증
-auth_gpt        # GPT 재인증
+# 인증 상태 확인
+gemini auth status
+claude auth status
 ```
 
 ### Rate Limit
