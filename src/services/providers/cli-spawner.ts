@@ -26,9 +26,13 @@ export async function spawnCli(
   const { timeoutMs, stdin, env, maxBuffer = DEFAULT_MAX_BUFFER } = options;
 
   return new Promise((resolve, reject) => {
+    // Claude Code 중첩 세션 방지 환경 변수 제거
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { CLAUDECODE, ...cleanEnv } = process.env;
+
     const proc = spawn(command, args, {
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, ...env },
+      env: { ...cleanEnv, ...env },
       shell: true,
       windowsHide: true,
     });

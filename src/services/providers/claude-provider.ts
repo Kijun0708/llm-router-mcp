@@ -4,6 +4,11 @@ import { CliProvider, CliCallParams, CliCallResult } from './types.js';
 import { spawnCli } from './cli-spawner.js';
 import { logger } from '../../utils/logger.js';
 import { config } from '../../config.js';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// 에러 로그 파일 경로
+const ERROR_LOG_PATH = path.join(process.cwd(), '.llm-router-data', 'claude-errors.log');
 
 // 전체 모델명을 Claude CLI 모델 플래그로 매핑
 function mapModelFlag(model: string): string {
@@ -45,14 +50,12 @@ export class ClaudeCliProvider implements CliProvider {
   async call(params: CliCallParams): Promise<CliCallResult> {
     const cliPath = config.cli.claudePath;
 
-    // 긴 프롬프트는 stdin으로 전달
+    // 긴 프롬프트는 stdin으로 전달 (Gemini와 동일 패턴)
     const useStdin = params.prompt.length > 8000;
 
     const args: string[] = [];
 
-    if (useStdin) {
-      args.push('-p', 'Process the input provided via stdin.');
-    } else {
+    if (!useStdin) {
       args.push('-p', params.prompt);
     }
 
@@ -67,9 +70,6 @@ export class ClaudeCliProvider implements CliProvider {
       args.push('--system-prompt', params.systemPrompt);
     }
 
-    // 단일 응답만 (Tool Loop 방지)
-    args.push('--max-turns', '1');
-
     logger.debug({
       provider: 'claude',
       model: params.model,
@@ -83,7 +83,37 @@ export class ClaudeCliProvider implements CliProvider {
       stdin: useStdin ? params.prompt : undefined,
     });
 
+    // 디버깅: 실제 CLI 응답 로깅
+    logger.info({
+      provider: 'claude',
+      exitCode: result.exitCode,
+      stdoutLength: result.stdout?.length ?? 0,
+      stderrLength: result.stderr?.length ?? 0,
+      stdoutPreview: result.stdout?.substring(0, 200),
+      stderrPreview: result.stderr?.substring(0, 200),
+    }, 'Claude CLI result');
+
     if (result.exitCode !== 0) {
+      // 에러 상세 정보를 파일에 저장
+      const errorLog = [
+        `=== Claude CLI Error @ ${new Date().toISOString()} ===`,
+        `Exit Code: ${result.exitCode}`,
+        `Model: ${params.model}`,
+        `Prompt Length: ${params.prompt.length}`,
+        `STDOUT:\n${result.stdout}`,
+        `STDERR:\n${result.stderr}`,
+        '='.repeat(60),
+        ''
+      ].join('\n');
+
+      try {
+        fs.mkdirSync(path.dirname(ERROR_LOG_PATH), { recursive: true });
+        fs.appendFileSync(ERROR_LOG_PATH, errorLog);
+        logger.error({ logPath: ERROR_LOG_PATH }, 'Claude CLI error logged to file');
+      } catch (e) {
+        logger.error({ error: (e as Error).message }, 'Failed to write error log');
+      }
+
       throw new Error(`Claude CLI error (exit ${result.exitCode}): ${result.stderr || result.stdout}`);
     }
 
