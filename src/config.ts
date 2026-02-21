@@ -51,20 +51,20 @@ export function loadConfig(): Config {
 
     models: {
       strategist: process.env.MODEL_STRATEGIST || 'gpt-5.2',
-      researcher: process.env.MODEL_RESEARCHER || 'claude-sonnet-4-5-20250929',
+      researcher: process.env.MODEL_RESEARCHER || 'claude-sonnet-4-6',
       reviewer: process.env.MODEL_REVIEWER || 'gemini-3-pro-preview',
       frontend: process.env.MODEL_FRONTEND || 'gemini-3-pro-preview',
       writer: process.env.MODEL_WRITER || 'gemini-3-flash-preview',
       explorer: process.env.MODEL_EXPLORER || 'gemini-3-flash-preview',
       multimodal: process.env.MODEL_MULTIMODAL || 'gemini-3-pro-preview',
       // Planning Agents
-      prometheus: process.env.MODEL_PROMETHEUS || 'claude-sonnet-4-5-20250929',
+      prometheus: process.env.MODEL_PROMETHEUS || 'claude-sonnet-4-6',
       metis: process.env.MODEL_METIS || 'gpt-5.2',
       momus: process.env.MODEL_MOMUS || 'gemini-3-pro-preview',
-      librarian: process.env.MODEL_LIBRARIAN || 'claude-sonnet-4-5-20250929',
+      librarian: process.env.MODEL_LIBRARIAN || 'claude-sonnet-4-6',
       // 특화 전문가
-      security: process.env.MODEL_SECURITY || 'claude-sonnet-4-5-20250929',
-      tester: process.env.MODEL_TESTER || 'claude-sonnet-4-5-20250929',
+      security: process.env.MODEL_SECURITY || 'claude-sonnet-4-6',
+      tester: process.env.MODEL_TESTER || 'claude-sonnet-4-6',
       data: process.env.MODEL_DATA || 'gpt-5.2',
       codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.3-codex',
       devops: process.env.MODEL_DEVOPS || 'gpt-5.2',
@@ -72,11 +72,11 @@ export function loadConfig(): Config {
       gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || 'gpt-5.2',
       gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.3-codex',
       claude_blank_1: process.env.MODEL_CLAUDE_BLANK_1 || 'claude-opus-4-6',
-      claude_blank_2: process.env.MODEL_CLAUDE_BLANK_2 || 'claude-sonnet-4-5-20250929',
+      claude_blank_2: process.env.MODEL_CLAUDE_BLANK_2 || 'claude-sonnet-4-6',
       gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || 'gemini-3-pro-preview',
       gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || 'gemini-3-flash-preview',
       // 페르소나 할당 전문가
-      debate_moderator: process.env.MODEL_DEBATE_MODERATOR || 'claude-sonnet-4-5-20250929'
+      debate_moderator: process.env.MODEL_DEBATE_MODERATOR || 'claude-sonnet-4-6'
     },
 
     hybrid: {

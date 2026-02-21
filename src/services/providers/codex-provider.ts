@@ -74,7 +74,8 @@ export class CodexCliProvider implements CliProvider {
     const cliPath = config.cli.codexPath;
     const prompt = buildPrompt(params);
 
-    const args: string[] = ['exec', prompt, '--json', '--full-auto'];
+    // stdin으로 프롬프트 전달 (특수문자/긴 프롬프트 안전 처리)
+    const args: string[] = ['exec', '-', '--json', '--full-auto'];
 
     logger.debug({
       provider: 'codex',
@@ -84,6 +85,7 @@ export class CodexCliProvider implements CliProvider {
 
     const result = await spawnCli(cliPath, args, {
       timeoutMs: params.timeoutMs,
+      stdin: prompt,
     });
 
     if (result.exitCode !== 0) {
