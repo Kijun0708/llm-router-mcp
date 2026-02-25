@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { existsSync } from "fs";
-import { resolve, normalize, isAbsolute } from "path";
+import { resolve, normalize, isAbsolute, sep } from "path";
 import { experts } from "../experts/index.js";
 import { callExpertWithFallback, callExpertWithToolsAndFallback } from "../services/expert-router.js";
 import { sessionMemory } from "../services/session-memory.js";
@@ -76,14 +76,15 @@ function validateImagePath(imagePath: string): { valid: boolean; error?: string 
     return { valid: false, error: '절대 경로는 허용되지 않습니다. 상대 경로를 사용하세요.' };
   }
 
-  // 정규화된 경로 확인
-  const normalizedPath = normalize(imagePath);
+  // 절대 경로로 변환하여 비교 (디렉토리 경계 우회 방지)
+  const resolvedPath = resolve(imagePath);
 
-  // 허용된 디렉토리 내 파일인지 확인
+  // 허용된 디렉토리 내 파일인지 확인 (경로 경계 검사 포함)
   const isInAllowedDir = ALLOWED_LOCAL_DIRECTORIES.some(dir => {
-    const normalizedDir = normalize(dir);
-    return normalizedPath.startsWith(normalizedDir) ||
-           normalizedPath.startsWith(normalizedDir.replace('./', ''));
+    const resolvedDir = resolve(dir);
+    // 디렉토리 경계까지 검사하여 ./images_evil 같은 우회 방지
+    return resolvedPath === resolvedDir ||
+           resolvedPath.startsWith(resolvedDir + sep);
   });
 
   if (!isInAllowedDir) {
@@ -94,7 +95,7 @@ function validateImagePath(imagePath: string): { valid: boolean; error?: string 
   }
 
   // 확장자 검증
-  const ext = normalizedPath.toLowerCase().slice(normalizedPath.lastIndexOf('.'));
+  const ext = resolvedPath.toLowerCase().slice(resolvedPath.lastIndexOf('.'));
   if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
     return {
       valid: false,
@@ -102,10 +103,9 @@ function validateImagePath(imagePath: string): { valid: boolean; error?: string 
     };
   }
 
-  // 파일 존재 여부 확인
-  const fullPath = resolve(process.cwd(), normalizedPath);
-  if (!existsSync(fullPath)) {
-    return { valid: false, error: `파일을 찾을 수 없습니다: ${normalizedPath}` };
+  // 파일 존재 여부 확인 (이미 resolve된 절대 경로 사용)
+  if (!existsSync(resolvedPath)) {
+    return { valid: false, error: `파일을 찾을 수 없습니다: ${imagePath}` };
   }
 
   return { valid: true };
@@ -130,7 +130,7 @@ export const consultExpertSchema = z.object({
     .describe("전문가에게 할 질문"),
 
   context: z.string()
-    .max(10000, "컨텍스트는 최대 10000자")
+    .max(50000, "컨텍스트는 최대 50000자")
     .optional()
     .describe("관련 코드, 설계 문서 등 추가 컨텍스트"),
 
@@ -166,93 +166,25 @@ export const consultExpertTool = {
 
   description: `외부 AI 전문가에게 자문을 구합니다.
 
-## 전문가 목록
+## 전문가
+- strategist: 설계/아키텍처 (GPT)
+- researcher: 조사/분석 (Claude)
+- reviewer: 코드리뷰/버그 (Gemini)
+- frontend: UI/UX (Gemini)
+- writer: 문서작성 (Gemini)
+- explorer: 빠른탐색 (Gemini)
+- multimodal: 이미지분석 (GPT) - image_path로 이미지 전달
+- librarian: 지식관리 (Claude)
+- metis: 전략계획 (GPT)
+- momus: 비판분석 (Gemini)
+- prometheus: 창의솔루션 (Claude)
+- security: 보안분석 (Claude)
+- tester: TDD/테스트 (Claude)
+- data: DB설계 (GPT)
+- codex_reviewer: GPT코드리뷰 (Codex)
+- devops: CI/CD, 인프라 (GPT)
 
-### strategist (GPT 5.2)
-- 역할: 전략, 설계, 아키텍처, 디버깅 전략
-- 사용 시점: 복잡한 설계 결정, 아키텍처 자문, 새로운 기능 설계
-
-### researcher (Claude Sonnet)
-- 역할: 문서 분석, 코드 탐색, 레퍼런스 조사
-- 사용 시점: 라이브러리 사용법, 코드베이스 분석, 대량 문서 처리
-
-### reviewer (Gemini 3.0 Pro)
-- 역할: 코드 리뷰, 버그 탐지, 성능/보안 분석
-- 사용 시점: 코드 품질 검토, 버그 찾기, 보안 점검
-
-### frontend (Gemini 3.0 Pro)
-- 역할: UI/UX 설계, 프론트엔드 컴포넌트, CSS/스타일링
-- 사용 시점: UI 설계, 반응형 디자인, 접근성 검토
-
-### writer (Gemini 3.0 Flash)
-- 역할: 문서 작성, README, API 문서화
-- 사용 시점: 기술 문서 작성, 문서 정리, 보고서 작성
-
-### explorer (Gemini 3.0 Flash)
-- 역할: 빠른 코드베이스 탐색, 패턴 매칭, 간단한 질문
-- 사용 시점: 파일 찾기, 빠른 답변, 구조 파악
-
-### multimodal (GPT 5.2)
-- 역할: 이미지/시각적 콘텐츠 분석, 스크린샷 해석, 다이어그램 이해
-- 사용 시점: 스크린샷 분석, UI 목업 리뷰, 다이어그램 해석, 에러 메시지 이미지 읽기
-- **이미지 전달**: image_path 파라미터로 로컬 파일 경로 또는 URL 전달
-
-### librarian (Claude Sonnet)
-- 역할: 지식 관리, 세션 히스토리 검색, 컨텍스트 정리
-- 사용 시점: 이전 대화 참조, 세션 간 정보 연결, 지식 베이스 관리
-
-### metis (GPT 5.2)
-- 역할: 전략적 계획, 복잡한 문제 분해, 단계별 실행 계획
-- 사용 시점: 복잡한 프로젝트 계획, 문제 분해, 실행 로드맵 작성
-
-### momus (Gemini Pro)
-- 역할: 비판적 분석, 품질 평가, 약점 발견
-- 사용 시점: 솔루션 비평, 품질 검증, 잠재적 문제점 도출
-
-### prometheus (Claude Sonnet)
-- 역할: 창의적 솔루션, 혁신적 접근, 새로운 아이디어
-- 사용 시점: 브레인스토밍, 창의적 문제 해결, 대안 탐색
-
----
-
-## 특화 전문가
-
-### security (Claude Sonnet)
-- 역할: OWASP/CWE 보안 취약점 분석, 보안 감사
-- 사용 시점: 보안 코드 리뷰, 취약점 분석, 보안 모범 사례 자문
-
-### tester (Claude Sonnet)
-- 역할: TDD/테스트 전략 설계, 테스트 케이스 작성
-- 사용 시점: 테스트 계획, 테스트 코드 작성, 커버리지 분석
-
-### data (GPT 5.2)
-- 역할: DB 설계, 쿼리 최적화, 데이터 모델링
-- 사용 시점: 스키마 설계, SQL 최적화, 데이터 아키텍처 자문
-
-### codex_reviewer (GPT Codex)
-- 역할: GPT 관점 코드 리뷰, 코드 품질 분석
-- 사용 시점: OpenAI 관점의 코드 리뷰, reviewer와 다른 시각 필요 시
-
----
-
-## Rate Limit 자동 처리
-- 전문가가 한도 초과 시 자동으로 대체 전문가로 폴백
-- 폴백 시 응답에 알림 포함
-
-## 도구 사용 (Function Calling)
-- 전문가들은 필요시 자동으로 도구를 호출할 수 있습니다
-- 사용 가능한 도구: web_search (최신 정보), get_library_docs (라이브러리 문서)
-- use_tools=false로 비활성화 가능
-- explorer는 빠른 응답을 위해 도구를 사용하지 않음
-
-## 사용 예시
-- 설계 자문: expert="strategist", question="REST vs GraphQL 어떤 게 나을까요?"
-- 코드 분석: expert="researcher", question="이 코드의 동작 방식을 분석해주세요"
-- 코드 리뷰: expert="reviewer", question="이 코드의 문제점을 찾아주세요"
-- UI 피드백: expert="frontend", question="이 대시보드 레이아웃 개선점은?"
-- 문서 작성: expert="writer", question="이 API의 README를 작성해주세요"
-- 빠른 탐색: expert="explorer", question="인증 관련 파일들이 어디에 있나요?"
-- 이미지 분석: expert="multimodal", question="이 스크린샷을 분석해주세요", image_path="./screenshot.png"`,
+Rate Limit 초과 시 자동 폴백. use_tools=false로 도구 비활성화 가능.`,
 
   inputSchema: consultExpertSchema,
 

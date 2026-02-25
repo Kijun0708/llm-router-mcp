@@ -28,8 +28,8 @@ const allExpertIds = [
   'prometheus', 'metis', 'momus', 'librarian',
   // Specialized experts
   'security', 'tester', 'data', 'codex_reviewer',
-  // Blank experts
-  'gpt_blank_1', 'gpt_blank_2', 'claude_blank_1', 'claude_blank_2', 'gemini_blank_1', 'gemini_blank_2',
+  // Blank experts (GPT/Gemini only)
+  'gpt_blank_1', 'gpt_blank_2', 'gemini_blank_1', 'gemini_blank_2',
   // Debate moderator
   'debate_moderator'
 ] as const;
@@ -202,38 +202,12 @@ export const ensembleQueryTool = {
 
   title: '앙상블 쿼리',
 
-  description: `여러 LLM 전문가를 조합하여 쿼리를 실행합니다.
+  description: `여러 LLM 전문가를 조합하여 앙상블 쿼리 실행.
 
-## 전략
-- **parallel**: 병렬 실행 후 결과 병합
-- **synthesize**: 병렬 실행 후 합성 모델이 통합
-- **debate**: 전문가들이 서로 비평하며 토론
-- **vote**: 선택지에 대해 투표
-- **best_of_n**: N번 실행 후 최고 선택
-- **chain**: 이전 결과를 다음 전문가에게 전달
+전략: parallel(병렬), synthesize(합성), debate(토론), vote(투표), best_of_n, chain(순차)
+전문가: strategist, researcher, reviewer, frontend, writer, explorer, multimodal, security, tester, data, codex_reviewer + blank 전문가(gpt_blank_*, gemini_blank_*)
 
-## 전문가
-**Core:**
-- strategist (GPT): 설계, 아키텍처, 전략
-- researcher (Claude): 조사, 분석, 문서화
-- reviewer (Gemini): 코드 리뷰, 버그/보안
-- frontend (Gemini): UI/UX, 컴포넌트
-- writer (Gemini): 문서 작성
-- explorer (Gemini): 빠른 탐색
-- multimodal (Gemini): 이미지/시각 분석
-
-**Specialized:**
-- security (Claude): 보안 취약점, OWASP
-- tester (Claude): TDD, 테스트 전략
-- data (GPT): DB 설계, 쿼리 최적화
-- codex_reviewer (GPT Codex): 코드 리뷰
-
-**Blank (동적 페르소나):**
-- gpt_blank_1, gpt_blank_2 (GPT)
-- claude_blank_1, claude_blank_2 (Claude)
-- gemini_blank_1, gemini_blank_2 (Gemini)
-
-💡 페르소나 토론은 \`dynamic_debate\` 또는 \`auto_debate\` 도구 사용 권장`,
+synthesize 전략: synthesizer 필수. vote 전략: vote_options 필수.`,
 
   inputSchema: ensembleQuerySchema,
 
@@ -250,25 +224,7 @@ export const ensemblePresetTool = {
 
   title: '프리셋 앙상블',
 
-  description: `미리 정의된 프리셋으로 앙상블을 실행합니다.
-
-## 기본 프리셋
-- diverse_perspectives: 다양한 관점 수집
-- synthesized_analysis: 통합 분석
-- expert_debate: 전문가 토론
-- code_review_ensemble: 코드 리뷰
-- quick_consensus: 빠른 합의
-
-## 신규 프리셋
-- dynamic_debate_3: 동적 페르소나 토론 (3명)
-- dynamic_debate_6: 동적 페르소나 토론 (6명)
-- security_debate: 보안 검토 토론
-- multi_review: 다중 관점 코드리뷰
-- tdd_review: TDD 검토 앙상블
-- data_architecture: 데이터 아키텍처 검토
-
-💡 커스텀 페르소나 토론은 \`dynamic_debate\` 또는 \`auto_debate\` 도구 사용 권장
-프리셋 목록은 ensemble_presets_list로 확인하세요.`,
+  description: `미리 정의된 프리셋으로 앙상블 실행. 프리셋 목록은 ensemble_presets_list로 확인.`,
 
   inputSchema: ensemblePresetSchema,
 

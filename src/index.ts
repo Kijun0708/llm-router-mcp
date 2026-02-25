@@ -8,6 +8,7 @@ import { logger } from "./utils/logger.js";
 
 import { setupHookSystem } from "./hooks/index.js";
 import { initializeHud, shutdownHud } from "./hud/index.js";
+import { shutdownPersistence } from "./services/background-manager.js";
 
 // New tool registrations
 import { registerInteractiveBashTools } from "./tools/interactive-bash.js";
@@ -37,12 +38,6 @@ import {
   ralphLoopStartTool, ralphLoopStartSchema, handleRalphLoopStart,
   ralphLoopCancelTool, ralphLoopCancelSchema, handleRalphLoopCancel,
   ralphLoopStatusTool, ralphLoopStatusSchema, handleRalphLoopStatus,
-  hookStatusTool, hookStatusSchema, handleHookStatus,
-  hookToggleTool, hookToggleSchema, handleHookToggle,
-  hookSystemToggleTool, hookSystemToggleSchema, handleHookSystemToggle,
-  externalHookAddTool, externalHookAddSchema, handleExternalHookAdd,
-  externalHookRemoveTool, externalHookRemoveSchema, handleExternalHookRemove,
-  externalHookListTool, externalHookListSchema, handleExternalHookList,
   boulderStatusTool, boulderStatusSchema, handleBoulderStatus,
   boulderRecoverTool, boulderRecoverSchema, handleBoulderRecover,
   boulderDetailTool, boulderDetailSchema, handleBoulderDetail,
@@ -52,13 +47,6 @@ import {
   keywordDetectTool, keywordDetectSchema, handleKeywordDetect,
   keywordToggleTool, keywordToggleSchema, handleKeywordToggle,
   keywordSystemToggleTool, keywordSystemToggleSchema, handleKeywordSystemToggle,
-  permissionCheckTool, permissionCheckSchema, handlePermissionCheck,
-  permissionGrantTool, permissionGrantSchema, handlePermissionGrant,
-  permissionDenyTool, permissionDenySchema, handlePermissionDeny,
-  permissionListTool, permissionListSchema, handlePermissionList,
-  permissionPatternToggleTool, permissionPatternToggleSchema, handlePermissionPatternToggle,
-  permissionSystemToggleTool, permissionSystemToggleSchema, handlePermissionSystemToggle,
-  permissionClearSessionTool, permissionClearSessionSchema, handlePermissionClearSession,
   costStatusTool, costStatusSchema, handleCostStatus,
   costHistoryTool, costHistorySchema, handleCostHistory,
   costStatsTool, costStatsSchema, handleCostStats,
@@ -103,10 +91,6 @@ import {
   commandExecuteTool, commandExecuteSchema, handleCommandExecute,
   commandRescanTool, commandRescanSchema, handleCommandRescan,
   commandConfigTool, commandConfigSchema, handleCommandConfig,
-  playwrightScreenshotTool, playwrightScreenshotSchema, handlePlaywrightScreenshot,
-  playwrightExtractTool, playwrightExtractSchema, handlePlaywrightExtract,
-  playwrightActionTool, playwrightActionSchema, handlePlaywrightAction,
-  playwrightPdfTool, playwrightPdfSchema, handlePlaywrightPdf,
   // Agent & Command tools
   listAgentsTool, listAgentsSchema, handleListAgents,
   runAgentTool, runAgentSchema, handleRunAgent,
@@ -280,28 +264,7 @@ function registerTools() {
     () => handleRalphLoopStatus()
   );
 
-  // 26. hook_status
-  server.tool(
-    hookStatusTool.name,
-    hookStatusSchema.shape,
-    (args) => handleHookStatus(hookStatusSchema.parse(args))
-  );
-
-  // 27. hook_toggle
-  server.tool(
-    hookToggleTool.name,
-    hookToggleSchema.shape,
-    (args) => handleHookToggle(hookToggleSchema.parse(args))
-  );
-
-  // 28. hook_system_toggle
-  server.tool(
-    hookSystemToggleTool.name,
-    hookSystemToggleSchema.shape,
-    (args) => handleHookSystemToggle(hookSystemToggleSchema.parse(args))
-  );
-
-  // 29. boulder_status
+  // boulder_status
   server.tool(
     boulderStatusTool.name,
     boulderStatusSchema.shape,
@@ -322,28 +285,7 @@ function registerTools() {
     (args) => handleBoulderDetail(boulderDetailSchema.parse(args))
   );
 
-  // 32. external_hook_add
-  server.tool(
-    externalHookAddTool.name,
-    externalHookAddSchema.shape,
-    (args) => handleExternalHookAdd(externalHookAddSchema.parse(args))
-  );
-
-  // 33. external_hook_remove
-  server.tool(
-    externalHookRemoveTool.name,
-    externalHookRemoveSchema.shape,
-    (args) => handleExternalHookRemove(externalHookRemoveSchema.parse(args))
-  );
-
-  // 34. external_hook_list
-  server.tool(
-    externalHookListTool.name,
-    externalHookListSchema.shape,
-    (args) => handleExternalHookList(externalHookListSchema.parse(args))
-  );
-
-  // 35. keyword_add
+  // keyword_add
   server.tool(
     keywordAddTool.name,
     keywordAddSchema.shape,
@@ -385,56 +327,7 @@ function registerTools() {
     (args) => handleKeywordSystemToggle(keywordSystemToggleSchema.parse(args))
   );
 
-  // 41. permission_check
-  server.tool(
-    permissionCheckTool.name,
-    permissionCheckSchema.shape,
-    (args) => handlePermissionCheck(permissionCheckSchema.parse(args))
-  );
-
-  // 42. permission_grant
-  server.tool(
-    permissionGrantTool.name,
-    permissionGrantSchema.shape,
-    (args) => handlePermissionGrant(permissionGrantSchema.parse(args))
-  );
-
-  // 43. permission_deny
-  server.tool(
-    permissionDenyTool.name,
-    permissionDenySchema.shape,
-    (args) => handlePermissionDeny(permissionDenySchema.parse(args))
-  );
-
-  // 44. permission_list
-  server.tool(
-    permissionListTool.name,
-    permissionListSchema.shape,
-    (args) => handlePermissionList(permissionListSchema.parse(args))
-  );
-
-  // 45. permission_pattern_toggle
-  server.tool(
-    permissionPatternToggleTool.name,
-    permissionPatternToggleSchema.shape,
-    (args) => handlePermissionPatternToggle(permissionPatternToggleSchema.parse(args))
-  );
-
-  // 46. permission_system_toggle
-  server.tool(
-    permissionSystemToggleTool.name,
-    permissionSystemToggleSchema.shape,
-    (args) => handlePermissionSystemToggle(permissionSystemToggleSchema.parse(args))
-  );
-
-  // 47. permission_clear_session
-  server.tool(
-    permissionClearSessionTool.name,
-    permissionClearSessionSchema.shape,
-    (args) => handlePermissionClearSession(permissionClearSessionSchema.parse(args))
-  );
-
-  // 48. cost_status
+  // cost_status
   server.tool(
     costStatusTool.name,
     costStatusSchema.shape,
@@ -742,35 +635,7 @@ function registerTools() {
     (args) => handleCommandConfig(commandConfigSchema.parse(args))
   );
 
-  // 92. playwright_screenshot
-  server.tool(
-    playwrightScreenshotTool.name,
-    playwrightScreenshotSchema.shape,
-    (args) => handlePlaywrightScreenshot(playwrightScreenshotSchema.parse(args))
-  );
-
-  // 93. playwright_extract
-  server.tool(
-    playwrightExtractTool.name,
-    playwrightExtractSchema.shape,
-    (args) => handlePlaywrightExtract(playwrightExtractSchema.parse(args))
-  );
-
-  // 94. playwright_action
-  server.tool(
-    playwrightActionTool.name,
-    playwrightActionSchema.shape,
-    (args) => handlePlaywrightAction(playwrightActionSchema.parse(args))
-  );
-
-  // 95. playwright_pdf
-  server.tool(
-    playwrightPdfTool.name,
-    playwrightPdfSchema.shape,
-    (args) => handlePlaywrightPdf(playwrightPdfSchema.parse(args))
-  );
-
-  // 96. list_agents
+  // list_agents
   server.tool(
     listAgentsTool.name,
     listAgentsSchema.shape,
@@ -870,7 +735,7 @@ function registerTools() {
   // 123-131. MCP Manager Tools (9 tools)
   registerMcpManagerTools(server);
 
-  logger.info('All tools registered (131 tools)');
+  logger.info('All tools registered (114 tools)');
 }
 
 // 메인 함수
@@ -892,10 +757,14 @@ async function main() {
 
   logger.info('Server connected via stdio');
 
-  // 프로세스 종료 시 HUD 정리
-  process.on('exit', () => shutdownHud());
-  process.on('SIGINT', () => { shutdownHud(); process.exit(0); });
-  process.on('SIGTERM', () => { shutdownHud(); process.exit(0); });
+  // 프로세스 종료 시 정리
+  const gracefulShutdown = () => {
+    shutdownPersistence();  // 백그라운드 작업 상태 저장
+    shutdownHud();          // HUD 정리
+  };
+  process.on('exit', gracefulShutdown);
+  process.on('SIGINT', () => { gracefulShutdown(); process.exit(0); });
+  process.on('SIGTERM', () => { gracefulShutdown(); process.exit(0); });
 }
 
 // 실행

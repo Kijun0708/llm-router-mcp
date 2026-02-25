@@ -49,7 +49,6 @@ interface DynamicDebateResult {
 
 const blankExperts = [
   'gpt_blank_1', 'gpt_blank_2',
-  'claude_blank_1', 'claude_blank_2',
   'gemini_blank_1', 'gemini_blank_2'
 ] as const;
 
@@ -97,28 +96,7 @@ export const dynamicDebateTool = {
 
   title: '동적 페르소나 토론',
 
-  description: `Blank 전문가들에게 사용자 정의 페르소나를 부여하여 토론합니다.
-
-## 사용 가능한 Blank 전문가
-- **gpt_blank_1** (GPT 5.2): OpenAI 범용 모델
-- **gpt_blank_2** (GPT Codex): OpenAI 코드 특화 모델
-- **claude_blank_1** (Claude Opus): Anthropic 최고 성능
-- **claude_blank_2** (Claude Sonnet): Anthropic 빠른 모델
-- **gemini_blank_1** (Gemini Pro): Google 고성능 모델
-- **gemini_blank_2** (Gemini Flash): Google 빠른 모델
-
-## 사용 예시
-\`\`\`
-dynamic_debate({
-  topic: "주식 손절 타이밍 전략",
-  participants: [
-    { expert: "gpt_blank_1", persona: "기술적 분석가 (차트, 이동평균선 전문)" },
-    { expert: "claude_blank_1", persona: "펀더멘털 분석가 (재무제표 전문)" },
-    { expert: "gemini_blank_1", persona: "리스크 관리자 (손실 최소화 관점)" }
-  ],
-  max_rounds: 2
-})
-\`\`\``,
+  description: `Blank 전문가(gpt_blank_1/2, gemini_blank_1/2)에 사용자 정의 페르소나 부여 토론.`,
 
   inputSchema: dynamicDebateSchema,
 
@@ -352,8 +330,6 @@ function getProviderName(expertId: string): string {
   const providerMap: Record<string, string> = {
     gpt_blank_1: 'OpenAI GPT 5.2',
     gpt_blank_2: 'OpenAI GPT Codex',
-    claude_blank_1: 'Anthropic Claude Opus',
-    claude_blank_2: 'Anthropic Claude Sonnet',
     gemini_blank_1: 'Google Gemini Pro',
     gemini_blank_2: 'Google Gemini Flash'
   };

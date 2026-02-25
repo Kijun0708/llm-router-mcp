@@ -100,39 +100,9 @@ export const orchestrateTaskTool = {
 
   title: 'Orchestrate Task',
 
-  description: `Executes a complex task using the phase-based workflow system.
-
-## Workflow Phases
-1. **Intent** - Classifies the request (conceptual, implementation, debugging, etc.)
-2. **Assessment** - Analyzes codebase to identify relevant files
-3. **Exploration** - Deep dives into code when needed (optional)
-4. **Implementation** - Delegates to appropriate expert
-5. **Recovery** - Handles failures with 3-strike protocol
-6. **Completion** - Verifies and summarizes results
-
-## Ralph Loop Mode
-When \`use_ralph_loop=true\`, uses iterative completion instead of normal phases:
-- Runs task repeatedly until <promise>DONE</promise> is detected
-- Auto-retries up to max iterations
-- Best for complex tasks that may need multiple passes
-
-## When to Use
-- Complex tasks requiring multiple steps
-- Tasks that benefit from codebase context
-- When unsure which expert to use
-- For tasks that might need retry/recovery
-- **Ralph Loop**: Tasks requiring iterative refinement until completion
-
-## Examples
-- "Implement user authentication with JWT"
-- "Find and fix the memory leak in the cache module"
-- "Refactor the API handlers to use async/await"
-- "Review the security of the auth module"
-
-## Compared to consult_expert
-- \`consult_expert\`: Direct expert call, you choose the expert
-- \`orchestrate_task\`: Autonomous workflow, system chooses expert and handles failures
-- \`orchestrate_task\` + Ralph Loop: Iterative completion until done`,
+  description: `복잡한 작업을 단계별 워크플로우로 자동 실행.
+Intent분류 → Assessment → Exploration(선택) → Implementation → Recovery(실패시) → Completion
+use_ralph_loop=true: 완료될 때까지 반복 실행 모드`,
 
   inputSchema: orchestrateTaskSchema,
 

@@ -43,9 +43,9 @@ export const autoDebateSchema = z.object({
     .min(5, '토론 주제는 최소 5자 이상')
     .describe('토론 주제'),
 
-  participant_count: z.union([z.literal(3), z.literal(6)])
+  participant_count: z.union([z.literal(3), z.literal(4)])
     .default(3)
-    .describe('참여자 수 (3명 또는 6명)'),
+    .describe('참여자 수 (3명 또는 4명)'),
 
   context: z.string()
     .optional()
@@ -72,27 +72,7 @@ export const autoDebateTool = {
 
   title: '자동 페르소나 토론',
 
-  description: `AI가 토론 주제를 분석하고 자동으로 최적의 페르소나를 할당하여 토론합니다.
-
-## 동작 방식
-1. **debate_moderator**가 토론 주제를 분석
-2. 주제에 적합한 관점/역할 자동 설계
-3. 각 AI에 페르소나 할당 후 토론 시작
-
-## 참여자 수
-- **3명**: GPT, Claude, Gemini 각 1명 (기본)
-- **6명**: 각 프로바이더 2명씩 (심층 토론)
-
-## 사용 예시
-\`\`\`
-auto_debate({
-  topic: "주식 손절 타이밍 전략",
-  participant_count: 3,
-  max_rounds: 2
-})
-\`\`\`
-
-→ AI가 자동으로 "기술적 분석가", "펀더멘털 분석가", "리스크 관리자" 등의 역할을 설계하고 토론 진행`,
+  description: `debate_moderator가 토론 주제 분석 후 최적 페르소나 자동 할당 토론. participant_count: 3명 또는 4명.`,
 
   inputSchema: autoDebateSchema,
 
@@ -108,10 +88,9 @@ auto_debate({
 // Constants
 // ============================================================================
 
-const BLANK_EXPERTS_3 = ['gpt_blank_1', 'claude_blank_1', 'gemini_blank_1'];
-const BLANK_EXPERTS_6 = [
+const BLANK_EXPERTS_3 = ['gpt_blank_1', 'gemini_blank_1', 'gemini_blank_2'];
+const BLANK_EXPERTS_4 = [
   'gpt_blank_1', 'gpt_blank_2',
-  'claude_blank_1', 'claude_blank_2',
   'gemini_blank_1', 'gemini_blank_2'
 ];
 
@@ -125,10 +104,10 @@ function generateDebateId(): string {
 
 async function generatePersonaAssignments(
   topic: string,
-  participantCount: 3 | 6,
+  participantCount: 3 | 4,
   context?: string
 ): Promise<PersonaAssignment[]> {
-  const blankExperts = participantCount === 3 ? BLANK_EXPERTS_3 : BLANK_EXPERTS_6;
+  const blankExperts = participantCount === 3 ? BLANK_EXPERTS_3 : BLANK_EXPERTS_4;
 
   const prompt = `
 토론 주제를 분석하고, 각 AI 참여자에게 최적의 페르소나를 할당해주세요.
@@ -513,11 +492,9 @@ function getProviderName(expertId: string): string {
   const providerMap: Record<string, string> = {
     gpt_blank_1: 'OpenAI GPT 5.2',
     gpt_blank_2: 'OpenAI GPT Codex',
-    claude_blank_1: 'Anthropic Claude Opus',
-    claude_blank_2: 'Anthropic Claude Sonnet',
     gemini_blank_1: 'Google Gemini Pro',
     gemini_blank_2: 'Google Gemini Flash',
-    debate_moderator: 'Anthropic Claude Sonnet'
+    debate_moderator: 'Google Gemini Pro'
   };
   return providerMap[expertId] || EXPERT_PROVIDERS[expertId] || expertId;
 }

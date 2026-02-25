@@ -30,42 +30,13 @@ export const categoryTaskTool = {
 
   title: "카테고리 기반 작업 라우팅",
 
-  description: `작업 카테고리에 따라 최적의 전문가에게 자동 라우팅합니다.
-
-## 카테고리
-
-### visual
-- 기본 전문가: frontend (Gemini Pro)
-- 용도: UI/UX, 디자인, 프론트엔드 작업
-- 특성: 높은 창의성 (temperature 0.7)
-
-### business-logic
-- 기본 전문가: strategist (GPT 5.2)
-- 용도: 백엔드 로직, 아키텍처, 전략적 결정
-- 특성: 낮은 창의성, 높은 정확도 (temperature 0.1)
-
-### research
-- 기본 전문가: researcher (Claude Sonnet)
-- 용도: 조사, 분석, 문서 탐색
-- 특성: 근거 기반 분석
-
-### quick
-- 기본 전문가: explorer (Gemini Flash)
-- 용도: 빠른 탐색, 간단한 질문, 파일 찾기
-- 특성: 빠른 응답, 짧은 출력
-
-### review
-- 기본 전문가: reviewer (Gemini Pro)
-- 용도: 코드 리뷰, 버그 탐지, 품질 검사
-
-### documentation
-- 기본 전문가: writer (Gemini Flash)
-- 용도: 문서 작성, README, API 문서화
-
-## 사용 예시
-- category="visual", prompt="대시보드 컴포넌트 설계해줘"
-- category="business-logic", prompt="결제 시스템 아키텍처 제안해줘"
-- category="quick", prompt="src 폴더에 있는 테스트 파일들 찾아줘"`,
+  description: `카테고리별 최적 전문가 자동 라우팅.
+- visual: frontend (UI/UX)
+- business-logic: strategist (아키텍처)
+- research: researcher (조사/분석)
+- quick: explorer (빠른탐색)
+- review: reviewer (코드리뷰)
+- documentation: writer (문서작성)`,
 
   inputSchema: categoryTaskSchema,
 
