@@ -113,7 +113,7 @@ export interface Category {
 export interface Config {
   cli: {
     geminiPath: string;   // Gemini CLI 경로 (default: 'gemini')
-    claudePath: string;   // Claude CLI 경로 (default: 'claude')
+    claudePath: string;   // Claude CLI 경로 (unused - kept for compatibility)
     codexPath: string;    // Codex CLI 경로 (default: 'codex')
   };
   exaApiKey?: string;     // Exa AI 검색 API 키
@@ -151,11 +151,9 @@ export interface Config {
     data: string;
     codex_reviewer: string;
     devops: string;
-    // Blank 전문가 (동적 페르소나 토론용)
+    // Blank 전문가 (동적 페르소나 토론용 - GPT/Gemini only)
     gpt_blank_1: string;
     gpt_blank_2: string;
-    claude_blank_1: string;
-    claude_blank_2: string;
     gemini_blank_1: string;
     gemini_blank_2: string;
     // 페르소나 할당 전문가

@@ -318,6 +318,13 @@ async function executeTask(
   try {
     const result = await callExpertWithFallback(expertId, prompt, context);
 
+    // 취소된 작업이면 상태 업데이트 건너뛰기 (레이스 컨디션 방지)
+    const currentTask = tasks.get(taskId);
+    if (currentTask?.status === 'cancelled') {
+      logger.info({ taskId, expertId }, 'Task was cancelled during execution, skipping completion update');
+      return;
+    }
+
     const updatedTask: BackgroundTask = {
       ...task,
       status: 'completed',
@@ -329,6 +336,13 @@ async function executeTask(
 
     logger.info({ taskId, expertId, latencyMs: result.latencyMs }, 'Background task completed');
   } catch (error) {
+    // 취소된 작업이면 상태 업데이트 건너뛰기 (레이스 컨디션 방지)
+    const currentTask = tasks.get(taskId);
+    if (currentTask?.status === 'cancelled') {
+      logger.info({ taskId, expertId }, 'Task was cancelled during execution, skipping failure update');
+      return;
+    }
+
     const updatedTask: BackgroundTask = {
       ...task,
       status: 'failed',

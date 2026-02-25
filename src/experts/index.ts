@@ -18,11 +18,9 @@ import { tester, TESTER_METADATA } from './tester.js';
 import { data, DATA_METADATA } from './data.js';
 import { codexReviewer, CODEX_REVIEWER_METADATA } from './codex-reviewer.js';
 import { devops, DEVOPS_METADATA } from './devops.js';
-// Blank experts for dynamic persona debates
+// Blank experts for dynamic persona debates (GPT/Gemini only - Claude Code handles Claude)
 import { gptBlank1 } from './gpt-blank-1.js';
 import { gptBlank2 } from './gpt-blank-2.js';
-import { claudeBlank1 } from './claude-blank-1.js';
-import { claudeBlank2 } from './claude-blank-2.js';
 import { geminiBlank1 } from './gemini-blank-1.js';
 import { geminiBlank2 } from './gemini-blank-2.js';
 // Debate moderator
@@ -48,11 +46,9 @@ export const experts: Record<string, Expert> = {
   data,
   codex_reviewer: codexReviewer,
   devops,
-  // Blank experts for dynamic persona debates
+  // Blank experts for dynamic persona debates (GPT/Gemini only)
   gpt_blank_1: gptBlank1,
   gpt_blank_2: gptBlank2,
-  claude_blank_1: claudeBlank1,
-  claude_blank_2: claudeBlank2,
   gemini_blank_1: geminiBlank1,
   gemini_blank_2: geminiBlank2,
   // Debate moderator
@@ -80,11 +76,9 @@ export const FALLBACK_CHAIN: Record<string, string[]> = {
   data: ['strategist', 'researcher'],
   codex_reviewer: ['reviewer', 'strategist'],
   devops: ['strategist', 'researcher'],
-  // Blank experts (same provider first, then cross-provider)
-  gpt_blank_1: ['gpt_blank_2', 'claude_blank_1'],
-  gpt_blank_2: ['gpt_blank_1', 'claude_blank_2'],
-  claude_blank_1: ['claude_blank_2', 'gemini_blank_1'],
-  claude_blank_2: ['claude_blank_1', 'gemini_blank_2'],
+  // Blank experts (GPT/Gemini only - cross-provider fallback)
+  gpt_blank_1: ['gpt_blank_2', 'gemini_blank_1'],
+  gpt_blank_2: ['gpt_blank_1', 'gemini_blank_2'],
   gemini_blank_1: ['gemini_blank_2', 'gpt_blank_1'],
   gemini_blank_2: ['gemini_blank_1', 'gpt_blank_2'],
   // Debate moderator
@@ -96,7 +90,7 @@ export {
   strategist, researcher, reviewer, frontend, writer, explorer, multimodal,
   prometheus, metis, momus, librarian,
   security, tester, data, codexReviewer, devops,
-  gptBlank1, gptBlank2, claudeBlank1, claudeBlank2, geminiBlank1, geminiBlank2,
+  gptBlank1, gptBlank2, geminiBlank1, geminiBlank2,
   debateModerator
 };
 
@@ -143,11 +137,9 @@ export const EXPERT_METADATA_REGISTRY: Record<string, ExpertPromptMetadata> = {
   data: DATA_METADATA,
   codex_reviewer: CODEX_REVIEWER_METADATA,
   devops: DEVOPS_METADATA,
-  // Blank experts (shared metadata)
+  // Blank experts (shared metadata, GPT/Gemini only)
   gpt_blank_1: BLANK_METADATA,
   gpt_blank_2: BLANK_METADATA,
-  claude_blank_1: BLANK_METADATA,
-  claude_blank_2: BLANK_METADATA,
   gemini_blank_1: BLANK_METADATA,
   gemini_blank_2: BLANK_METADATA,
   // Debate moderator

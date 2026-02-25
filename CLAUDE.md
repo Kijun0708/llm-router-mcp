@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-LLM Router MCP is a Model Context Protocol (MCP) server that enables multi-LLM collaboration via terminal CLI tools (gemini, codex, claude). It allows Claude Code to orchestrate GPT, Gemini, and other Claude instances as team members, with automatic rate limit handling and fallback routing.
+LLM Router MCP is a Model Context Protocol (MCP) server that enables multi-LLM collaboration via terminal CLI tools (gemini, codex). It allows Claude Code to orchestrate GPT and Gemini instances as team members, with automatic rate limit handling and fallback routing.
 
-**Core Concept**: Claude Code acts as the team leader, delegating specialized tasks to different LLM "experts" based on their strengths.
+**Core Concept**: Claude Code acts as the team leader (handling all Claude-related tasks natively), delegating specialized tasks to GPT/Gemini "experts" for diverse perspectives.
+
+**Note**: Claude models are NOT called via MCP - Claude Code handles Claude tasks directly to avoid nested session issues.
 
 ## Tech Stack
 
@@ -34,42 +36,40 @@ node dist/index.js
 
 ### Expert System
 
-23 AI experts with specialized roles and automatic fallback chains:
+17 AI experts with specialized roles and automatic fallback chains (GPT/Gemini only):
 
 #### 기본 전문가 (11명)
 
 | Expert | Model | Role | Fallbacks |
 |--------|-------|------|-----------|
 | `strategist` | GPT 5.2 | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
-| `researcher` | Claude Sonnet | 문서 분석, 코드베이스 탐색 | reviewer → explorer |
+| `researcher` | Gemini Pro | 문서 분석, 코드베이스 탐색 | reviewer → explorer |
 | `reviewer` | Gemini Pro | 코드 리뷰, 보안 분석 | explorer → codex_reviewer |
 | `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | writer → explorer |
 | `writer` | Gemini Flash | 기술 문서 작성 | explorer |
 | `explorer` | Gemini Flash | 빠른 검색, 간단한 쿼리 | - |
-| `multimodal` | GPT 5.2 | 이미지 분석, 시각적 콘텐츠 | strategist → researcher |
-| `librarian` | Claude Sonnet | 지식 관리, 세션 히스토리 검색 | researcher → explorer |
+| `multimodal` | Gemini Pro | 이미지 분석, 시각적 콘텐츠 | strategist → researcher |
+| `librarian` | Gemini Flash | 지식 관리, 세션 히스토리 검색 | researcher → explorer |
 | `metis` | GPT 5.2 | 전략적 계획, 복잡한 문제 분해 | strategist → researcher |
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → explorer |
-| `prometheus` | Claude Sonnet | 창의적 솔루션, 혁신적 접근 | strategist → researcher |
+| `prometheus` | GPT 5.2 | 창의적 솔루션, 혁신적 접근 | strategist → metis |
 
 #### 특화 전문가 (5명)
 
 | Expert | Model | Role | Fallbacks |
 |--------|-------|------|-----------|
-| `security` | Claude Sonnet | OWASP/CWE 보안 취약점 분석 | reviewer → strategist |
-| `tester` | Claude Sonnet | TDD/테스트 전략 설계 | reviewer → researcher |
+| `security` | Gemini Pro | OWASP/CWE 보안 취약점 분석 | reviewer → strategist |
+| `tester` | GPT Codex | TDD/테스트 전략 설계 | reviewer → researcher |
 | `data` | GPT 5.2 | DB 설계, 쿼리 최적화 | strategist → researcher |
 | `codex_reviewer` | GPT Codex | GPT 관점 코드 리뷰 | reviewer → strategist |
 | `devops` | GPT 5.2 | CI/CD, Docker, K8s, 인프라 자동화 | strategist → researcher |
 
-#### 동적 페르소나 전문가 (6명) - 토론용
+#### 동적 페르소나 전문가 (4명) - 토론용
 
 | Expert | Model | Description |
 |--------|-------|-------------|
 | `gpt_blank_1` | GPT 5.2 | OpenAI 범용 모델 |
 | `gpt_blank_2` | GPT Codex | OpenAI 코드 특화 |
-| `claude_blank_1` | Claude Opus | Anthropic 최고 성능 |
-| `claude_blank_2` | Claude Sonnet | Anthropic 빠른 모델 |
 | `gemini_blank_1` | Gemini Pro | Google 고성능 |
 | `gemini_blank_2` | Gemini Flash | Google 빠른 응답 |
 
@@ -77,7 +77,7 @@ node dist/index.js
 
 | Expert | Model | Role |
 |--------|-------|------|
-| `debate_moderator` | Claude Sonnet | 토론 주제 분석 → 자동 페르소나 할당 |
+| `debate_moderator` | Gemini Pro | 토론 주제 분석 → 자동 페르소나 할당 |
 
 ### MCP Tools
 
@@ -102,7 +102,7 @@ node dist/index.js
 ### Key Services
 
 - `src/services/cliproxy-client.ts` - CLI tool orchestrator (child_process.spawn) with rate limit detection, model-specific timeouts
-- `src/services/providers/` - CLI provider adapters (Gemini, Claude, Codex)
+- `src/services/providers/` - CLI provider adapters (Gemini, Codex only - no Claude)
 - `src/services/expert-router.ts` - Expert selection and fallback routing with error classification
 - `src/services/background-manager.ts` - Async task queue with concurrency control and JSON persistence
 
@@ -143,9 +143,8 @@ node dist/index.js
 | Model | Timeout | Reason |
 |-------|---------|--------|
 | GPT 5.x / Codex | 5분 | Deep thinking 모드 |
-| Claude Opus | 3분 | Deep thinking 모드 |
-| Claude Sonnet/Haiku | 2분 | 일반 추론 |
-| Gemini | 1.5분 | 빠른 응답 |
+| Gemini Pro | 2분 | 일반 추론 |
+| Gemini Flash | 1.5분 | 빠른 응답 |
 | 기타 | 1분 | 기본값 |
 
 ### Error Classification for Fallback
@@ -181,7 +180,6 @@ Environment variables (see `.env.example`):
 ```bash
 # CLI 도구 경로 (PATH에 있으면 생략 가능)
 CLI_GEMINI_PATH=gemini
-CLI_CLAUDE_PATH=claude
 CLI_CODEX_PATH=codex
 
 # 선택적 API 키
@@ -192,7 +190,8 @@ CONTEXT7_API_KEY=your_key              # 라이브러리 문서
 CACHE_ENABLED=true                     # Response caching
 CACHE_TTL_MS=1800000                   # 30 minute cache TTL
 RETRY_MAX=3                            # Max retry attempts
-CONCURRENCY_ANTHROPIC=3                # Concurrent requests per provider
+CONCURRENCY_OPENAI=5                   # Concurrent requests per provider
+CONCURRENCY_GOOGLE=10
 ```
 
 ## Rate Limit Handling

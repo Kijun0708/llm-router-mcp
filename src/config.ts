@@ -17,7 +17,7 @@ export function loadConfig(): Config {
   return {
     cli: {
       geminiPath: process.env.CLI_GEMINI_PATH || 'gemini',
-      claudePath: process.env.CLI_CLAUDE_PATH || 'claude',
+      claudePath: '',  // unused - Claude Code handles Claude natively
       codexPath: process.env.CLI_CODEX_PATH || 'codex',
     },
     exaApiKey: process.env.EXA_API_KEY,
@@ -38,12 +38,10 @@ export function loadConfig(): Config {
     concurrency: {
       default: parseInt(process.env.CONCURRENCY_DEFAULT || '5'),
       byProvider: {
-        anthropic: parseInt(process.env.CONCURRENCY_ANTHROPIC || '3'),
         openai: parseInt(process.env.CONCURRENCY_OPENAI || '5'),
         google: parseInt(process.env.CONCURRENCY_GOOGLE || '10')
       },
       byModel: {
-        'claude-opus-4-5-20251101': 2,
         'gpt-5.2': 3,
         'gemini-3-flash-preview': 10
       }
@@ -51,32 +49,30 @@ export function loadConfig(): Config {
 
     models: {
       strategist: process.env.MODEL_STRATEGIST || 'gpt-5.2',
-      researcher: process.env.MODEL_RESEARCHER || 'claude-sonnet-4-6',
+      researcher: process.env.MODEL_RESEARCHER || 'gemini-3-pro-preview',
       reviewer: process.env.MODEL_REVIEWER || 'gemini-3-pro-preview',
       frontend: process.env.MODEL_FRONTEND || 'gemini-3-pro-preview',
       writer: process.env.MODEL_WRITER || 'gemini-3-flash-preview',
       explorer: process.env.MODEL_EXPLORER || 'gemini-3-flash-preview',
       multimodal: process.env.MODEL_MULTIMODAL || 'gemini-3-pro-preview',
       // Planning Agents
-      prometheus: process.env.MODEL_PROMETHEUS || 'claude-sonnet-4-6',
+      prometheus: process.env.MODEL_PROMETHEUS || 'gpt-5.2',
       metis: process.env.MODEL_METIS || 'gpt-5.2',
       momus: process.env.MODEL_MOMUS || 'gemini-3-pro-preview',
-      librarian: process.env.MODEL_LIBRARIAN || 'claude-sonnet-4-6',
+      librarian: process.env.MODEL_LIBRARIAN || 'gemini-3-flash-preview',
       // 특화 전문가
-      security: process.env.MODEL_SECURITY || 'claude-sonnet-4-6',
-      tester: process.env.MODEL_TESTER || 'claude-sonnet-4-6',
+      security: process.env.MODEL_SECURITY || 'gemini-3-pro-preview',
+      tester: process.env.MODEL_TESTER || 'gpt-5.3-codex',
       data: process.env.MODEL_DATA || 'gpt-5.2',
       codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.3-codex',
       devops: process.env.MODEL_DEVOPS || 'gpt-5.2',
-      // Blank 전문가 (동적 페르소나 토론용 - 다양한 모델)
+      // Blank 전문가 (동적 페르소나 토론용 - GPT/Gemini만 사용)
       gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || 'gpt-5.2',
       gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.3-codex',
-      claude_blank_1: process.env.MODEL_CLAUDE_BLANK_1 || 'claude-opus-4-6',
-      claude_blank_2: process.env.MODEL_CLAUDE_BLANK_2 || 'claude-sonnet-4-6',
       gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || 'gemini-3-pro-preview',
       gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || 'gemini-3-flash-preview',
       // 페르소나 할당 전문가
-      debate_moderator: process.env.MODEL_DEBATE_MODERATOR || 'claude-sonnet-4-6'
+      debate_moderator: process.env.MODEL_DEBATE_MODERATOR || 'gemini-3-pro-preview'
     },
 
     hybrid: {

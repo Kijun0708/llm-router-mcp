@@ -183,11 +183,9 @@ export const EXPERT_REGISTRY: ExpertRegistry = {
   data: DATA_METADATA,
   codex_reviewer: CODEX_REVIEWER_METADATA,
   devops: DEVOPS_METADATA,
-  // Blank experts (share same metadata)
+  // Blank experts (share same metadata) - GPT/Gemini only
   gpt_blank_1: BLANK_METADATA,
   gpt_blank_2: BLANK_METADATA,
-  claude_blank_1: BLANK_METADATA,
-  claude_blank_2: BLANK_METADATA,
   gemini_blank_1: BLANK_METADATA,
   gemini_blank_2: BLANK_METADATA,
   // Debate moderator
@@ -215,11 +213,9 @@ export const EXPERT_PROMPTS: Record<string, string> = {
   data: DATA_SYSTEM_PROMPT,
   codex_reviewer: CODEX_REVIEWER_SYSTEM_PROMPT,
   devops: DEVOPS_SYSTEM_PROMPT,
-  // Blank experts (share same minimal prompt)
+  // Blank experts (share same minimal prompt) - GPT/Gemini only
   gpt_blank_1: BLANK_SYSTEM_PROMPT,
   gpt_blank_2: BLANK_SYSTEM_PROMPT,
-  claude_blank_1: BLANK_SYSTEM_PROMPT,
-  claude_blank_2: BLANK_SYSTEM_PROMPT,
   gemini_blank_1: BLANK_SYSTEM_PROMPT,
   gemini_blank_2: BLANK_SYSTEM_PROMPT,
   // Debate moderator

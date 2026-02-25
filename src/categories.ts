@@ -24,7 +24,7 @@ export const categories: Record<string, Category> = {
   research: {
     id: 'research',
     defaultExpert: 'researcher',
-    model: 'claude-sonnet-4-5-20250929',
+    model: 'gemini-3-pro-preview',
     temperature: 0.1,
     description: '조사, 분석, 문서 탐색',
     promptAppend: '근거를 명확히 제시하고 출처를 밝히세요.'

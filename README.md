@@ -1,6 +1,6 @@
 # LLM Router MCP
 
-Claude Code를 팀 리더로, GPT/Gemini/Claude를 전문가 팀으로 활용하는 MCP 서버
+Claude Code를 팀 리더로, GPT/Gemini를 전문가 팀으로 활용하는 MCP 서버
 
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
@@ -8,18 +8,20 @@ Claude Code를 팀 리더로, GPT/Gemini/Claude를 전문가 팀으로 활용하
 
 ## 개요
 
-LLM Router MCP는 Claude Code가 팀 리더 역할을 하며, 특정 작업에 맞는 AI 전문가에게 업무를 위임하는 MCP 서버입니다.
+LLM Router MCP는 Claude Code가 팀 리더 역할을 하며, GPT/Gemini 전문가에게 업무를 위임하는 MCP 서버입니다.
+
+> **Note**: Claude 모델은 MCP를 통해 호출되지 않습니다. Claude Code가 직접 Claude 역할을 수행하므로, 중첩 세션 문제를 피하면서 진정한 다중 LLM 협업이 가능합니다.
 
 | 항목 | 수량 |
 |------|------|
 | MCP 도구 | 108개 |
 | 내장 훅 | 38개 |
-| AI 전문가 | 23개 |
+| AI 전문가 | 17개 |
 | 내장 스킬 | 12개 |
 
 ### 주요 특징
 
-- **멀티 LLM 협업**: GPT 5.2, Claude Opus/Sonnet, Gemini Pro/Flash를 역할별로 활용
+- **멀티 LLM 협업**: Claude Code(리더) + GPT 5.2/Codex + Gemini Pro/Flash
 - **자동 폴백**: Rate limit 발생 시 자동으로 다른 전문가로 전환
 - **동적 토론**: AI가 자동으로 페르소나를 설계하여 토론 진행
 - **백그라운드 실행**: 장시간 작업을 백그라운드에서 비동기 실행
@@ -43,8 +45,9 @@ npm run build
 터미널에서 사용할 LLM CLI 도구가 인증된 상태여야 합니다:
 
 - `gemini` — Google Gemini CLI
-- `claude` — Anthropic Claude CLI
 - `codex` — OpenAI Codex CLI
+
+> **Note**: `claude` CLI는 필요하지 않습니다. Claude Code가 직접 Claude 역할을 수행합니다.
 
 ### 3. 환경변수 설정 (선택)
 
@@ -77,42 +80,42 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 
 ## 전문가 시스템
 
+> GPT/Gemini 전문가만 MCP를 통해 호출됩니다. Claude 관련 분석/판단은 Claude Code가 직접 수행합니다.
+
 ### 기본 전문가 (11명)
 
 | 전문가 | 모델 | 역할 | 폴백 |
 |--------|------|------|------|
 | `strategist` | GPT 5.2 | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
-| `researcher` | Claude Sonnet | 문서 분석, 코드베이스 탐색 | reviewer → explorer |
+| `researcher` | Gemini Pro | 문서 분석, 코드베이스 탐색 | reviewer → explorer |
 | `reviewer` | Gemini Pro | 코드 리뷰, 보안 분석 | explorer → codex_reviewer |
 | `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | writer → explorer |
 | `writer` | Gemini Flash | 기술 문서 작성 | explorer |
 | `explorer` | Gemini Flash | 빠른 검색, 간단한 쿼리 | - |
-| `multimodal` | GPT 5.2 | 이미지 분석, 시각적 콘텐츠 | strategist → researcher |
-| `librarian` | Claude Sonnet | 지식 관리, 세션 히스토리 | researcher → explorer |
+| `multimodal` | Gemini Pro | 이미지 분석, 시각적 콘텐츠 | strategist → researcher |
+| `librarian` | Gemini Flash | 지식 관리, 세션 히스토리 | researcher → explorer |
 | `metis` | GPT 5.2 | 전략적 계획, 문제 분해 | strategist → researcher |
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → explorer |
-| `prometheus` | Claude Sonnet | 창의적 솔루션, 혁신적 접근 | strategist → researcher |
+| `prometheus` | GPT 5.2 | 창의적 솔루션, 혁신적 접근 | strategist → metis |
 
 ### 특화 전문가 (5명)
 
 | 전문가 | 모델 | 역할 | 폴백 |
 |--------|------|------|------|
-| `security` | Claude Sonnet | OWASP/CWE 보안 취약점 분석 | reviewer → strategist |
-| `tester` | Claude Sonnet | TDD/테스트 전략 설계 | reviewer → researcher |
+| `security` | Gemini Pro | OWASP/CWE 보안 취약점 분석 | reviewer → strategist |
+| `tester` | GPT Codex | TDD/테스트 전략 설계 | reviewer → researcher |
 | `data` | GPT 5.2 | DB 설계, 쿼리 최적화 | strategist → researcher |
 | `codex_reviewer` | GPT Codex | GPT 관점 코드 리뷰 | reviewer → strategist |
 | `devops` | GPT 5.2 | CI/CD, Docker, K8s, 인프라 자동화 | strategist → researcher |
 
-### 동적 페르소나 전문가 (6명)
+### 동적 페르소나 전문가 (4명)
 
-토론 시 AI가 자동으로 역할을 부여하는 빈 슬롯:
+토론 시 AI가 자동으로 역할을 부여하는 빈 슬롯 (GPT/Gemini only):
 
 | 전문가 | 모델 |
 |--------|------|
 | `gpt_blank_1` | GPT 5.2 |
 | `gpt_blank_2` | GPT Codex |
-| `claude_blank_1` | Claude Opus |
-| `claude_blank_2` | Claude Sonnet |
 | `gemini_blank_1` | Gemini Pro |
 | `gemini_blank_2` | Gemini Flash |
 
@@ -120,7 +123,7 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 
 | 전문가 | 모델 | 역할 |
 |--------|------|------|
-| `debate_moderator` | Claude Sonnet | 토론 주제 분석 → 자동 페르소나 할당 |
+| `debate_moderator` | Gemini Pro | 토론 주제 분석 → 자동 페르소나 할당 |
 
 ---
 
@@ -263,7 +266,7 @@ dynamic_debate({
   topic: "마이크로서비스 vs 모놀리식",
   participants: [
     { expert: "gpt_blank_1", persona: "마이크로서비스 옹호자" },
-    { expert: "claude_blank_1", persona: "모놀리식 옹호자" },
+    { expert: "gpt_blank_2", persona: "모놀리식 옹호자" },
     { expert: "gemini_blank_1", persona: "중립적 아키텍트" }
   ],
   max_rounds: 2
@@ -289,9 +292,8 @@ dynamic_debate({
 | 모델 | 타임아웃 | 이유 |
 |------|---------|--------|
 | GPT 5.x / Codex | 5분 | Deep thinking |
-| Claude Opus | 3분 | Deep thinking |
-| Claude Sonnet/Haiku | 2분 | 일반 추론 |
-| Gemini | 1.5분 | 빠른 응답 |
+| Gemini Pro | 2분 | 일반 추론 |
+| Gemini Flash | 1.5분 | 빠른 응답 |
 | 기타 | 1분 | 기본값 |
 
 ---
@@ -302,7 +304,7 @@ dynamic_debate({
 llm-router-mcp/
 ├── src/
 │   ├── index.ts              # MCP 서버 진입점
-│   ├── experts/              # 전문가 정의 (22개)
+│   ├── experts/              # 전문가 정의 (17개)
 │   ├── tools/                # MCP 도구 (108개)
 │   ├── hooks/builtin/        # 내장 훅 (38개)
 │   ├── hud/                  # HUD 상태 관리
@@ -313,7 +315,7 @@ llm-router-mcp/
 │   ├── services/             # 핵심 서비스
 │   │   ├── expert-router.ts  # 전문가 라우팅
 │   │   ├── cliproxy-client.ts # CLI 도구 오케스트레이터
-│   │   ├── providers/         # CLI 프로바이더 (Gemini/Claude/Codex)
+│   │   ├── providers/         # CLI 프로바이더 (Gemini/Codex only)
 │   │   └── background-manager.ts # 백그라운드 작업 관리
 │   └── utils/                # 유틸리티
 ├── skills/                   # 내장 스킬 (10개)
@@ -329,8 +331,9 @@ llm-router-mcp/
 ### 지원 CLI 도구
 
 - `gemini` — Gemini Pro/Flash 모델
-- `claude` — Claude Opus/Sonnet/Haiku 모델
 - `codex` — GPT 5.2/Codex 모델
+
+> **Note**: `claude` CLI는 사용하지 않습니다. Claude Code가 직접 Claude 역할을 수행합니다.
 
 ### 사전 요구사항
 
@@ -339,7 +342,6 @@ CLI 도구 경로는 `.env`에서 설정 가능합니다 (PATH에 있으면 생�
 
 ```bash
 CLI_GEMINI_PATH=gemini
-CLI_CLAUDE_PATH=claude
 CLI_CODEX_PATH=codex
 ```
 
@@ -352,12 +354,11 @@ CLI_CODEX_PATH=codex
 ```bash
 # CLI 도구 설치 확인
 gemini --version
-claude --version
 codex --version
 
 # 인증 상태 확인
 gemini auth status
-claude auth status
+codex auth status
 ```
 
 ### Rate Limit
