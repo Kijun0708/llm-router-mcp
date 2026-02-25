@@ -38,34 +38,9 @@ import {
   ralphLoopStartTool, ralphLoopStartSchema, handleRalphLoopStart,
   ralphLoopCancelTool, ralphLoopCancelSchema, handleRalphLoopCancel,
   ralphLoopStatusTool, ralphLoopStatusSchema, handleRalphLoopStatus,
-  boulderStatusTool, boulderStatusSchema, handleBoulderStatus,
-  boulderRecoverTool, boulderRecoverSchema, handleBoulderRecover,
-  boulderDetailTool, boulderDetailSchema, handleBoulderDetail,
-  keywordAddTool, keywordAddSchema, handleKeywordAdd,
-  keywordRemoveTool, keywordRemoveSchema, handleKeywordRemove,
-  keywordListTool, keywordListSchema, handleKeywordList,
-  keywordDetectTool, keywordDetectSchema, handleKeywordDetect,
-  keywordToggleTool, keywordToggleSchema, handleKeywordToggle,
-  keywordSystemToggleTool, keywordSystemToggleSchema, handleKeywordSystemToggle,
-  costStatusTool, costStatusSchema, handleCostStatus,
-  costHistoryTool, costHistorySchema, handleCostHistory,
-  costStatsTool, costStatsSchema, handleCostStats,
-  costResetTool, costResetSchema, handleCostReset,
-  costBudgetTool, costBudgetSchema, handleCostBudget,
-  costSystemToggleTool, costSystemToggleSchema, handleCostSystemToggle,
   ensembleQueryTool, ensembleQuerySchema, handleEnsembleQuery,
   ensemblePresetTool, ensemblePresetSchema, handleEnsemblePreset,
   ensemblePresetsListTool, ensemblePresetsListSchema, handleEnsemblePresetsList,
-  astGrepSearchTool, astGrepSearchSchema, handleAstGrepSearch,
-  astGrepReplaceTool, astGrepReplaceSchema, handleAstGrepReplace,
-  astGrepLanguagesTool, astGrepLanguagesSchema, handleAstGrepLanguages,
-  lspGetDefinitionTool, lspGetDefinitionSchema, handleLspGetDefinition,
-  lspGetReferencesTool, lspGetReferencesSchema, handleLspGetReferences,
-  lspGetHoverTool, lspGetHoverSchema, handleLspGetHover,
-  lspWorkspaceSymbolsTool, lspWorkspaceSymbolsSchema, handleLspWorkspaceSymbols,
-  lspCheckServerTool, lspCheckServerSchema, handleLspCheckServer,
-  lspPrepareRenameTool, lspPrepareRenameSchema, handleLspPrepareRename,
-  lspRenameTool, lspRenameSchema, handleLspRename,
   contextStatusTool, contextStatusSchema, handleContextStatus,
   contextConfigTool, contextConfigSchema, handleContextConfig,
   truncatorConfigTool, truncatorConfigSchema, handleTruncatorConfig,
@@ -77,10 +52,6 @@ import {
   magicKeywordsTool, magicKeywordsSchema, handleMagicKeywords,
   grepAppSearchTool, grepAppSearchSchema, handleGrepAppSearch,
   grepAppLanguagesTool, grepAppLanguagesSchema, handleGrepAppLanguages,
-  sessionListTool, sessionListSchema, handleSessionList,
-  sessionReadTool, sessionReadSchema, handleSessionRead,
-  sessionSearchTool, sessionSearchSchema, handleSessionSearch,
-  sessionInfoTool, sessionInfoSchema, handleSessionInfo,
   gitAtomicCommitTool, gitAtomicCommitSchema, handleGitAtomicCommit,
   gitHistorySearchTool, gitHistorySearchSchema, handleGitHistorySearch,
   gitRebasePlannerTool, gitRebasePlannerSchema, handleGitRebasePlanner,
@@ -97,13 +68,6 @@ import {
   listCommandsTool, listCommandsSchema, handleListCommands,
   runCommandTool, runCommandSchema, handleRunCommand,
   searchCommandsTool, searchCommandsSchema, handleSearchCommands,
-  // TODO Manager tools
-  todoAddTool, todoAddSchema, handleTodoAdd,
-  todoUpdateTool, todoUpdateSchema, handleTodoUpdate,
-  todoCompleteTool, todoCompleteSchema, handleTodoComplete,
-  todoListTool, todoListSchema, handleTodoList,
-  todoRemindTool, todoRemindSchema, handleTodoRemind,
-  todoClearTool, todoClearSchema, handleTodoClear,
   // Dynamic Persona Debate tools
   dynamicDebateTool, dynamicDebateSchema, handleDynamicDebate,
   autoDebateTool, autoDebateSchema, handleAutoDebate
@@ -264,112 +228,7 @@ function registerTools() {
     () => handleRalphLoopStatus()
   );
 
-  // boulder_status
-  server.tool(
-    boulderStatusTool.name,
-    boulderStatusSchema.shape,
-    (args) => handleBoulderStatus(boulderStatusSchema.parse(args))
-  );
-
-  // 30. boulder_recover
-  server.tool(
-    boulderRecoverTool.name,
-    boulderRecoverSchema.shape,
-    (args) => handleBoulderRecover(boulderRecoverSchema.parse(args))
-  );
-
-  // 31. boulder_detail
-  server.tool(
-    boulderDetailTool.name,
-    boulderDetailSchema.shape,
-    (args) => handleBoulderDetail(boulderDetailSchema.parse(args))
-  );
-
-  // keyword_add
-  server.tool(
-    keywordAddTool.name,
-    keywordAddSchema.shape,
-    (args) => handleKeywordAdd(keywordAddSchema.parse(args))
-  );
-
-  // 36. keyword_remove
-  server.tool(
-    keywordRemoveTool.name,
-    keywordRemoveSchema.shape,
-    (args) => handleKeywordRemove(keywordRemoveSchema.parse(args))
-  );
-
-  // 37. keyword_list
-  server.tool(
-    keywordListTool.name,
-    keywordListSchema.shape,
-    (args) => handleKeywordList(keywordListSchema.parse(args))
-  );
-
-  // 38. keyword_detect
-  server.tool(
-    keywordDetectTool.name,
-    keywordDetectSchema.shape,
-    (args) => handleKeywordDetect(keywordDetectSchema.parse(args))
-  );
-
-  // 39. keyword_toggle
-  server.tool(
-    keywordToggleTool.name,
-    keywordToggleSchema.shape,
-    (args) => handleKeywordToggle(keywordToggleSchema.parse(args))
-  );
-
-  // 40. keyword_system_toggle
-  server.tool(
-    keywordSystemToggleTool.name,
-    keywordSystemToggleSchema.shape,
-    (args) => handleKeywordSystemToggle(keywordSystemToggleSchema.parse(args))
-  );
-
-  // cost_status
-  server.tool(
-    costStatusTool.name,
-    costStatusSchema.shape,
-    (args) => handleCostStatus(costStatusSchema.parse(args))
-  );
-
-  // 49. cost_history
-  server.tool(
-    costHistoryTool.name,
-    costHistorySchema.shape,
-    (args) => handleCostHistory(costHistorySchema.parse(args))
-  );
-
-  // 50. cost_stats
-  server.tool(
-    costStatsTool.name,
-    costStatsSchema.shape,
-    (args) => handleCostStats(costStatsSchema.parse(args))
-  );
-
-  // 51. cost_reset
-  server.tool(
-    costResetTool.name,
-    costResetSchema.shape,
-    (args) => handleCostReset(costResetSchema.parse(args))
-  );
-
-  // 52. cost_budget
-  server.tool(
-    costBudgetTool.name,
-    costBudgetSchema.shape,
-    (args) => handleCostBudget(costBudgetSchema.parse(args))
-  );
-
-  // 53. cost_system_toggle
-  server.tool(
-    costSystemToggleTool.name,
-    costSystemToggleSchema.shape,
-    (args) => handleCostSystemToggle(costSystemToggleSchema.parse(args))
-  );
-
-  // 54. ensemble_query
+  // ensemble_query
   server.tool(
     ensembleQueryTool.name,
     ensembleQuerySchema.shape,
@@ -390,77 +249,7 @@ function registerTools() {
     () => handleEnsemblePresetsList()
   );
 
-  // 57. ast_grep_search
-  server.tool(
-    astGrepSearchTool.name,
-    astGrepSearchSchema.shape,
-    (args) => handleAstGrepSearch(astGrepSearchSchema.parse(args))
-  );
-
-  // 58. ast_grep_replace
-  server.tool(
-    astGrepReplaceTool.name,
-    astGrepReplaceSchema.shape,
-    (args) => handleAstGrepReplace(astGrepReplaceSchema.parse(args))
-  );
-
-  // 59. ast_grep_languages
-  server.tool(
-    astGrepLanguagesTool.name,
-    astGrepLanguagesSchema.shape,
-    () => handleAstGrepLanguages()
-  );
-
-  // 60. lsp_get_definition
-  server.tool(
-    lspGetDefinitionTool.name,
-    lspGetDefinitionSchema.shape,
-    (args) => handleLspGetDefinition(lspGetDefinitionSchema.parse(args))
-  );
-
-  // 61. lsp_get_references
-  server.tool(
-    lspGetReferencesTool.name,
-    lspGetReferencesSchema.shape,
-    (args) => handleLspGetReferences(lspGetReferencesSchema.parse(args))
-  );
-
-  // 62. lsp_get_hover
-  server.tool(
-    lspGetHoverTool.name,
-    lspGetHoverSchema.shape,
-    (args) => handleLspGetHover(lspGetHoverSchema.parse(args))
-  );
-
-  // 63. lsp_workspace_symbols
-  server.tool(
-    lspWorkspaceSymbolsTool.name,
-    lspWorkspaceSymbolsSchema.shape,
-    (args) => handleLspWorkspaceSymbols(lspWorkspaceSymbolsSchema.parse(args))
-  );
-
-  // 64. lsp_check_server
-  server.tool(
-    lspCheckServerTool.name,
-    lspCheckServerSchema.shape,
-    (args) => handleLspCheckServer(lspCheckServerSchema.parse(args))
-  );
-
-  // 65. lsp_prepare_rename
-  server.tool(
-    lspPrepareRenameTool.name,
-    lspPrepareRenameSchema.shape,
-    (args) => handleLspPrepareRename(lspPrepareRenameSchema.parse(args))
-  );
-
-  // 66. lsp_rename
-  server.tool(
-    lspRenameTool.name,
-    lspRenameSchema.shape,
-    (args) => handleLspRename(lspRenameSchema.parse(args))
-  );
-
-  // 67. context_status
+  // context_status
   server.tool(
     contextStatusTool.name,
     contextStatusSchema.shape,
@@ -537,35 +326,7 @@ function registerTools() {
     (args) => handleGrepAppLanguages(grepAppLanguagesSchema.parse(args))
   );
 
-  // 78. session_list
-  server.tool(
-    sessionListTool.name,
-    sessionListSchema.shape,
-    (args) => handleSessionList(sessionListSchema.parse(args))
-  );
-
-  // 79. session_read
-  server.tool(
-    sessionReadTool.name,
-    sessionReadSchema.shape,
-    (args) => handleSessionRead(sessionReadSchema.parse(args))
-  );
-
-  // 80. session_search
-  server.tool(
-    sessionSearchTool.name,
-    sessionSearchSchema.shape,
-    (args) => handleSessionSearch(sessionSearchSchema.parse(args))
-  );
-
-  // 81. session_info
-  server.tool(
-    sessionInfoTool.name,
-    sessionInfoSchema.shape,
-    (args) => handleSessionInfo(sessionInfoSchema.parse(args))
-  );
-
-  // 82. git_atomic_commit
+  // git_atomic_commit
   server.tool(
     gitAtomicCommitTool.name,
     gitAtomicCommitSchema.shape,
@@ -670,49 +431,7 @@ function registerTools() {
     (args) => handleSearchCommands(searchCommandsSchema.parse(args))
   );
 
-  // 101. todo_add
-  server.tool(
-    todoAddTool.name,
-    todoAddSchema.shape,
-    (args) => handleTodoAdd(todoAddSchema.parse(args))
-  );
-
-  // 102. todo_update
-  server.tool(
-    todoUpdateTool.name,
-    todoUpdateSchema.shape,
-    (args) => handleTodoUpdate(todoUpdateSchema.parse(args))
-  );
-
-  // 103. todo_complete
-  server.tool(
-    todoCompleteTool.name,
-    todoCompleteSchema.shape,
-    (args) => handleTodoComplete(todoCompleteSchema.parse(args))
-  );
-
-  // 104. todo_list
-  server.tool(
-    todoListTool.name,
-    todoListSchema.shape,
-    (args) => handleTodoList(todoListSchema.parse(args))
-  );
-
-  // 105. todo_remind
-  server.tool(
-    todoRemindTool.name,
-    todoRemindSchema.shape,
-    (args) => handleTodoRemind(todoRemindSchema.parse(args))
-  );
-
-  // 106. todo_clear
-  server.tool(
-    todoClearTool.name,
-    todoClearSchema.shape,
-    (args) => handleTodoClear(todoClearSchema.parse(args))
-  );
-
-  // 107. dynamic_debate
+  // dynamic_debate
   server.tool(
     dynamicDebateTool.name,
     dynamicDebateSchema.shape,
@@ -735,7 +454,7 @@ function registerTools() {
   // 123-131. MCP Manager Tools (9 tools)
   registerMcpManagerTools(server);
 
-  logger.info('All tools registered (114 tools)');
+  logger.info('All tools registered (79 tools)');
 }
 
 // 메인 함수
