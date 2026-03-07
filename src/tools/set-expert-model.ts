@@ -26,7 +26,7 @@ export const setExpertModelTool = {
   description: `전문가가 사용하는 LLM 모델을 런타임에 변경합니다.
 
 ## 전문가 목록
-- strategist: 전략/설계/아키텍처 (기본: gpt-5.2)
+- strategist: 전략/설계/아키텍처 (기본: gpt-5.4)
 - researcher: 조사/문서분석 (기본: claude-sonnet-4-5-20250929)
 - reviewer: 코드리뷰/보안 (기본: gemini-2.5-pro)
 - frontend: UI/UX/컴포넌트 (기본: gemini-2.5-pro)

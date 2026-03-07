@@ -70,24 +70,14 @@ For each participant, you must provide:
 
 === PARTICIPANT ASSIGNMENT RULES ===
 
-### For 3 Participants (1 per provider)
-Assign to: gpt_blank_1, claude_blank_1, gemini_blank_1
+### 4 Participants (GPT 2 + Gemini 2)
+Assign to: gpt_blank_1, gpt_blank_2, gemini_blank_1, gemini_blank_2
 
 Typical configuration:
-- GPT (gpt_blank_1): Technical/analytical perspective
-- Claude (claude_blank_1): Balanced/holistic perspective
-- Gemini (gemini_blank_1): Critical/risk-aware perspective
-
-### For 6 Participants (2 per provider)
-Assign to: gpt_blank_1, gpt_blank_2, claude_blank_1, claude_blank_2, gemini_blank_1, gemini_blank_2
-
-Create more nuanced perspectives:
-- GPT 1: Technical specialist
-- GPT 2: Business/strategy specialist
-- Claude 1: User/human-centered specialist
-- Claude 2: Innovation/future-oriented specialist
-- Gemini 1: Risk/security specialist
-- Gemini 2: Practical/implementation specialist
+- GPT 1 (gpt_blank_1): Technical/analytical perspective
+- GPT 2 (gpt_blank_2): Business/strategy perspective
+- Gemini 1 (gemini_blank_1): Critical/risk-aware perspective
+- Gemini 2 (gemini_blank_2): Practical/implementation perspective
 
 === DOMAIN-SPECIFIC PERSONA TEMPLATES ===
 
@@ -139,7 +129,7 @@ Always respond in this exact JSON format:
       "key_arguments": ["arg1", "arg2", "arg3"]
     },
     {
-      "expert_id": "claude_blank_1",
+      "expert_id": "gpt_blank_2",
       "persona_name": "[Name in Korean]",
       "persona_description": "[Detailed description in Korean]",
       "debate_stance": "[Clear position in Korean]",
@@ -147,6 +137,13 @@ Always respond in this exact JSON format:
     },
     {
       "expert_id": "gemini_blank_1",
+      "persona_name": "[Name in Korean]",
+      "persona_description": "[Detailed description in Korean]",
+      "debate_stance": "[Clear position in Korean]",
+      "key_arguments": ["arg1", "arg2", "arg3"]
+    },
+    {
+      "expert_id": "gemini_blank_2",
       "persona_name": "[Name in Korean]",
       "persona_description": "[Detailed description in Korean]",
       "debate_stance": "[Clear position in Korean]",
@@ -187,7 +184,7 @@ Always respond in this exact JSON format:
       ]
     },
     {
-      "expert_id": "claude_blank_1",
+      "expert_id": "gpt_blank_2",
       "persona_name": "펀더멘털 분석가",
       "persona_description": "재무제표 분석, 기업 가치평가, 산업 분석 전문. 가치투자 철학. 워런 버핏 투자 방식 추종.",
       "debate_stance": "손절보다 기업의 본질가치 변화 여부가 중요하다. 본질가치가 변하지 않았다면 가격 하락은 오히려 추가 매수 기회다.",
@@ -252,15 +249,12 @@ export const DEBATE_MODERATOR_METADATA: ExpertPromptMetadata = {
 };
 
 /**
- * Builds a debate moderator prompt for a specific participant count.
+ * Builds a debate moderator prompt.
  *
- * @param participantCount - Number of participants (3 or 6)
- * @returns Modified system prompt
+ * @returns System prompt for 4-participant debate (GPT 2 + Gemini 2)
  */
-export function buildDebateModeratorPrompt(participantCount: 3 | 6 = 3): string {
-  const countInstruction = participantCount === 3
-    ? '\n\n=== MODE: 3 PARTICIPANTS ===\nDesign 3 distinct personas, one for each: gpt_blank_1, claude_blank_1, gemini_blank_1'
-    : '\n\n=== MODE: 6 PARTICIPANTS ===\nDesign 6 distinct personas for: gpt_blank_1, gpt_blank_2, claude_blank_1, claude_blank_2, gemini_blank_1, gemini_blank_2\nCreate more nuanced distinctions between personas.';
+export function buildDebateModeratorPrompt(): string {
+  const countInstruction = '\n\n=== MODE: 4 PARTICIPANTS ===\nDesign 4 distinct personas for: gpt_blank_1, gpt_blank_2, gemini_blank_1, gemini_blank_2\nCreate diverse perspectives across GPT and Gemini models.';
 
   return DEBATE_MODERATOR_SYSTEM_PROMPT + countInstruction;
 }

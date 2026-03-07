@@ -328,8 +328,8 @@ export function handleDynamicDebate(
 
 function getProviderName(expertId: string): string {
   const providerMap: Record<string, string> = {
-    gpt_blank_1: 'OpenAI GPT 5.2',
-    gpt_blank_2: 'OpenAI GPT Codex',
+    gpt_blank_1: 'OpenAI GPT 5.4',
+    gpt_blank_2: 'OpenAI GPT 5.4',
     gemini_blank_1: 'Google Gemini Pro',
     gemini_blank_2: 'Google Gemini Flash'
   };

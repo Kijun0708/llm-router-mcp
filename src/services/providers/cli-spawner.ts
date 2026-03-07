@@ -17,6 +17,8 @@ export interface SpawnResult {
 }
 
 const DEFAULT_MAX_BUFFER = 10 * 1024 * 1024; // 10MB
+const MAX_STDERR_SIZE = 1 * 1024 * 1024; // 1MB - stderr 제한
+const NODE_HEAP_SIZE = 8192; // 8GB - 자식 프로세스 힙 크기
 
 export async function spawnCli(
   command: string,
@@ -30,28 +32,39 @@ export async function spawnCli(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { CLAUDECODE, ...cleanEnv } = process.env;
 
+    // 자식 프로세스 힙 크기 증가 (Gemini CLI OOM 방지)
+    const existingNodeOptions = cleanEnv.NODE_OPTIONS || '';
+    const heapOption = `--max-old-space-size=${NODE_HEAP_SIZE}`;
+    const nodeOptions = existingNodeOptions.includes('--max-old-space-size')
+      ? existingNodeOptions
+      : `${existingNodeOptions} ${heapOption}`.trim();
+
     const proc = spawn(command, args, {
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...cleanEnv, ...env },
+      env: { ...cleanEnv, ...env, NODE_OPTIONS: nodeOptions },
       shell: true,
       windowsHide: true,
     });
 
-    let stdout = '';
-    let stderr = '';
+    // Buffer 배열 방식으로 변경 - O(n) 메모리 사용 (문자열 연결은 O(n²))
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
     let stdoutSize = 0;
+    let stderrSize = 0;
     let killed = false;
 
     proc.stdout.on('data', (data: Buffer) => {
-      const chunk = data.toString();
-      stdoutSize += chunk.length;
-      if (stdoutSize <= maxBuffer) {
-        stdout += chunk;
+      if (stdoutSize < maxBuffer) {
+        stdoutChunks.push(data);
+        stdoutSize += data.length;
       }
     });
 
     proc.stderr.on('data', (data: Buffer) => {
-      stderr += data.toString();
+      if (stderrSize < MAX_STDERR_SIZE) {
+        stderrChunks.push(data);
+        stderrSize += data.length;
+      }
     });
 
     // stdin으로 프롬프트 전달 (긴 프롬프트용)
@@ -77,6 +90,9 @@ export async function spawnCli(
         reject(new Error(`CLI timeout: ${command} timed out after ${Math.round(timeoutMs / 1000)}s`));
         return;
       }
+      // 마지막에 한 번만 Buffer 연결 (메모리 효율적)
+      const stdout = Buffer.concat(stdoutChunks).toString();
+      const stderr = Buffer.concat(stderrChunks).toString();
       resolve({ stdout, stderr, exitCode: code ?? 1 });
     });
 

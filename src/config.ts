@@ -42,37 +42,37 @@ export function loadConfig(): Config {
         google: parseInt(process.env.CONCURRENCY_GOOGLE || '10')
       },
       byModel: {
-        'gpt-5.2': 3,
+        'gpt-5.4': 3,
         'gemini-3-flash-preview': 10
       }
     },
 
     models: {
-      strategist: process.env.MODEL_STRATEGIST || 'gpt-5.2',
-      researcher: process.env.MODEL_RESEARCHER || 'gemini-3-pro-preview',
-      reviewer: process.env.MODEL_REVIEWER || 'gemini-3-pro-preview',
-      frontend: process.env.MODEL_FRONTEND || 'gemini-3-pro-preview',
+      strategist: process.env.MODEL_STRATEGIST || 'gpt-5.4',
+      researcher: process.env.MODEL_RESEARCHER || 'gemini-3.1-pro-preview',
+      reviewer: process.env.MODEL_REVIEWER || 'gemini-3.1-pro-preview',
+      frontend: process.env.MODEL_FRONTEND || 'gemini-3.1-pro-preview',
       writer: process.env.MODEL_WRITER || 'gemini-3-flash-preview',
       explorer: process.env.MODEL_EXPLORER || 'gemini-3-flash-preview',
-      multimodal: process.env.MODEL_MULTIMODAL || 'gemini-3-pro-preview',
+      multimodal: process.env.MODEL_MULTIMODAL || 'gemini-3.1-pro-preview',
       // Planning Agents
-      prometheus: process.env.MODEL_PROMETHEUS || 'gpt-5.2',
-      metis: process.env.MODEL_METIS || 'gpt-5.2',
-      momus: process.env.MODEL_MOMUS || 'gemini-3-pro-preview',
+      prometheus: process.env.MODEL_PROMETHEUS || 'gpt-5.4',
+      metis: process.env.MODEL_METIS || 'gpt-5.4',
+      momus: process.env.MODEL_MOMUS || 'gemini-3.1-pro-preview',
       librarian: process.env.MODEL_LIBRARIAN || 'gemini-3-flash-preview',
       // 특화 전문가
-      security: process.env.MODEL_SECURITY || 'gemini-3-pro-preview',
-      tester: process.env.MODEL_TESTER || 'gpt-5.3-codex',
-      data: process.env.MODEL_DATA || 'gpt-5.2',
-      codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.3-codex',
-      devops: process.env.MODEL_DEVOPS || 'gpt-5.2',
+      security: process.env.MODEL_SECURITY || 'gpt-5.4',
+      tester: process.env.MODEL_TESTER || 'gpt-5.4',
+      data: process.env.MODEL_DATA || 'gpt-5.4',
+      codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.4',
+      devops: process.env.MODEL_DEVOPS || 'gpt-5.4',
       // Blank 전문가 (동적 페르소나 토론용 - GPT/Gemini만 사용)
-      gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || 'gpt-5.2',
-      gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.3-codex',
-      gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || 'gemini-3-pro-preview',
+      gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || 'gpt-5.4',
+      gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.4',
+      gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || 'gemini-3.1-pro-preview',
       gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || 'gemini-3-flash-preview',
       // 페르소나 할당 전문가
-      debate_moderator: process.env.MODEL_DEBATE_MODERATOR || 'gemini-3-pro-preview'
+      debate_moderator: process.env.MODEL_DEBATE_MODERATOR || 'gemini-3.1-pro-preview'
     },
 
     hybrid: {

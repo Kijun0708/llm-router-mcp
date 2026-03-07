@@ -301,7 +301,7 @@ async function executeTask(
   context?: string
 ): Promise<void> {
   const task = tasks.get(taskId);
-  const model = preAllocatedModel || experts[expertId]?.model || 'gemini-3.0-flash';
+  const model = preAllocatedModel || experts[expertId]?.model || 'gemini-3-flash-preview';
 
   if (!task || task.status === 'cancelled') {
     // 이미 할당된 동시성 카운트 반환
@@ -378,7 +378,7 @@ export function startBackgroundTask(
   markDirty(); // 새 작업 저장 예약
 
   const expert = experts[expertId];
-  const model = expert?.model || 'gemini-3.0-flash';
+  const model = expert?.model || 'gemini-3-flash-preview';
 
   if (canStartTask(model)) {
     incrementRunning(model);

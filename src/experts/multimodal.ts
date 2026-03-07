@@ -22,7 +22,7 @@ import {
 export const multimodal: Expert = {
   id: "multimodal",
   name: "Multimodal Looker",
-  model: config.models.multimodal || 'gemini-2.5-pro',
+  model: config.models.multimodal || 'gemini-3.1-pro-preview',
   role: "이미지/시각적 콘텐츠 분석 전문가 (Multimodal Analysis)",
   systemPrompt: MULTIMODAL_SYSTEM_PROMPT,
   temperature: 0.3,

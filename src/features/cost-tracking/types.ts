@@ -186,13 +186,13 @@ export const DEFAULT_MODEL_PRICING: ModelPricing[] = [
     updatedAt: '2025-01-01'
   },
   {
-    modelId: 'gpt-5.2',
+    modelId: 'gpt-5.4',
     provider: 'openai',
-    displayName: 'GPT-5.2',
+    displayName: 'GPT-5.4',
     inputPricePerMillion: 5.00,
     outputPricePerMillion: 15.00,
     cachedInputPricePerMillion: 2.50,
-    updatedAt: '2025-01-01'
+    updatedAt: '2026-03-01'
   },
   {
     modelId: 'o1',
@@ -287,6 +287,24 @@ export const DEFAULT_MODEL_PRICING: ModelPricing[] = [
     outputPricePerMillion: 5.00,
     cachedInputPricePerMillion: 0.31,
     updatedAt: '2025-01-01'
+  },
+  {
+    modelId: 'gemini-3.1-pro-preview',
+    provider: 'google',
+    displayName: 'Gemini 3.1 Pro',
+    inputPricePerMillion: 2.00,
+    outputPricePerMillion: 12.00,
+    cachedInputPricePerMillion: 0.50,
+    updatedAt: '2026-02-28'
+  },
+  {
+    modelId: 'gemini-3-flash-preview',
+    provider: 'google',
+    displayName: 'Gemini 3 Flash',
+    inputPricePerMillion: 0.50,
+    outputPricePerMillion: 3.00,
+    cachedInputPricePerMillion: 0.125,
+    updatedAt: '2026-02-28'
   }
 ];
 

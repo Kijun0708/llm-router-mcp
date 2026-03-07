@@ -35,7 +35,7 @@ const MODEL_CONTEXT_LIMITS: Record<string, number> = {
   'claude-sonnet-4-5-20250929': 200000,
 
   // GPT models
-  'gpt-5.2': 128000,
+  'gpt-5.4': 1000000,
   'gpt-4o': 128000,
   'gpt-4-turbo': 128000,
   'gpt-4': 8192,
@@ -45,6 +45,8 @@ const MODEL_CONTEXT_LIMITS: Record<string, number> = {
   'gemini-2.5-flash': 1000000,
   'gemini-3.0-pro': 2000000,
   'gemini-3.0-flash': 1000000,
+  'gemini-3.1-pro-preview': 2000000,
+  'gemini-3-flash-preview': 1000000,
 
   // Default
   'default': 100000

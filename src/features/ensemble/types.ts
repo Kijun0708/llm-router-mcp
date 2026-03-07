@@ -240,39 +240,21 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
   // === New Presets ===
 
   {
-    id: 'dynamic_debate_3',
-    name: '동적 페르소나 토론 (3명)',
-    description: '각 프로바이더 1명씩 사용자 정의 페르소나 토론 (dynamic_debate 도구 사용 권장)',
-    config: {
-      strategy: 'debate',
-      participants: [
-        { expertId: 'gpt_blank_1', role: '사용자 지정' },
-        { expertId: 'claude_blank_1', role: '사용자 지정' },
-        { expertId: 'gemini_blank_1', role: '사용자 지정' }
-      ],
-      aggregation: 'synthesize',
-      maxRounds: 2
-    },
-    useCases: ['커스텀 페르소나 토론', '도메인 특화 토론', '다양한 AI 관점']
-  },
-  {
-    id: 'dynamic_debate_6',
-    name: '동적 페르소나 토론 (6명)',
-    description: '각 프로바이더 2명씩 확장 토론 (dynamic_debate 도구 사용 권장)',
+    id: 'dynamic_debate_4',
+    name: '동적 페르소나 토론 (4명)',
+    description: 'GPT/Gemini 각 2명씩 사용자 정의 페르소나 토론 (dynamic_debate 도구 사용 권장)',
     config: {
       strategy: 'debate',
       participants: [
         { expertId: 'gpt_blank_1', role: '사용자 지정' },
         { expertId: 'gpt_blank_2', role: '사용자 지정' },
-        { expertId: 'claude_blank_1', role: '사용자 지정' },
-        { expertId: 'claude_blank_2', role: '사용자 지정' },
         { expertId: 'gemini_blank_1', role: '사용자 지정' },
         { expertId: 'gemini_blank_2', role: '사용자 지정' }
       ],
       aggregation: 'synthesize',
       maxRounds: 2
     },
-    useCases: ['대규모 토론', '복잡한 의사결정', '심층 분석']
+    useCases: ['커스텀 페르소나 토론', '도메인 특화 토론', '다양한 AI 관점', '복잡한 의사결정']
   },
   {
     id: 'security_debate',
@@ -344,24 +326,28 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
  */
 export const EXPERT_PROVIDERS: Record<string, string> = {
   strategist: 'OpenAI (GPT)',
-  researcher: 'Anthropic (Claude)',
-  reviewer: 'Google (Gemini)',
-  frontend: 'Google (Gemini)',
-  writer: 'Google (Gemini)',
-  explorer: 'Google (Gemini)',
-  multimodal: 'Google (Gemini)',
-  // New specialized experts
-  security: 'Anthropic (Claude)',
-  tester: 'Anthropic (Claude)',
-  data: 'OpenAI (GPT)',
-  codex_reviewer: 'OpenAI (GPT Codex)',
-  // Blank experts
-  gpt_blank_1: 'OpenAI (GPT 5.2)',
-  gpt_blank_2: 'OpenAI (GPT Codex)',
-  claude_blank_1: 'Anthropic (Claude Opus)',
-  claude_blank_2: 'Anthropic (Claude Sonnet)',
+  researcher: 'Google (Gemini Pro)',
+  reviewer: 'Google (Gemini Pro)',
+  frontend: 'Google (Gemini Pro)',
+  writer: 'Google (Gemini Flash)',
+  explorer: 'Google (Gemini Flash)',
+  multimodal: 'Google (Gemini Pro)',
+  // Planning agents
+  prometheus: 'OpenAI (GPT)',
+  metis: 'OpenAI (GPT)',
+  momus: 'Google (Gemini Pro)',
+  librarian: 'Google (Gemini Flash)',
+  // Specialized experts
+  security: 'OpenAI (GPT 5.4)',
+  tester: 'OpenAI (GPT 5.4)',
+  data: 'OpenAI (GPT 5.4)',
+  codex_reviewer: 'OpenAI (GPT 5.4)',
+  devops: 'OpenAI (GPT 5.4)',
+  // Blank experts (GPT/Gemini only)
+  gpt_blank_1: 'OpenAI (GPT 5.4)',
+  gpt_blank_2: 'OpenAI (GPT 5.4)',
   gemini_blank_1: 'Google (Gemini Pro)',
   gemini_blank_2: 'Google (Gemini Flash)',
   // Debate moderator
-  debate_moderator: 'Anthropic (Claude Sonnet)'
+  debate_moderator: 'Google (Gemini Pro)'
 };

@@ -63,10 +63,12 @@ let config: TruncatorConfig = { ...DEFAULT_CONFIG };
 const MODEL_CONTEXT_LIMITS: Record<string, number> = {
   'claude-opus-4-5': 200000,
   'claude-sonnet-4-5': 200000,
-  'gpt-5.2': 128000,
+  'gpt-5.4': 1000000,
   'gpt-4o': 128000,
   'gemini-2.5-pro': 1000000,
   'gemini-2.5-flash': 1000000,
+  'gemini-3.1-pro-preview': 2000000,
+  'gemini-3-flash-preview': 1000000,
   'default': 100000
 };
 
