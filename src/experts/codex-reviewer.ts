@@ -6,7 +6,7 @@ import { CODEX_REVIEWER_SYSTEM_PROMPT, CODEX_REVIEWER_METADATA } from '../prompt
 
 export const codexReviewer: Expert = {
   id: "codex_reviewer",
-  name: "GPT Codex Reviewer",
+  name: "GPT 5.4 Reviewer",
   model: config.models.codex_reviewer,
 
   role: "GPT 기반 코드 리뷰/리팩토링 전문가 (READ-ONLY)",
