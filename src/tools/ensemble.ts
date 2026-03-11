@@ -27,7 +27,7 @@ const allExpertIds = [
   // Planning experts
   'prometheus', 'metis', 'momus', 'librarian',
   // Specialized experts
-  'security', 'tester', 'data', 'codex_reviewer',
+  'security', 'tester', 'data', 'codex_reviewer', 'devops', 'reality_checker', 'lsp_index_engineer',
   // Blank experts (GPT/Gemini only)
   'gpt_blank_1', 'gpt_blank_2', 'gemini_blank_1', 'gemini_blank_2',
   // Debate moderator
@@ -52,7 +52,7 @@ export const ensembleQuerySchema = z.object({
     .max(MAX_QUERY_LENGTH, `쿼리는 최대 ${MAX_QUERY_LENGTH}자`)
     .describe('앙상블로 실행할 쿼리'),
 
-  strategy: z.enum(['parallel', 'synthesize', 'debate', 'vote', 'best_of_n', 'chain'])
+  strategy: z.enum(['parallel', 'synthesize', 'vote', 'best_of_n', 'chain'])
     .default('parallel')
     .describe('앙상블 전략'),
 
@@ -64,7 +64,7 @@ export const ensembleQuerySchema = z.object({
 
   synthesizer: z.enum(allExpertIds)
     .optional()
-    .describe('합성 담당 전문가 (synthesize 전략용, synthesize/debate 전략에서 필수)'),
+    .describe('합성 담당 전문가 (synthesize 전략용)'),
 
   context: z.string()
     .max(100000, '컨텍스트는 최대 100000자')
@@ -76,12 +76,6 @@ export const ensembleQuerySchema = z.object({
     .max(10, '투표 옵션은 최대 10개')
     .optional()
     .describe('투표 선택지 (vote 전략에서 필수)'),
-
-  max_rounds: z.number()
-    .min(1)
-    .max(5)
-    .default(2)
-    .describe('최대 토론 라운드 (debate 전략용)'),
 
   n: z.number()
     .min(2)
@@ -120,15 +114,6 @@ export function validateEnsembleStrategy(
       field: 'synthesizer',
       message: 'synthesize 전략에서는 synthesizer 파라미터가 필수입니다.',
       severity: 'error'
-    });
-  }
-
-  // debate 전략: synthesizer 권장 (최종 정리용)
-  if (data.strategy === 'debate' && !data.synthesizer) {
-    errors.push({
-      field: 'synthesizer',
-      message: 'debate 전략에서는 synthesizer를 지정하면 토론 결과를 정리해줍니다.',
-      severity: 'warning'
     });
   }
 
@@ -204,8 +189,8 @@ export const ensembleQueryTool = {
 
   description: `여러 LLM 전문가를 조합하여 앙상블 쿼리 실행.
 
-전략: parallel(병렬), synthesize(합성), debate(토론), vote(투표), best_of_n, chain(순차)
-전문가: strategist, researcher, reviewer, frontend, writer, explorer, multimodal, security, tester, data, codex_reviewer + blank 전문가(gpt_blank_*, gemini_blank_*)
+전략: parallel(병렬), synthesize(합성), vote(투표), best_of_n, chain(순차)
+전문가: strategist, researcher, reviewer, frontend, writer, explorer, multimodal, security, tester, data, codex_reviewer, devops, reality_checker, lsp_index_engineer + blank 전문가(gpt_blank_*, gemini_blank_*)
 
 synthesize 전략: synthesizer 필수. vote 전략: vote_options 필수.`,
 
@@ -290,7 +275,6 @@ export async function handleEnsembleQuery(
         participants,
         aggregation: params.strategy === 'synthesize' ? 'synthesize' : 'concatenate',
         synthesizer: params.synthesizer,
-        maxRounds: params.max_rounds,
         n: params.n,
         useCache: !params.skip_cache
       },
@@ -321,7 +305,7 @@ export async function handleEnsembleQuery(
     response += result.finalResult;
 
     // 개별 응답 요약
-    if (result.strategy !== 'debate' && result.strategy !== 'vote') {
+    if (result.strategy !== 'vote') {
       response += `\n\n---\n\n### 📊 개별 응답 요약\n\n`;
       response += `| 전문가 | 프로바이더 | 응답 길이 | 지연 시간 | 상태 |\n`;
       response += `|--------|-----------|----------|----------|------|\n`;
@@ -411,10 +395,6 @@ export async function handleEnsemblePresetsList(): Promise<{ content: Array<{ ty
       response += `**합성자**: ${preset.config.synthesizer}\n`;
     }
 
-    if (preset.config.maxRounds) {
-      response += `**최대 라운드**: ${preset.config.maxRounds}\n`;
-    }
-
     response += `**용도**: ${preset.useCases.join(', ')}\n\n`;
   }
 
@@ -431,8 +411,7 @@ function getStrategyLabel(strategy: string): string {
   const labels: Record<string, string> = {
     parallel: '병렬 실행',
     synthesize: '합성 통합',
-    debate: '전문가 토론',
-    vote: '투표',
+      vote: '투표',
     best_of_n: 'Best-of-N',
     chain: '체인 실행'
   };

@@ -549,24 +549,6 @@ export async function runEnsemble(
         break;
       }
 
-      case 'debate': {
-        const debateResult = await executeDebate(
-          query,
-          config.participants,
-          config.maxRounds || 2,
-          context,
-          config.useCache
-        );
-        responses = debateResult.responses;
-        debateHistory = debateResult.debateHistory;
-
-        // 토론 결과 포맷팅
-        finalResult = debateHistory
-          .map(round => `### 라운드 ${round.round} - ${round.speaker}${round.responseTo ? ` (${round.responseTo}에 대한 응답)` : ''}\n\n${round.content}`)
-          .join('\n\n---\n\n');
-        break;
-      }
-
       case 'vote': {
         if (!voteOptions || voteOptions.length < 2) {
           throw new Error('vote 전략에는 최소 2개의 선택지가 필요합니다.');

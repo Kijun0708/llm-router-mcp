@@ -12,7 +12,6 @@
 export type EnsembleStrategy =
   | 'parallel'      // 병렬 실행 후 결과 병합
   | 'synthesize'    // 병렬 실행 후 합성
-  | 'debate'        // 전문가 토론 (상호 비평)
   | 'vote'          // 투표 (이산적 선택)
   | 'best_of_n'     // N번 실행 후 최고 선택
   | 'chain';        // 체인 (이전 결과를 다음에 전달)
@@ -52,9 +51,6 @@ export interface EnsembleConfig {
 
   /** 합성 담당 전문가 (synthesize 전략용) */
   synthesizer?: string;
-
-  /** 최대 라운드 수 (debate 전략용) */
-  maxRounds?: number;
 
   /** 실행 횟수 (best_of_n 전략용) */
   n?: number;
@@ -191,23 +187,6 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
     useCases: ['종합 보고서', '최종 결론 도출', '의견 통합']
   },
   {
-    id: 'expert_debate',
-    name: '전문가 토론',
-    description: '전문가들이 서로의 의견을 비평하며 토론',
-    config: {
-      strategy: 'debate',
-      participants: [
-        { expertId: 'strategist', role: '제안자' },
-        { expertId: 'reviewer', role: '비평가' },
-        { expertId: 'researcher', role: '검증자' }
-      ],
-      aggregation: 'synthesize',
-      synthesizer: 'strategist',
-      maxRounds: 2
-    },
-    useCases: ['설계 검증', '아이디어 발전', '취약점 발견']
-  },
-  {
     id: 'code_review_ensemble',
     name: '코드 리뷰 앙상블',
     description: '여러 관점에서 코드 리뷰',
@@ -240,40 +219,6 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
   // === New Presets ===
 
   {
-    id: 'dynamic_debate_4',
-    name: '동적 페르소나 토론 (4명)',
-    description: 'GPT/Gemini 각 2명씩 사용자 정의 페르소나 토론 (dynamic_debate 도구 사용 권장)',
-    config: {
-      strategy: 'debate',
-      participants: [
-        { expertId: 'gpt_blank_1', role: '사용자 지정' },
-        { expertId: 'gpt_blank_2', role: '사용자 지정' },
-        { expertId: 'gemini_blank_1', role: '사용자 지정' },
-        { expertId: 'gemini_blank_2', role: '사용자 지정' }
-      ],
-      aggregation: 'synthesize',
-      maxRounds: 2
-    },
-    useCases: ['커스텀 페르소나 토론', '도메인 특화 토론', '다양한 AI 관점', '복잡한 의사결정']
-  },
-  {
-    id: 'security_debate',
-    name: '보안 검토 토론',
-    description: '보안 전문가 + 리뷰어 + 전략가 토론',
-    config: {
-      strategy: 'debate',
-      participants: [
-        { expertId: 'security', role: '보안 분석가' },
-        { expertId: 'reviewer', role: '코드 품질 검토자' },
-        { expertId: 'strategist', role: '아키텍처 관점' }
-      ],
-      aggregation: 'synthesize',
-      synthesizer: 'security',
-      maxRounds: 2
-    },
-    useCases: ['보안 감사', '취약점 분석', 'OWASP 검토']
-  },
-  {
     id: 'multi_review',
     name: '다중 관점 코드리뷰',
     description: 'Gemini + GPT Codex 코드리뷰',
@@ -301,23 +246,6 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
       synthesizer: 'tester'
     },
     useCases: ['테스트 커버리지 분석', 'TDD 전략 수립', '테스트 케이스 설계']
-  },
-  {
-    id: 'data_architecture',
-    name: '데이터 아키텍처 검토',
-    description: '데이터 전문가 + 전략가 + 보안 전문가',
-    config: {
-      strategy: 'debate',
-      participants: [
-        { expertId: 'data', role: '데이터 아키텍트' },
-        { expertId: 'strategist', role: '시스템 아키텍트' },
-        { expertId: 'security', role: '보안 관점' }
-      ],
-      aggregation: 'synthesize',
-      synthesizer: 'data',
-      maxRounds: 2
-    },
-    useCases: ['DB 설계 검토', '쿼리 최적화', '데이터 보안']
   }
 ];
 
