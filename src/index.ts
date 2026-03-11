@@ -68,9 +68,7 @@ import {
   listCommandsTool, listCommandsSchema, handleListCommands,
   runCommandTool, runCommandSchema, handleRunCommand,
   searchCommandsTool, searchCommandsSchema, handleSearchCommands,
-  // Dynamic Persona Debate tools
-  dynamicDebateTool, dynamicDebateSchema, handleDynamicDebate,
-  autoDebateTool, autoDebateSchema, handleAutoDebate
+  moderatedDebateTool, moderatedDebateSchema, handleModeratedDebate
 } from "./tools/index.js";
 
 // 서버 초기화
@@ -431,18 +429,11 @@ function registerTools() {
     (args) => handleSearchCommands(searchCommandsSchema.parse(args))
   );
 
-  // dynamic_debate
+  // moderated_debate
   server.tool(
-    dynamicDebateTool.name,
-    dynamicDebateSchema.shape,
-    (args) => handleDynamicDebate(dynamicDebateSchema.parse(args))
-  );
-
-  // 108. auto_debate
-  server.tool(
-    autoDebateTool.name,
-    autoDebateSchema.shape,
-    (args) => handleAutoDebate(autoDebateSchema.parse(args))
+    moderatedDebateTool.name,
+    moderatedDebateSchema.shape,
+    (args) => handleModeratedDebate(moderatedDebateSchema.parse(args))
   );
 
   // 109-113. Interactive Bash Tools (5 tools)
