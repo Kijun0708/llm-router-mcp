@@ -151,6 +151,8 @@ export interface Config {
     data: string;
     codex_reviewer: string;
     devops: string;
+    reality_checker: string;
+    lsp_index_engineer: string;
     // Blank 전문가 (동적 페르소나 토론용 - GPT/Gemini only)
     gpt_blank_1: string;
     gpt_blank_2: string;

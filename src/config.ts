@@ -66,6 +66,8 @@ export function loadConfig(): Config {
       data: process.env.MODEL_DATA || 'gpt-5.4',
       codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.4',
       devops: process.env.MODEL_DEVOPS || 'gpt-5.4',
+      reality_checker: process.env.MODEL_REALITY_CHECKER || 'gemini-3.1-pro-preview',
+      lsp_index_engineer: process.env.MODEL_LSP_INDEX_ENGINEER || 'gpt-5.4',
       // Blank 전문가 (동적 페르소나 토론용 - GPT/Gemini만 사용)
       gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || 'gpt-5.4',
       gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.4',

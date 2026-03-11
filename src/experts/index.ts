@@ -18,6 +18,8 @@ import { tester, TESTER_METADATA } from './tester.js';
 import { data, DATA_METADATA } from './data.js';
 import { codexReviewer, CODEX_REVIEWER_METADATA } from './codex-reviewer.js';
 import { devops, DEVOPS_METADATA } from './devops.js';
+import { realityChecker, REALITY_CHECKER_METADATA } from './reality-checker.js';
+import { lspIndexEngineer, LSP_INDEX_ENGINEER_METADATA } from './lsp-index-engineer.js';
 // Blank experts for dynamic persona debates (GPT/Gemini only - Claude Code handles Claude)
 import { gptBlank1 } from './gpt-blank-1.js';
 import { gptBlank2 } from './gpt-blank-2.js';
@@ -46,6 +48,8 @@ export const experts: Record<string, Expert> = {
   data,
   codex_reviewer: codexReviewer,
   devops,
+  reality_checker: realityChecker,
+  lsp_index_engineer: lspIndexEngineer,
   // Blank experts for dynamic persona debates (GPT/Gemini only)
   gpt_blank_1: gptBlank1,
   gpt_blank_2: gptBlank2,
@@ -76,6 +80,8 @@ export const FALLBACK_CHAIN: Record<string, string[]> = {
   data: ['strategist', 'researcher'],
   codex_reviewer: ['reviewer', 'strategist'],
   devops: ['strategist', 'researcher'],
+  reality_checker: ['momus', 'reviewer'],
+  lsp_index_engineer: ['reviewer', 'researcher'],
   // Blank experts (GPT/Gemini only - cross-provider fallback)
   gpt_blank_1: ['gpt_blank_2', 'gemini_blank_1'],
   gpt_blank_2: ['gpt_blank_1', 'gemini_blank_2'],
@@ -89,7 +95,7 @@ export const FALLBACK_CHAIN: Record<string, string[]> = {
 export {
   strategist, researcher, reviewer, frontend, writer, explorer, multimodal,
   prometheus, metis, momus, librarian,
-  security, tester, data, codexReviewer, devops,
+  security, tester, data, codexReviewer, devops, realityChecker, lspIndexEngineer,
   gptBlank1, gptBlank2, geminiBlank1, geminiBlank2,
   debateModerator
 };
@@ -112,6 +118,8 @@ export {
   DATA_METADATA,
   CODEX_REVIEWER_METADATA,
   DEVOPS_METADATA,
+  REALITY_CHECKER_METADATA,
+  LSP_INDEX_ENGINEER_METADATA,
   BLANK_METADATA,
   DEBATE_MODERATOR_METADATA
 };
@@ -137,6 +145,8 @@ export const EXPERT_METADATA_REGISTRY: Record<string, ExpertPromptMetadata> = {
   data: DATA_METADATA,
   codex_reviewer: CODEX_REVIEWER_METADATA,
   devops: DEVOPS_METADATA,
+  reality_checker: REALITY_CHECKER_METADATA,
+  lsp_index_engineer: LSP_INDEX_ENGINEER_METADATA,
   // Blank experts (shared metadata, GPT/Gemini only)
   gpt_blank_1: BLANK_METADATA,
   gpt_blank_2: BLANK_METADATA,
