@@ -1,6 +1,6 @@
 # LLM Router Plugin for Claude Code
 
-GPT, Gemini, Claude 전문가 23명을 통한 코드 리뷰, 보안 감사, 아키텍처 설계, 리서치를 Claude Code에서 자동으로 사용할 수 있는 플러그인입니다.
+GPT 5.4와 Gemini 전문가 팀을 통한 코드 리뷰, 보안 감사, 아키텍처 설계, 리서치를 Claude Code에서 자동으로 사용할 수 있는 플러그인입니다.
 
 ## 설치
 
@@ -8,7 +8,7 @@ GPT, Gemini, Claude 전문가 23명을 통한 코드 리뷰, 보안 감사, 아�
 
 - **Node.js** 18+
 - **Claude Code** (CLI 또는 VSCode 익스텐션)
-- **CLI 도구** — gemini, claude, codex 중 사용할 CLI가 터미널에 인증된 상태
+- **CLI 도구** — gemini, codex 가 터미널에 인증된 상태
 
 ### Step 1: 저장소 클론 및 빌드
 
@@ -40,7 +40,6 @@ npm run build
 
 ```bash
 gemini --version    # Google Gemini CLI
-claude --version    # Anthropic Claude CLI
 codex --version     # OpenAI Codex CLI
 ```
 
@@ -101,7 +100,7 @@ LLM Router 서버 상태 확인해줘
 → devops 전문가가 분석
 
 > Redis vs Memcached 비교해줘
-→ GPT, Gemini, Claude 전문가 3명이 토론
+→ 중재형 전문가 토론으로 비교 분석
 ```
 
 ### 개발 중 전문가 활용
@@ -113,7 +112,7 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 
 나: 전문가 토론으로 추천받아봐
 
-→ auto_debate 호출 → 3명 전문가가 각각 분석 → 토론 → 합의안 도출
+→ moderated_debate 호출 → 자동 페르소나 배정(또는 수동 지정) → 패널 토론 → 최종 정리
 ```
 
 ### 슬래시 커맨드 (선택 사항)
@@ -121,7 +120,7 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 자연어로 요청하면 자동 호출되지만, 직접 실행할 수도 있습니다:
 
 ```
-/llm-router:ensemble-debate 마이크로서비스 vs 모놀리스
+/llm-router:moderated-debate 마이크로서비스 vs 모놀리스
 /llm-router:design-workflow 사용자 인증 시스템
 /llm-router:tdd-workflow 사용자 등록 기능
 /llm-router:background-task 아키텍처 분석
@@ -170,10 +169,10 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 ```
 전문가 토론으로 비교해줘: React vs Vue vs Svelte
 
-1. debate_moderator가 주제 분석 → 페르소나 할당
-2. GPT, Gemini, Claude 전문가 각각 독립 분석
-3. 라운드별 반박/보완
-4. 최종 합의안 도출
+1. Claude가 몇 명의 AI(2-4명), 몇 번 재질의할지 확인
+2. `moderated_debate`가 자동 페르소나를 배정하거나 수동 페르소나를 사용
+3. 각 AI가 1차 의견을 병렬 제출
+4. 중재자가 종합 브리프를 만들고 재질의 후 최종 정리
 ```
 
 ---
@@ -184,7 +183,7 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 
 | 스킬 | 설명 | 비고 |
 |------|------|------|
-| `consult-expert` | 23명의 AI 전문가 상담 라우팅 | |
+| `consult-expert` | 18명의 AI 전문가 상담 라우팅 | |
 | `code-review` | GPT + Gemini 교차 검증 코드 리뷰 → plan 모드로 수정 계획 | |
 | `deep-analyze` | 아키텍처/시스템 깊은 분석 | |
 | `security-audit` | OWASP Top 10 보안 감사 | |
@@ -192,7 +191,7 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 | `cross-verify` | 서로 다른 LLM 교차 검증 | |
 | `code-validate` | 빌드 체크, 변수 참조 오류, 타입 에러 자동 탐지 | |
 | `design-workflow` | 다중 전문가 설계 워크플로우 | 사용자 확인 후 실행 |
-| `ensemble-debate` | 멀티 전문가 토론 및 비교 분석 | 사용자 확인 후 실행 |
+| `moderated-debate` | 중재형 전문가 토론 및 비교 분석 | 사용자 확인 후 실행 |
 | `tdd-workflow` | TDD 테스트 주도 개발 | 사용자 확인 후 실행 |
 | `background-task` | 백그라운드 비동기 전문가 실행 | 사용자 확인 후 실행 |
 
@@ -204,43 +203,45 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 
 ---
 
-## 전문가 목록 (23명)
+## 전문가 목록
 
-### 핵심 전문가 (8명)
+### 핵심 전문가
 
 | 전문가 | 모델 | 전문 분야 | 폴백 |
 |--------|------|----------|------|
-| strategist | GPT 5.2 | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
-| researcher | Claude Sonnet | 문서 분석, 기술 리서치 | reviewer → explorer |
+| strategist | GPT 5.4 | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
+| researcher | Gemini Pro | 문서 분석, 기술 리서치 | reviewer → explorer |
 | reviewer | Gemini Pro | 코드 리뷰, 보안 분석 | explorer → codex_reviewer |
 | frontend | Gemini Pro | UI/UX, 컴포넌트 설계 | writer → explorer |
 | writer | Gemini Flash | 기술 문서 작성 | explorer → reviewer |
 | explorer | Gemini Flash | 빠른 검색, 간단한 쿼리 | writer → researcher |
-| multimodal | GPT 5.2 | 이미지 분석 | researcher → reviewer |
-| librarian | Claude Sonnet | 지식 관리 | researcher → explorer |
+| multimodal | Gemini Pro | 이미지 분석 | researcher → reviewer |
+| librarian | Gemini Flash | 지식 관리 | researcher → explorer |
 
-### 계획/분석 전문가 (3명)
+### 계획/분석 전문가
 
 | 전문가 | 모델 | 전문 분야 | 폴백 |
 |--------|------|----------|------|
-| metis | GPT 5.2 | 전략적 계획, 문제 분해 | prometheus → strategist |
+| metis | GPT 5.4 | 전략적 계획, 문제 분해 | prometheus → strategist |
 | momus | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → strategist |
-| prometheus | Claude Sonnet | 창의적 솔루션 | strategist → metis |
+| prometheus | GPT 5.4 | 창의적 솔루션 | strategist → metis |
 
-### 특화 전문가 (5명)
+### 특화 전문가
 
 | 전문가 | 모델 | 전문 분야 | 폴백 |
 |--------|------|----------|------|
-| security | Claude Sonnet | OWASP/CWE 보안 분석 | reviewer → strategist |
-| tester | Claude Sonnet | TDD/테스트 전략 | reviewer → researcher |
-| data | GPT 5.2 | DB 설계, 쿼리 최적화 | strategist → researcher |
-| codex_reviewer | GPT Codex | GPT 관점 코드 리뷰 | reviewer → strategist |
-| devops | GPT 5.2 | CI/CD, Docker, K8s | strategist → researcher |
+| security | Gemini Pro | OWASP/CWE 보안 분석 | reviewer → strategist |
+| tester | GPT 5.4 | TDD/테스트 전략 | reviewer → researcher |
+| data | GPT 5.4 | DB 설계, 쿼리 최적화 | strategist → researcher |
+| codex_reviewer | GPT 5.4 | GPT 관점 코드 리뷰 | reviewer → strategist |
+| devops | GPT 5.4 | CI/CD, Docker, K8s | strategist → researcher |
+| reality_checker | Gemini Pro | refactor 잔재, dead code, 혼재 경로 검증 | momus → reviewer |
+| lsp_index_engineer | GPT 5.4 | 참조/심볼/인덱스 기반 분석 | reviewer → researcher |
 
-### 토론 전용 (7명)
+### 토론 전용
 
-- 동적 페르소나 6명 (GPT 2, Claude 2, Gemini 2) — 토론 시 주제에 맞게 자동 할당
-- 토론 조정자 1명 (`debate_moderator`) — 주제 분석 후 페르소나 배정
+- 동적 페르소나 4명 (`gpt_blank_1`, `gpt_blank_2`, `gemini_blank_1`, `gemini_blank_2`) — 토론 시 자동 또는 수동 할당
+- 토론 중재자 1명 (`debate_moderator`) — 페르소나 배정, 중간 종합, 최종 정리
 
 ---
 
