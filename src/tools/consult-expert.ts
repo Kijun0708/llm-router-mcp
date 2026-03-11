@@ -120,8 +120,8 @@ export const consultExpertSchema = z.object({
     // 기본 전문가 (11명)
     "strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
     "librarian", "metis", "momus", "prometheus",
-    // 특화 전문가 (5명)
-    "security", "tester", "data", "codex_reviewer", "devops"
+    // 특화 전문가 (7명)
+    "security", "tester", "data", "codex_reviewer", "devops", "reality_checker", "lsp_index_engineer"
   ]).describe("자문할 전문가"),
 
   question: z.string()
@@ -168,21 +168,23 @@ export const consultExpertTool = {
 
 ## 전문가
 - strategist: 설계/아키텍처 (GPT)
-- researcher: 조사/분석 (Claude)
+- researcher: 조사/분석 (Gemini)
 - reviewer: 코드리뷰/버그 (Gemini)
 - frontend: UI/UX (Gemini)
 - writer: 문서작성 (Gemini)
 - explorer: 빠른탐색 (Gemini)
-- multimodal: 이미지분석 (GPT) - image_path로 이미지 전달
-- librarian: 지식관리 (Claude)
+- multimodal: 이미지분석 (Gemini) - image_path로 이미지 전달
+- librarian: 지식관리 (Gemini)
 - metis: 전략계획 (GPT)
 - momus: 비판분석 (Gemini)
-- prometheus: 창의솔루션 (Claude)
-- security: 보안분석 (Claude)
-- tester: TDD/테스트 (Claude)
+- prometheus: 창의솔루션 (GPT)
+- security: 보안분석 (Gemini)
+- tester: TDD/테스트 (GPT)
 - data: DB설계 (GPT)
 - codex_reviewer: GPT코드리뷰 (Codex)
 - devops: CI/CD, 인프라 (GPT)
+- reality_checker: 현실검증/레거시 잔재 탐지 (Gemini)
+- lsp_index_engineer: 참조/심볼/인덱스 분석 (GPT)
 
 Rate Limit 초과 시 자동 폴백. use_tools=false로 도구 비활성화 가능.`,
 

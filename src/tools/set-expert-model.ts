@@ -6,7 +6,7 @@ import { experts } from "../experts/index.js";
 
 const expertIds = [
   "strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
-  "librarian", "metis", "momus", "prometheus", "security", "tester", "data", "codex_reviewer", "devops"
+  "librarian", "metis", "momus", "prometheus", "security", "tester", "data", "codex_reviewer", "devops", "reality_checker", "lsp_index_engineer"
 ] as const;
 
 export const setExpertModelSchema = z.object({
@@ -27,12 +27,23 @@ export const setExpertModelTool = {
 
 ## 전문가 목록
 - strategist: 전략/설계/아키텍처 (기본: gpt-5.4)
-- researcher: 조사/문서분석 (기본: claude-sonnet-4-5-20250929)
-- reviewer: 코드리뷰/보안 (기본: gemini-2.5-pro)
-- frontend: UI/UX/컴포넌트 (기본: gemini-2.5-pro)
-- writer: 문서작성 (기본: gemini-2.5-flash)
-- explorer: 빠른검색 (기본: gemini-2.5-flash)
-- multimodal: 이미지/시각분석 (기본: gemini-2.5-pro)
+- researcher: 조사/문서분석 (기본: gemini-3.1-pro-preview)
+- reviewer: 코드리뷰/보안 (기본: gemini-3.1-pro-preview)
+- frontend: UI/UX/컴포넌트 (기본: gemini-3.1-pro-preview)
+- writer: 문서작성 (기본: gemini-3-flash-preview)
+- explorer: 빠른검색 (기본: gemini-3-flash-preview)
+- multimodal: 이미지/시각분석 (기본: gemini-3.1-pro-preview)
+- librarian: 지식관리 (기본: gemini-3-flash-preview)
+- metis: 전략계획 (기본: gpt-5.4)
+- momus: 비판분석 (기본: gemini-3.1-pro-preview)
+- prometheus: 창의솔루션 (기본: gpt-5.4)
+- security: 보안분석 (기본: gpt-5.4)
+- tester: 테스트전략 (기본: gpt-5.4)
+- data: DB설계 (기본: gpt-5.4)
+- codex_reviewer: GPT 코드리뷰 (기본: gpt-5.4)
+- devops: CI/CD/인프라 (기본: gpt-5.4)
+- reality_checker: 현실 검증/잔재 탐지 (기본: gemini-3.1-pro-preview)
+- lsp_index_engineer: 참조/심볼/인덱스 분석 (기본: gpt-5.4)
 
 ## 사용 예시
 - expert: "strategist", model: "gpt-4o"

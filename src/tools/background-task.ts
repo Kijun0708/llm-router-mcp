@@ -13,7 +13,7 @@ import { wrapMcpResponse } from "../utils/response-saver.js";
 // 백그라운드 시작
 export const backgroundStartSchema = z.object({
   expert: z.enum(["strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
-    "librarian", "metis", "momus", "prometheus", "security", "tester", "data", "codex_reviewer", "devops"])
+    "librarian", "metis", "momus", "prometheus", "security", "tester", "data", "codex_reviewer", "devops", "reality_checker", "lsp_index_engineer"])
     .describe("실행할 전문가"),
 
   prompt: z.string()
