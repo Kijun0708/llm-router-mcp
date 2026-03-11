@@ -51,19 +51,7 @@ export class GeminiCliProvider implements CliProvider {
     const cliPath = config.cli.geminiPath;
     const prompt = buildPrompt(params);
 
-    // 긴 프롬프트는 stdin으로 전달
-    const useStdin = prompt.length > 8000;
-
-    const args: string[] = [];
-
-    if (useStdin) {
-      // stdin 모드: gemini 만 실행하고 stdin으로 프롬프트 전달
-      // gemini CLI는 파이프 입력을 자동 감지
-    } else {
-      args.push('-p', prompt);
-    }
-
-    args.push('--output-format', 'json');
+    const args: string[] = ['--output-format', 'json'];
 
     // 모델 지정
     if (params.model) {
@@ -74,12 +62,11 @@ export class GeminiCliProvider implements CliProvider {
       provider: 'gemini',
       model: params.model,
       promptLength: prompt.length,
-      useStdin,
     }, 'Calling Gemini CLI');
 
     const result = await spawnCli(cliPath, args, {
       timeoutMs: params.timeoutMs,
-      stdin: useStdin ? prompt : undefined,
+      stdin: prompt,
     });
 
     if (result.exitCode !== 0) {
