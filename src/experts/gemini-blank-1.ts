@@ -9,7 +9,7 @@ export const geminiBlank1: Expert = {
   name: "Gemini Blank #1 (Pro)",
   model: config.models.gemini_blank_1,
 
-  role: "사용자 정의 페르소나 (Gemini Pro 기반)",
+  role: "사용자 정의 페르소나 (Gemini 계열 고성능)",
 
   systemPrompt: BLANK_SYSTEM_PROMPT,
 

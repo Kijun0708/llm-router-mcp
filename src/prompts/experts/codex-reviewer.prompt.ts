@@ -1,7 +1,7 @@
 /**
  * Codex Reviewer Expert Prompt
  *
- * GPT 5.4-based code review specialist providing alternative perspective to Gemini Reviewer.
+ * GPT-based code review specialist providing alternative perspective to Gemini Reviewer.
  *
  * Key characteristics:
  * - SOLID principles analysis
