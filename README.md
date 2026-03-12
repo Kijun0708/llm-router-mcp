@@ -21,7 +21,7 @@ LLM Router MCP는 Claude Code가 팀 리더 역할을 하며, GPT/Gemini 전문�
 
 ### 주요 특징
 
-- **멀티 LLM 협업**: Claude Code(리더) + GPT 5.4 + Gemini Pro/Flash
+- **멀티 LLM 협업**: Claude Code(리더) + GPT/Gemini 전문가 협업
 - **자동 폴백**: Rate limit 발생 시 자동으로 다른 전문가로 전환
 - **중재형 토론**: 중재자가 2라운드 패널 토론을 진행하고 최종 요약 반환
 - **백그라운드 실행**: 장시간 작업을 백그라운드에서 비동기 실행
@@ -86,7 +86,7 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 
 | 전문가 | 모델 | 역할 | 폴백 |
 |--------|------|------|------|
-| `strategist` | GPT 5.4 | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
+| `strategist` | GPT | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
 | `researcher` | Gemini Pro | 문서 분석, 코드베이스 탐색 | reviewer → explorer |
 | `reviewer` | Gemini Pro | 코드 리뷰, 보안 분석 | explorer → codex_reviewer |
 | `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | writer → explorer |
@@ -94,21 +94,21 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 | `explorer` | Gemini Flash | 빠른 검색, 간단한 쿼리 | - |
 | `multimodal` | Gemini Pro | 이미지 분석, 시각적 콘텐츠 | strategist → researcher |
 | `librarian` | Gemini Flash | 지식 관리, 세션 히스토리 | researcher → explorer |
-| `metis` | GPT 5.4 | 전략적 계획, 문제 분해 | strategist → researcher |
+| `metis` | GPT | 전략적 계획, 문제 분해 | strategist → researcher |
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → explorer |
-| `prometheus` | GPT 5.4 | 창의적 솔루션, 혁신적 접근 | strategist → metis |
+| `prometheus` | GPT | 창의적 솔루션, 혁신적 접근 | strategist → metis |
 
 ### 특화 전문가 (7명)
 
 | 전문가 | 모델 | 역할 | 폴백 |
 |--------|------|------|------|
 | `security` | Gemini Pro | OWASP/CWE 보안 취약점 분석 | reviewer → strategist |
-| `tester` | GPT 5.4 | TDD/테스트 전략 설계 | reviewer → researcher |
-| `data` | GPT 5.4 | DB 설계, 쿼리 최적화 | strategist → researcher |
-| `codex_reviewer` | GPT 5.4 | GPT 관점 코드 리뷰 | reviewer → strategist |
-| `devops` | GPT 5.4 | CI/CD, Docker, K8s, 인프라 자동화 | strategist → researcher |
+| `tester` | GPT | TDD/테스트 전략 설계 | reviewer → researcher |
+| `data` | GPT | DB 설계, 쿼리 최적화 | strategist → researcher |
+| `codex_reviewer` | GPT | GPT 관점 코드 리뷰 | reviewer → strategist |
+| `devops` | GPT | CI/CD, Docker, K8s, 인프라 자동화 | strategist → researcher |
 | `reality_checker` | Gemini Pro | refactor 잔재, dead code, 혼재 경로 현실 검증 | momus → reviewer |
-| `lsp_index_engineer` | GPT 5.4 | 참조/심볼/인덱스 기반 코드 인텔리전스 분석 | reviewer → researcher |
+| `lsp_index_engineer` | GPT | 참조/심볼/인덱스 기반 코드 인텔리전스 분석 | reviewer → researcher |
 
 ### 동적 페르소나 전문가 (4명)
 
@@ -116,8 +116,8 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 
 | 전문가 | 모델 |
 |--------|------|
-| `gpt_blank_1` | GPT 5.4 |
-| `gpt_blank_2` | GPT 5.4 |
+| `gpt_blank_1` | GPT |
+| `gpt_blank_2` | GPT |
 | `gemini_blank_1` | Gemini Pro |
 | `gemini_blank_2` | Gemini Flash |
 
@@ -316,7 +316,7 @@ llm-router-mcp/
 ### 지원 CLI 도구
 
 - `gemini` — Gemini Pro/Flash 모델
-- `codex` — GPT 5.4 모델
+- `codex` — GPT 계열 모델
 
 > **Note**: `claude` CLI는 사용하지 않습니다. Claude Code가 직접 Claude 역할을 수행합니다.
 

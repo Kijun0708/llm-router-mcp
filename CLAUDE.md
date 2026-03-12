@@ -42,7 +42,7 @@ node dist/index.js
 
 | Expert | Model | Role | Fallbacks |
 |--------|-------|------|-----------|
-| `strategist` | GPT 5.4 | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
+| `strategist` | GPT | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
 | `researcher` | Gemini Pro | 문서 분석, 코드베이스 탐색 | reviewer → explorer |
 | `reviewer` | Gemini Pro | 코드 리뷰, 보안 분석 | explorer → codex_reviewer |
 | `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | writer → explorer |
@@ -50,28 +50,28 @@ node dist/index.js
 | `explorer` | Gemini Flash | 빠른 검색, 간단한 쿼리 | - |
 | `multimodal` | Gemini Pro | 이미지 분석, 시각적 콘텐츠 | strategist → researcher |
 | `librarian` | Gemini Flash | 지식 관리, 세션 히스토리 검색 | researcher → explorer |
-| `metis` | GPT 5.4 | 전략적 계획, 복잡한 문제 분해 | strategist → researcher |
+| `metis` | GPT | 전략적 계획, 복잡한 문제 분해 | strategist → researcher |
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → explorer |
-| `prometheus` | GPT 5.4 | 창의적 솔루션, 혁신적 접근 | strategist → metis |
+| `prometheus` | GPT | 창의적 솔루션, 혁신적 접근 | strategist → metis |
 
 #### 특화 전문가 (7명)
 
 | Expert | Model | Role | Fallbacks |
 |--------|-------|------|-----------|
 | `security` | Gemini Pro | OWASP/CWE 보안 취약점 분석 | reviewer → strategist |
-| `tester` | GPT 5.4 | TDD/테스트 전략 설계 | reviewer → researcher |
-| `data` | GPT 5.4 | DB 설계, 쿼리 최적화 | strategist → researcher |
-| `codex_reviewer` | GPT 5.4 | GPT 관점 코드 리뷰 | reviewer → strategist |
-| `devops` | GPT 5.4 | CI/CD, Docker, K8s, 인프라 자동화 | strategist → researcher |
+| `tester` | GPT | TDD/테스트 전략 설계 | reviewer → researcher |
+| `data` | GPT | DB 설계, 쿼리 최적화 | strategist → researcher |
+| `codex_reviewer` | GPT | GPT 관점 코드 리뷰 | reviewer → strategist |
+| `devops` | GPT | CI/CD, Docker, K8s, 인프라 자동화 | strategist → researcher |
 | `reality_checker` | Gemini Pro | refactor 잔재/혼재 경로 현실 검증 | momus → reviewer |
-| `lsp_index_engineer` | GPT 5.4 | 심볼/참조/인덱스 기반 코드 인텔리전스 분석 | reviewer → researcher |
+| `lsp_index_engineer` | GPT | 심볼/참조/인덱스 기반 코드 인텔리전스 분석 | reviewer → researcher |
 
 #### 동적 페르소나 전문가 (4명) - 토론용
 
 | Expert | Model | Description |
 |--------|-------|-------------|
-| `gpt_blank_1` | GPT 5.4 | OpenAI 범용 모델 |
-| `gpt_blank_2` | GPT 5.4 | OpenAI 코드 특화 |
+| `gpt_blank_1` | GPT | OpenAI 범용 모델 |
+| `gpt_blank_2` | GPT | OpenAI 코드 특화 |
 | `gemini_blank_1` | Gemini Pro | Google 고성능 |
 | `gemini_blank_2` | Gemini Flash | Google 빠른 응답 |
 
