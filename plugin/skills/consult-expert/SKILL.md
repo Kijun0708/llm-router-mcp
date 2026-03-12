@@ -14,7 +14,7 @@ argument-hint: "<질문 또는 분석 요청>"
 
 | Expert ID | 모델 | 전문 분야 |
 |-----------|------|----------|
-| `strategist` | GPT 5.4 | 아키텍처 설계, 디버깅 전략, 시스템 설계 |
+| `strategist` | GPT | 아키텍처 설계, 디버깅 전략, 시스템 설계 |
 | `researcher` | Gemini Pro | 문서 분석, 코드베이스 탐색, 기술 리서치 |
 | `reviewer` | Gemini Pro | 코드 리뷰, 보안 분석, 품질 점검 |
 | `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계, 프론트엔드 |
@@ -27,21 +27,21 @@ argument-hint: "<질문 또는 분석 요청>"
 
 | Expert ID | 모델 | 전문 분야 |
 |-----------|------|----------|
-| `metis` | GPT 5.4 | 전략적 계획, 복잡한 문제 분해 |
+| `metis` | GPT | 전략적 계획, 복잡한 문제 분해 |
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가, 코드 단순화 |
-| `prometheus` | GPT 5.4 | 창의적 솔루션, 혁신적 접근 |
+| `prometheus` | GPT | 창의적 솔루션, 혁신적 접근 |
 
 #### 특화 전문가
 
 | Expert ID | 모델 | 전문 분야 |
 |-----------|------|----------|
 | `security` | Gemini Pro | OWASP/CWE 보안 취약점 분석 |
-| `tester` | GPT 5.4 | TDD/테스트 전략 설계 |
-| `data` | GPT 5.4 | DB 설계, 쿼리 최적화 |
-| `codex_reviewer` | GPT 5.4 | GPT 관점 코드 리뷰 |
-| `devops` | GPT 5.4 | CI/CD, Docker, Kubernetes, 인프라 자동화 |
+| `tester` | GPT | TDD/테스트 전략 설계 |
+| `data` | GPT | DB 설계, 쿼리 최적화 |
+| `codex_reviewer` | GPT | GPT 관점 코드 리뷰 |
+| `devops` | GPT | CI/CD, Docker, Kubernetes, 인프라 자동화 |
 | `reality_checker` | Gemini Pro | refactor 잔재, dead code, 혼재 경로 현실 검증 |
-| `lsp_index_engineer` | GPT 5.4 | 심볼/참조/인덱스 기반 코드 인텔리전스 분석 |
+| `lsp_index_engineer` | GPT | 심볼/참조/인덱스 기반 코드 인텔리전스 분석 |
 
 ### 사용법
 

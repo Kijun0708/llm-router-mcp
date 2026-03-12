@@ -1,6 +1,6 @@
 # LLM Router Plugin for Claude Code
 
-GPT 5.4와 Gemini 전문가 팀을 통한 코드 리뷰, 보안 감사, 아키텍처 설계, 리서치를 Claude Code에서 자동으로 사용할 수 있는 플러그인입니다.
+GPT와 Gemini 전문가 팀을 통한 코드 리뷰, 보안 감사, 아키텍처 설계, 리서치를 Claude Code에서 자동으로 사용할 수 있는 플러그인입니다.
 
 ## 설치
 
@@ -209,7 +209,7 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 
 | 전문가 | 모델 | 전문 분야 | 폴백 |
 |--------|------|----------|------|
-| strategist | GPT 5.4 | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
+| strategist | GPT | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
 | researcher | Gemini Pro | 문서 분석, 기술 리서치 | reviewer → explorer |
 | reviewer | Gemini Pro | 코드 리뷰, 보안 분석 | explorer → codex_reviewer |
 | frontend | Gemini Pro | UI/UX, 컴포넌트 설계 | writer → explorer |
@@ -222,21 +222,21 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 
 | 전문가 | 모델 | 전문 분야 | 폴백 |
 |--------|------|----------|------|
-| metis | GPT 5.4 | 전략적 계획, 문제 분해 | prometheus → strategist |
+| metis | GPT | 전략적 계획, 문제 분해 | prometheus → strategist |
 | momus | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → strategist |
-| prometheus | GPT 5.4 | 창의적 솔루션 | strategist → metis |
+| prometheus | GPT | 창의적 솔루션 | strategist → metis |
 
 ### 특화 전문가
 
 | 전문가 | 모델 | 전문 분야 | 폴백 |
 |--------|------|----------|------|
 | security | Gemini Pro | OWASP/CWE 보안 분석 | reviewer → strategist |
-| tester | GPT 5.4 | TDD/테스트 전략 | reviewer → researcher |
-| data | GPT 5.4 | DB 설계, 쿼리 최적화 | strategist → researcher |
-| codex_reviewer | GPT 5.4 | GPT 관점 코드 리뷰 | reviewer → strategist |
-| devops | GPT 5.4 | CI/CD, Docker, K8s | strategist → researcher |
+| tester | GPT | TDD/테스트 전략 | reviewer → researcher |
+| data | GPT | DB 설계, 쿼리 최적화 | strategist → researcher |
+| codex_reviewer | GPT | GPT 관점 코드 리뷰 | reviewer → strategist |
+| devops | GPT | CI/CD, Docker, K8s | strategist → researcher |
 | reality_checker | Gemini Pro | refactor 잔재, dead code, 혼재 경로 검증 | momus → reviewer |
-| lsp_index_engineer | GPT 5.4 | 참조/심볼/인덱스 기반 분석 | reviewer → researcher |
+| lsp_index_engineer | GPT | 참조/심볼/인덱스 기반 분석 | reviewer → researcher |
 
 ### 토론 전용
 
