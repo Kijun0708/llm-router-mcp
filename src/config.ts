@@ -4,6 +4,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { Config } from './types.js';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { DEFAULT_MODEL_CONCURRENCY, DEFAULT_MODEL_IDS } from './model-defaults.js';
 
 // 프로젝트 루트 경로 계산
 const __filename = fileURLToPath(import.meta.url);
@@ -41,40 +42,37 @@ export function loadConfig(): Config {
         openai: parseInt(process.env.CONCURRENCY_OPENAI || '5'),
         google: parseInt(process.env.CONCURRENCY_GOOGLE || '10')
       },
-      byModel: {
-        'gpt-5.4': 3,
-        'gemini-3-flash-preview': 10
-      }
+      byModel: { ...DEFAULT_MODEL_CONCURRENCY }
     },
 
     models: {
-      strategist: process.env.MODEL_STRATEGIST || 'gpt-5.4',
-      researcher: process.env.MODEL_RESEARCHER || 'gemini-3.1-pro-preview',
-      reviewer: process.env.MODEL_REVIEWER || 'gemini-3.1-pro-preview',
-      frontend: process.env.MODEL_FRONTEND || 'gemini-3.1-pro-preview',
-      writer: process.env.MODEL_WRITER || 'gemini-3-flash-preview',
-      explorer: process.env.MODEL_EXPLORER || 'gemini-3-flash-preview',
-      multimodal: process.env.MODEL_MULTIMODAL || 'gemini-3.1-pro-preview',
+      strategist: process.env.MODEL_STRATEGIST || DEFAULT_MODEL_IDS.strategist,
+      researcher: process.env.MODEL_RESEARCHER || DEFAULT_MODEL_IDS.researcher,
+      reviewer: process.env.MODEL_REVIEWER || DEFAULT_MODEL_IDS.reviewer,
+      frontend: process.env.MODEL_FRONTEND || DEFAULT_MODEL_IDS.frontend,
+      writer: process.env.MODEL_WRITER || DEFAULT_MODEL_IDS.writer,
+      explorer: process.env.MODEL_EXPLORER || DEFAULT_MODEL_IDS.explorer,
+      multimodal: process.env.MODEL_MULTIMODAL || DEFAULT_MODEL_IDS.multimodal,
       // Planning Agents
-      prometheus: process.env.MODEL_PROMETHEUS || 'gpt-5.4',
-      metis: process.env.MODEL_METIS || 'gpt-5.4',
-      momus: process.env.MODEL_MOMUS || 'gemini-3.1-pro-preview',
-      librarian: process.env.MODEL_LIBRARIAN || 'gemini-3-flash-preview',
+      prometheus: process.env.MODEL_PROMETHEUS || DEFAULT_MODEL_IDS.prometheus,
+      metis: process.env.MODEL_METIS || DEFAULT_MODEL_IDS.metis,
+      momus: process.env.MODEL_MOMUS || DEFAULT_MODEL_IDS.momus,
+      librarian: process.env.MODEL_LIBRARIAN || DEFAULT_MODEL_IDS.librarian,
       // 특화 전문가
-      security: process.env.MODEL_SECURITY || 'gpt-5.4',
-      tester: process.env.MODEL_TESTER || 'gpt-5.4',
-      data: process.env.MODEL_DATA || 'gpt-5.4',
-      codex_reviewer: process.env.MODEL_CODEX_REVIEWER || 'gpt-5.4',
-      devops: process.env.MODEL_DEVOPS || 'gpt-5.4',
-      reality_checker: process.env.MODEL_REALITY_CHECKER || 'gemini-3.1-pro-preview',
-      lsp_index_engineer: process.env.MODEL_LSP_INDEX_ENGINEER || 'gpt-5.4',
+      security: process.env.MODEL_SECURITY || DEFAULT_MODEL_IDS.security,
+      tester: process.env.MODEL_TESTER || DEFAULT_MODEL_IDS.tester,
+      data: process.env.MODEL_DATA || DEFAULT_MODEL_IDS.data,
+      codex_reviewer: process.env.MODEL_CODEX_REVIEWER || DEFAULT_MODEL_IDS.codex_reviewer,
+      devops: process.env.MODEL_DEVOPS || DEFAULT_MODEL_IDS.devops,
+      reality_checker: process.env.MODEL_REALITY_CHECKER || DEFAULT_MODEL_IDS.reality_checker,
+      lsp_index_engineer: process.env.MODEL_LSP_INDEX_ENGINEER || DEFAULT_MODEL_IDS.lsp_index_engineer,
       // Blank 전문가 (동적 페르소나 토론용 - GPT/Gemini만 사용)
-      gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || 'gpt-5.4',
-      gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || 'gpt-5.4',
-      gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || 'gemini-3.1-pro-preview',
-      gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || 'gemini-3-flash-preview',
+      gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || DEFAULT_MODEL_IDS.gpt_blank_1,
+      gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || DEFAULT_MODEL_IDS.gpt_blank_2,
+      gemini_blank_1: process.env.MODEL_GEMINI_BLANK_1 || DEFAULT_MODEL_IDS.gemini_blank_1,
+      gemini_blank_2: process.env.MODEL_GEMINI_BLANK_2 || DEFAULT_MODEL_IDS.gemini_blank_2,
       // 페르소나 할당 전문가
-      debate_moderator: process.env.MODEL_DEBATE_MODERATOR || 'gemini-3.1-pro-preview'
+      debate_moderator: process.env.MODEL_DEBATE_MODERATOR || DEFAULT_MODEL_IDS.debate_moderator
     },
 
     hybrid: {
