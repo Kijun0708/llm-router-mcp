@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { config } from "../config.js";
 import { experts } from "../experts/index.js";
+import { DEFAULT_MODEL_FAMILIES } from "../model-defaults.js";
 
 const expertIds = [
   "strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
@@ -26,28 +27,11 @@ export const setExpertModelTool = {
   description: `전문가가 사용하는 LLM 모델을 런타임에 변경합니다.
 
 ## 전문가 목록
-- strategist: 전략/설계/아키텍처 (기본: gpt-5.4)
-- researcher: 조사/문서분석 (기본: gemini-3.1-pro-preview)
-- reviewer: 코드리뷰/보안 (기본: gemini-3.1-pro-preview)
-- frontend: UI/UX/컴포넌트 (기본: gemini-3.1-pro-preview)
-- writer: 문서작성 (기본: gemini-3-flash-preview)
-- explorer: 빠른검색 (기본: gemini-3-flash-preview)
-- multimodal: 이미지/시각분석 (기본: gemini-3.1-pro-preview)
-- librarian: 지식관리 (기본: gemini-3-flash-preview)
-- metis: 전략계획 (기본: gpt-5.4)
-- momus: 비판분석 (기본: gemini-3.1-pro-preview)
-- prometheus: 창의솔루션 (기본: gpt-5.4)
-- security: 보안분석 (기본: gpt-5.4)
-- tester: 테스트전략 (기본: gpt-5.4)
-- data: DB설계 (기본: gpt-5.4)
-- codex_reviewer: GPT 코드리뷰 (기본: gpt-5.4)
-- devops: CI/CD/인프라 (기본: gpt-5.4)
-- reality_checker: 현실 검증/잔재 탐지 (기본: gemini-3.1-pro-preview)
-- lsp_index_engineer: 참조/심볼/인덱스 분석 (기본: gpt-5.4)
+${expertIds.map((expertId) => `- ${expertId}: ${DEFAULT_MODEL_FAMILIES[expertId]} 계열 기본 모델 사용`).join('\n')}
 
 ## 사용 예시
-- expert: "strategist", model: "gpt-4o"
-- expert: "researcher", model: "claude-opus-4"
+- expert: "strategist", model: "your-model-name"
+- expert: "researcher", model: "your-model-name"
 
 ## 참고
 - 변경사항은 MCP 세션 동안만 유지됩니다

@@ -181,7 +181,7 @@ export const consultExpertTool = {
 - security: 보안분석 (Gemini)
 - tester: TDD/테스트 (GPT)
 - data: DB설계 (GPT)
-- codex_reviewer: GPT코드리뷰 (Codex)
+- codex_reviewer: GPT코드리뷰 (GPT)
 - devops: CI/CD, 인프라 (GPT)
 - reality_checker: 현실검증/레거시 잔재 탐지 (Gemini)
 - lsp_index_engineer: 참조/심볼/인덱스 분석 (GPT)
