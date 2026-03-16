@@ -44,7 +44,7 @@ function getProvider(model: string): string {
 }
 
 function guessWorkflowType(workflowId: string): string {
-  if (workflowId.startsWith('debate_')) return 'moderated_debate';
+  if (workflowId.startsWith('moderated_debate_') || workflowId.startsWith('debate_')) return 'moderated_debate';
   if (workflowId.startsWith('design_')) return 'design_with_experts';
   if (workflowId.startsWith('review_')) return 'review_code';
   if (workflowId.startsWith('research_')) return 'research_topic';
@@ -167,7 +167,7 @@ const dashboardExpertCallHook: HookDefinition<OnExpertCallContext> = {
     emitEvent({
       type: 'expert_call_start',
       timestamp: context.timestamp,
-      data: call as unknown as Record<string, unknown>,
+      data: { ...call, workflowType: context.workflowType } as unknown as Record<string, unknown>,
     });
 
     return DEFAULT_HOOK_RESULT;
@@ -298,11 +298,12 @@ export function injectExternalEvent(event: DashboardEvent): void {
   switch (event.type) {
     case 'expert_call_start': {
       const call = data as unknown as ActiveCall;
+      const workflowType = (data as Record<string, unknown>).workflowType as string | undefined;
       if (call.id) {
         state.activeCalls[call.id] = call;
         state.totalCalls++;
         if (call.sessionId) updateSession(call.sessionId, event.timestamp);
-        if (call.workflowId) updateWorkflow(call.workflowId, call.id, call.sessionId, event.timestamp);
+        if (call.workflowId) updateWorkflow(call.workflowId, call.id, call.sessionId, event.timestamp, workflowType);
       }
       break;
     }
