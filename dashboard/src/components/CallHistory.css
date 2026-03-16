@@ -92,3 +92,65 @@
 .fallback-tag {
   color: var(--accent-amber);
 }
+
+/* Fallback chain display */
+.fallback-chain {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.original-expert {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-weight: bold;
+  text-decoration: line-through;
+  font-size: 11px;
+}
+
+.fallback-arrow {
+  color: var(--accent-amber);
+  font-size: 10px;
+}
+
+/* Latency badges */
+.latency-badge {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  margin-left: auto;
+}
+
+.latency-fast {
+  color: var(--accent-green);
+}
+
+.latency-medium {
+  color: var(--accent-amber);
+}
+
+.latency-slow {
+  color: var(--accent-red);
+  background: rgba(255, 51, 102, 0.1);
+}
+
+/* Response size */
+.response-size {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* Error message */
+.error-msg {
+  font-size: 10px;
+  color: var(--accent-red);
+  font-family: var(--font-mono);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}

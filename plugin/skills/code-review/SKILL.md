@@ -24,10 +24,19 @@ review_code({
 })
 ```
 
-2. 또는 **2명의 전문가를 각각 호출**합니다:
+2. 또는 **2명의 전문가를 병렬 호출**합니다:
 
-- `consult_expert({ expert: "reviewer", message: "..." })` — Gemini Pro: 코드 품질, 보안, 구조적 문제
-- `consult_expert({ expert: "codex_reviewer", message: "..." })` — GPT Codex: GPT 관점 코드 분석, 다른 시각
+```
+consult_experts_parallel({
+  experts: [
+    { expert: "reviewer", message: "다음 코드를 리뷰해줘: [코드]" },
+    { expert: "codex_reviewer", message: "다음 코드를 리뷰해줘: [코드]" }
+  ]
+})
+```
+
+- `reviewer` — Gemini Pro: 코드 품질, 보안, 구조적 문제
+- `codex_reviewer` — GPT: GPT 관점 코드 분석, 다른 시각
 
 3. **두 전문가의 결과를 종합**하여 교차 검증된 리뷰를 작성합니다.
 

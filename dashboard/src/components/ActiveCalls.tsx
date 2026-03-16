@@ -8,6 +8,31 @@ interface Props {
   calls: Record<string, ActiveCall>;
 }
 
+// Model-specific timeout thresholds (ms)
+const MODEL_TIMEOUTS: Record<string, number> = {
+  'gpt': 300000,       // 5 min
+  'o1': 300000,
+  'o3': 300000,
+  'codex': 300000,
+  'gemini-pro': 120000, // 2 min
+  'gemini-2': 120000,
+  'gemini-flash': 90000, // 1.5 min
+};
+
+function getTimeoutForModel(model: string): number {
+  const m = model.toLowerCase();
+  for (const [key, timeout] of Object.entries(MODEL_TIMEOUTS)) {
+    if (m.includes(key)) return timeout;
+  }
+  return 120000; // default 2 min
+}
+
+function getTimeoutLevel(ratio: number): string {
+  if (ratio >= 0.8) return 'danger';
+  if (ratio >= 0.5) return 'warn';
+  return 'ok';
+}
+
 export function ActiveCalls({ calls }: Props) {
   const [now, setNow] = useState(Date.now());
   const entries = Object.values(calls);
@@ -35,6 +60,11 @@ export function ActiveCalls({ calls }: Props) {
       <div className="calls-list">
         {entries.map((call) => {
           const elapsed = now - new Date(call.startedAt).getTime();
+          const timeout = getTimeoutForModel(call.model);
+          const ratio = elapsed / timeout;
+          const level = getTimeoutLevel(ratio);
+          const pct = Math.min(ratio * 100, 100);
+
           return (
             <div key={call.id} className="call-item">
               <div className="call-info">
@@ -43,6 +73,7 @@ export function ActiveCalls({ calls }: Props) {
                 <span className={`provider-badge ${call.provider}`}>
                   {call.provider}
                 </span>
+                <span className="model-name">{call.model}</span>
                 {call.callPhase && (
                   <span className="call-phase">{call.callPhase}</span>
                 )}
@@ -51,7 +82,15 @@ export function ActiveCalls({ calls }: Props) {
                 )}
                 {call.sessionId && <SessionBadge sessionId={call.sessionId} />}
               </div>
-              <span className="timer">{formatDuration(elapsed)}</span>
+              <div className="call-right">
+                <div className="timeout-bar-track">
+                  <div
+                    className={`timeout-bar-fill level-${level}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className={`timer timer-${level}`}>{formatDuration(elapsed)}</span>
+              </div>
             </div>
           );
         })}

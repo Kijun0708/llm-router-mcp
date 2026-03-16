@@ -22,6 +22,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+.saved-label {
+  font-size: 10px;
+  font-weight: normal;
+  color: var(--accent-green);
+}
+
+.metric-latency {
+  border-top: 1px solid var(--border-focus);
+}
+
 .accent-green { color: var(--accent-green); }
 .accent-amber { color: var(--accent-amber); }
 .accent-red { color: var(--accent-red); }

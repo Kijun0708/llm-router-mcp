@@ -1,0 +1,92 @@
+.health-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 8px 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.health-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.health-label {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 10px;
+  min-width: 50px;
+}
+
+.health-bar-track {
+  width: 80px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.health-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.health-bar-fill.level-ok {
+  background: var(--accent-green);
+}
+
+.health-bar-fill.level-warn {
+  background: var(--accent-amber);
+}
+
+.health-bar-fill.level-danger {
+  background: var(--accent-red);
+}
+
+.health-value {
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  min-width: 30px;
+}
+
+.health-separator {
+  width: 1px;
+  height: 16px;
+  background: var(--border-subtle);
+}
+
+.health-alert {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.alert-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.alert-badge.danger {
+  background: rgba(255, 51, 102, 0.2);
+  color: var(--accent-red);
+}
+
+.alert-badge.warn {
+  background: rgba(255, 179, 0, 0.2);
+  color: var(--accent-amber);
+}
+
+.alert-badge.ok {
+  background: rgba(0, 255, 102, 0.15);
+  color: var(--accent-green);
+}

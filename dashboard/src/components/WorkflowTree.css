@@ -9,6 +9,10 @@
   margin-bottom: 4px;
 }
 
+.workflow-group--error {
+  border-left-color: var(--accent-red);
+}
+
 .workflow-header {
   display: flex;
   align-items: center;
@@ -97,6 +101,21 @@
   font-size: 12px;
   border-bottom: 1px solid var(--border-subtle);
   position: relative;
+  z-index: 1;
+}
+
+/* Inline timeline sparkline background */
+.workflow-child::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--timeline-left, 0%);
+  width: var(--timeline-width, 0%);
+  background: rgba(0, 229, 255, 0.06);
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 2px;
 }
 
 .workflow-child:last-child {
@@ -124,6 +143,16 @@
 
 .workflow-child.error .expert-name {
   color: var(--accent-red);
+}
+
+.workflow-child.error {
+  animation: errorPulse 2s ease-out;
+}
+
+@keyframes errorPulse {
+  0% { box-shadow: inset 3px 0 0 0 var(--accent-red); }
+  70% { box-shadow: inset 3px 0 0 0 rgba(255, 51, 102, 0); }
+  100% { box-shadow: inset 3px 0 0 0 rgba(255, 51, 102, 0); }
 }
 
 .workflow-child.active-child {

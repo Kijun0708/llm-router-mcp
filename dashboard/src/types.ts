@@ -66,6 +66,11 @@ export interface SessionInfo {
   totalCalls: number;
 }
 
+export interface ConcurrencyInfo {
+  openai: { active: number; limit: number };
+  google: { active: number; limit: number };
+}
+
 export interface DashboardState {
   activeCalls: Record<string, ActiveCall>;
   callHistory: CallHistoryEntry[];
@@ -77,6 +82,7 @@ export interface DashboardState {
   };
   rateLimits: Record<string, { limited: boolean; retryInMs?: number }>;
   cacheStats: { size: number; maxSize: number; hitRate: number };
+  concurrency: ConcurrencyInfo;
   serverStartedAt: string;
   totalCalls: number;
   workflows: Record<string, WorkflowInfo>;

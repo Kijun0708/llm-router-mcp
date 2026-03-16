@@ -6,24 +6,26 @@ argument-hint: "<분석 대상 파일/모듈/시스템>"
 
 ## Deep Analysis
 
-코드베이스를 깊이 분석합니다. `consult_expert` MCP 도구로 `strategist` 전문가를 호출하세요.
+코드베이스를 깊이 분석합니다. 2명의 전문가를 **병렬 호출**하여 다각도로 분석합니다.
 
 ### 사용법
+
+```
+consult_experts_parallel({
+  experts: [
+    { expert: "strategist", message: "다음 코드/시스템을 깊이 분석해줘: [분석 대상]" },
+    { expert: "metis", message: "이 문제를 단계별로 분해해줘: [분석 대상]" }
+  ]
+})
+```
+
+단일 전문가로 충분한 경우:
 
 ```
 consult_expert({
   expert: "strategist",
   message: "다음 코드/시스템을 깊이 분석해줘: [분석 대상]",
   context: "프로젝트 컨텍스트 정보"
-})
-```
-
-복잡한 문제 분해가 필요하면 `metis` 전문가를 추가 호출하세요:
-
-```
-consult_expert({
-  expert: "metis",
-  message: "이 문제를 단계별로 분해해줘: [문제 설명]"
 })
 ```
 

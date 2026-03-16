@@ -12,6 +12,18 @@ interface Props {
 
 type ViewMode = 'flat' | 'tree';
 
+function getLatencyLevel(ms: number): string {
+  if (ms >= 120000) return 'slow';   // 2min+
+  if (ms >= 30000) return 'medium';  // 30s+
+  return 'fast';
+}
+
+function formatBytes(chars: number): string {
+  const kb = chars / 1024;
+  if (kb >= 1) return `${kb.toFixed(1)}KB`;
+  return `${chars}B`;
+}
+
 export function CallHistory({ history, activeCalls, workflows }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>('tree');
   const items = history.slice(0, 50);
@@ -53,16 +65,32 @@ export function CallHistory({ history, activeCalls, workflows }: Props) {
               <span className="history-time">
                 {formatTime(entry.completedAt || entry.startedAt)}
               </span>
-              <span className="expert-name">{entry.expertId}</span>
+              {entry.usedFallback && entry.originalExpert ? (
+                <span className="fallback-chain">
+                  <span className="original-expert">{entry.originalExpert}</span>
+                  <span className="fallback-arrow">&rarr;</span>
+                  <span className="expert-name">{entry.expertId}</span>
+                </span>
+              ) : (
+                <span className="expert-name">{entry.expertId}</span>
+              )}
               <span className={`provider-badge ${entry.provider}`}>
                 {entry.provider}
               </span>
-              <span className="history-duration">
+              <span className={`latency-badge latency-${getLatencyLevel(entry.durationMs)}`}>
                 {formatDuration(entry.durationMs)}
               </span>
+              {entry.responseLength > 0 && (
+                <span className="response-size">{formatBytes(entry.responseLength)}</span>
+              )}
               {entry.fromCache && <span className="tag cache-tag">[cached]</span>}
               {entry.usedFallback && (
                 <span className="tag fallback-tag">[fallback]</span>
+              )}
+              {!entry.success && entry.errorMessage && (
+                <span className="error-msg" title={entry.errorMessage}>
+                  {entry.errorMessage.slice(0, 40)}{entry.errorMessage.length > 40 ? '...' : ''}
+                </span>
               )}
             </div>
           ))}

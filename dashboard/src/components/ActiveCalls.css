@@ -21,12 +21,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .status-dot.active {
@@ -46,6 +49,7 @@
   border-radius: 3px;
   text-transform: uppercase;
   font-family: var(--font-mono);
+  flex-shrink: 0;
 }
 
 .provider-badge.openai {
@@ -56,6 +60,16 @@
 .provider-badge.google {
   background: rgba(255, 179, 0, 0.15);
   color: var(--accent-amber);
+}
+
+.model-name {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .call-phase {
@@ -78,11 +92,57 @@
   text-transform: uppercase;
 }
 
+.call-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.timeout-bar-track {
+  width: 60px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.timeout-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s linear, background-color 0.3s ease;
+}
+
+.timeout-bar-fill.level-ok {
+  background: var(--accent-green);
+}
+
+.timeout-bar-fill.level-warn {
+  background: var(--accent-amber);
+}
+
+.timeout-bar-fill.level-danger {
+  background: var(--accent-red);
+}
+
 .timer {
-  color: var(--accent-green);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-weight: bold;
+  min-width: 56px;
+  text-align: right;
+}
+
+.timer-ok {
+  color: var(--accent-green);
+}
+
+.timer-warn {
+  color: var(--accent-amber);
+}
+
+.timer-danger {
+  color: var(--accent-red);
 }
 
 .count-badge {

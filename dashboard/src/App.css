@@ -36,8 +36,14 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   padding: 0 4px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .dashboard-title {

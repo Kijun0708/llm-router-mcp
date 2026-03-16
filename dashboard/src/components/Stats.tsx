@@ -1,14 +1,41 @@
-import type { DashboardState } from '../types';
+import { useMemo } from 'react';
+import type { DashboardState, CallHistoryEntry } from '../types';
+import { formatDuration } from '../utils/formatters';
 import './Stats.css';
 
 interface Props {
   state: DashboardState;
+  history: CallHistoryEntry[];
 }
 
-export function Stats({ state }: Props) {
+function computeLatencyStats(history: CallHistoryEntry[]) {
+  const durations = history
+    .filter(e => e.success && !e.fromCache)
+    .map(e => e.durationMs)
+    .sort((a, b) => a - b);
+  if (durations.length < 2) return null;
+  return {
+    p50: durations[Math.floor(durations.length * 0.5)],
+    p95: durations[Math.floor(durations.length * 0.95)],
+    avg: durations.reduce((a, b) => a + b, 0) / durations.length,
+  };
+}
+
+function computeCacheSaved(history: CallHistoryEntry[], avgMs: number): number {
+  const cacheHits = history.filter(e => e.fromCache).length;
+  return cacheHits * avgMs;
+}
+
+export function Stats({ state, history }: Props) {
   const { cacheStats, backgroundTasks, totalCalls, sessions } = state;
   const activeCount = Object.keys(state.activeCalls).length;
   const sessionCount = Object.keys(sessions).length;
+
+  const latency = useMemo(() => computeLatencyStats(history), [history]);
+  const cacheSavedMs = useMemo(
+    () => latency ? computeCacheSaved(history, latency.avg) : 0,
+    [history, latency]
+  );
 
   return (
     <div className="panel">
@@ -28,7 +55,12 @@ export function Stats({ state }: Props) {
         </div>
         <div className="metric">
           <span className="metric-label">Cache Hit</span>
-          <span className="metric-value">{cacheStats.hitRate || 0}%</span>
+          <span className="metric-value">
+            {cacheStats.hitRate || 0}%
+            {cacheSavedMs > 0 && (
+              <span className="saved-label"> (~{formatDuration(cacheSavedMs)})</span>
+            )}
+          </span>
         </div>
         <div className="metric">
           <span className="metric-label">Cache Size</span>
@@ -50,6 +82,18 @@ export function Stats({ state }: Props) {
           <span className="metric-label">BG Failed</span>
           <span className="metric-value accent-red">{backgroundTasks.failed}</span>
         </div>
+        {latency && (
+          <>
+            <div className="metric metric-latency">
+              <span className="metric-label">Latency p50</span>
+              <span className="metric-value">{formatDuration(latency.p50)}</span>
+            </div>
+            <div className="metric metric-latency">
+              <span className="metric-label">Latency p95</span>
+              <span className="metric-value accent-amber">{formatDuration(latency.p95)}</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

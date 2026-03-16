@@ -68,6 +68,11 @@ export interface SessionInfo {
   totalCalls: number;
 }
 
+export interface ConcurrencyInfo {
+  openai: { active: number; limit: number };
+  google: { active: number; limit: number };
+}
+
 export interface DashboardState {
   activeCalls: Record<string, ActiveCall>;
   callHistory: CallHistoryEntry[];
@@ -79,6 +84,7 @@ export interface DashboardState {
   };
   rateLimits: Record<string, { limited: boolean; retryInMs?: number }>;
   cacheStats: { size: number; maxSize: number; hitRate: number };
+  concurrency: ConcurrencyInfo;
   serverStartedAt: string;
   totalCalls: number;
   workflows: Record<string, WorkflowInfo>;
@@ -94,6 +100,7 @@ export function createInitialState(): DashboardState {
     backgroundTasks: { running: 0, pending: 0, completed: 0, failed: 0 },
     rateLimits: {},
     cacheStats: { size: 0, maxSize: 100, hitRate: 0 },
+    concurrency: { openai: { active: 0, limit: 5 }, google: { active: 0, limit: 10 } },
     serverStartedAt: new Date().toISOString(),
     totalCalls: 0,
     workflows: {},

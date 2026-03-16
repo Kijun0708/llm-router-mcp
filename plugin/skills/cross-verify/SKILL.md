@@ -17,25 +17,18 @@ argument-hint: "<검증할 코드/분석/결정 사항>"
 
 ### 프로세스
 
-1. **전문가 A에게 분석 요청** (예: GPT 계열)
+1. **2명의 전문가에게 병렬로 동일 질문 전송** (서로 다른 프로바이더)
 
 ```
-consult_expert({
-  expert: "strategist",
-  message: "다음을 분석해줘: [대상]"
+consult_experts_parallel({
+  experts: [
+    { expert: "strategist", message: "다음을 분석해줘: [대상]" },
+    { expert: "reviewer", message: "다음을 분석해줘: [대상]" }
+  ]
 })
 ```
 
-2. **전문가 B에게 동일 대상 + A의 결과를 포함하여 검증 요청** (다른 프로바이더)
-
-```
-consult_expert({
-  expert: "reviewer",
-  message: "다음 분석 결과를 검증해줘. 동의하는 부분과 동의하지 않는 부분을 명시해줘: [A의 결과]\n\n원본 코드/대상: [대상]"
-})
-```
-
-3. **결과 종합** — 불일치 항목을 표로 정리하여 사용자에게 제공
+2. **결과 종합** — 두 전문가의 결과를 비교하여 불일치 항목을 표로 정리
 
 ### 추천 조합
 

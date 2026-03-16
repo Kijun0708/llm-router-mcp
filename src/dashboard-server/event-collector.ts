@@ -14,6 +14,7 @@ import { getRateLimitStatus } from '../utils/rate-limit.js';
 import { getCacheStats } from '../utils/cache.js';
 import { logger } from '../utils/logger.js';
 import { SESSION_ID } from '../session.js';
+import { config } from '../config.js';
 import {
   type DashboardState,
   type DashboardEvent,
@@ -53,6 +54,20 @@ function guessWorkflowType(workflowId: string): string {
 
 function emitEvent(event: DashboardEvent): void {
   emitFn(event);
+}
+
+function computeConcurrency(): { openai: { active: number; limit: number }; google: { active: number; limit: number } } {
+  let openaiActive = 0;
+  let googleActive = 0;
+  for (const call of Object.values(state.activeCalls)) {
+    const p = call.provider?.toLowerCase();
+    if (p === 'openai') openaiActive++;
+    else if (p === 'google') googleActive++;
+  }
+  return {
+    openai: { active: openaiActive, limit: config.concurrency.byProvider.openai },
+    google: { active: googleActive, limit: config.concurrency.byProvider.google },
+  };
 }
 
 function updateSession(sessionId: string, timestamp: string): void {
@@ -316,6 +331,19 @@ export function injectExternalEvent(event: DashboardEvent): void {
       }
       break;
     }
+    case 'background_update': {
+      // Sender의 background_update: rate limit/cache만 병합, broadcast 안 함
+      // Primary의 자체 poll이 병합된 전체 상태를 broadcast
+      const senderRL = data.rateLimits as Record<string, { limited: boolean; retryInMs?: number }> | undefined;
+      if (senderRL) {
+        for (const [model, status] of Object.entries(senderRL)) {
+          if (status.limited) {
+            state.rateLimits[model] = status;
+          }
+        }
+      }
+      return; // broadcast하지 않고 리턴
+    }
   }
 
   // Primary가 받은 외부 이벤트를 WS 클라이언트들에게 broadcast
@@ -377,6 +405,8 @@ export function startEventCollector(): void {
         }
       }
 
+      state.concurrency = computeConcurrency();
+
       emitEvent({
         type: 'background_update',
         timestamp: new Date().toISOString(),
@@ -384,6 +414,7 @@ export function startEventCollector(): void {
           rateLimits: state.rateLimits,
           cacheStats: state.cacheStats,
           backgroundTasks: state.backgroundTasks,
+          concurrency: state.concurrency,
           totalCalls: state.totalCalls,
           activeCallCount: Object.keys(state.activeCalls).length,
           sessions: state.sessions,
@@ -432,6 +463,7 @@ export function startEventCollectorSenderMode(): void {
           rateLimits,
           cacheStats,
           backgroundTasks: state.backgroundTasks,
+          concurrency: computeConcurrency(),
           totalCalls: state.totalCalls,
           activeCallCount: Object.keys(state.activeCalls).length,
           sessions: state.sessions,

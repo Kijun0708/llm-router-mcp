@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { CallHistoryEntry, ActiveCall, WorkflowInfo } from '../types';
 import { formatDuration, formatTime } from '../utils/formatters';
 import { SessionBadge } from './SessionBadge';
@@ -10,8 +10,15 @@ interface Props {
   workflows: Record<string, WorkflowInfo>;
 }
 
+function getLatencyLevel(ms: number): string {
+  if (ms >= 120000) return 'slow';
+  if (ms >= 30000) return 'medium';
+  return 'fast';
+}
+
 export function WorkflowTree({ history, activeCalls, workflows }: Props) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const userToggledRef = useRef<Set<string>>(new Set());
 
   // Separate entries by workflowId
   const grouped: Record<string, CallHistoryEntry[]> = {};
@@ -35,7 +42,7 @@ export function WorkflowTree({ history, activeCalls, workflows }: Props) {
     }
   }
 
-  // Build ordered workflow IDs: workflows with data, sorted by most recent activity
+  // Build ordered workflow IDs
   const workflowIds = new Set<string>([
     ...Object.keys(workflows),
     ...Object.keys(grouped),
@@ -50,7 +57,25 @@ export function WorkflowTree({ history, activeCalls, workflows }: Props) {
     return timeB.localeCompare(timeA);
   });
 
+  // Auto-expand workflows with errors (unless user manually collapsed)
+  useEffect(() => {
+    const updates: Record<string, boolean> = {};
+    for (const wfId of sortedWorkflowIds) {
+      if (userToggledRef.current.has(wfId)) continue;
+      const wf = workflows[wfId];
+      const entries = grouped[wfId] || [];
+      const hasError = wf?.status === 'failed' || entries.some(e => !e.success);
+      if (hasError) {
+        updates[wfId] = false; // force expand
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      setCollapsed(prev => ({ ...prev, ...updates }));
+    }
+  }, [workflows, history]);
+
   const toggleCollapse = (wfId: string) => {
+    userToggledRef.current.add(wfId);
     setCollapsed((prev) => ({ ...prev, [wfId]: !prev[wfId] }));
   };
 
@@ -76,9 +101,15 @@ export function WorkflowTree({ history, activeCalls, workflows }: Props) {
         const totalDuration = computeWorkflowDuration(wf, entries);
         const workflowType = wf?.workflowType || 'workflow';
         const sessionId = wf?.sessionId || entries[0]?.sessionId;
+        const hasError = status === 'failed' || entries.some(e => !e.success);
+
+        // Timeline calculation
+        const wfStartMs = wf?.startedAt ? new Date(wf.startedAt).getTime() : (entries[0] ? new Date(entries[0].startedAt).getTime() : 0);
+        const wfEndMs = wf?.completedAt ? new Date(wf.completedAt).getTime() : Date.now();
+        const wfDurationMs = wfEndMs - wfStartMs;
 
         return (
-          <div key={wfId} className="workflow-group">
+          <div key={wfId} className={`workflow-group ${hasError ? 'workflow-group--error' : ''}`}>
             <div
               className="workflow-header"
               onClick={() => toggleCollapse(wfId)}
@@ -91,7 +122,7 @@ export function WorkflowTree({ history, activeCalls, workflows }: Props) {
                 {status}
               </span>
               {totalDuration !== null && (
-                <span className="workflow-duration">
+                <span className={`workflow-duration latency-${getLatencyLevel(totalDuration)}`}>
                   {formatDuration(totalDuration)}
                 </span>
               )}
@@ -102,28 +133,51 @@ export function WorkflowTree({ history, activeCalls, workflows }: Props) {
             </div>
             {!isCollapsed && (
               <div className="workflow-children">
-                {entries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className={`workflow-child ${entry.success ? '' : 'error'}`}
-                  >
-                    <span className="tree-connector" />
-                    {entry.callPhase && (
-                      <span className="phase-label">{entry.callPhase}</span>
-                    )}
-                    <span className="expert-name">{entry.expertId}</span>
-                    <span className={`provider-badge ${entry.provider}`}>
-                      {entry.provider}
-                    </span>
-                    <span className="history-duration">
-                      {formatDuration(entry.durationMs)}
-                    </span>
-                    {entry.fromCache && <span className="tag cache-tag">[cached]</span>}
-                    {entry.usedFallback && (
-                      <span className="tag fallback-tag">[fallback]</span>
-                    )}
-                  </div>
-                ))}
+                {entries.map((entry) => {
+                  const entryStartMs = new Date(entry.startedAt).getTime();
+                  const relLeft = wfDurationMs > 0 ? ((entryStartMs - wfStartMs) / wfDurationMs) * 100 : 0;
+                  const relWidth = wfDurationMs > 0 ? (entry.durationMs / wfDurationMs) * 100 : 0;
+
+                  return (
+                    <div
+                      key={entry.id}
+                      className={`workflow-child ${entry.success ? '' : 'error'}`}
+                      style={{
+                        '--timeline-left': `${Math.max(0, Math.min(relLeft, 100))}%`,
+                        '--timeline-width': `${Math.max(0, Math.min(relWidth, 100 - relLeft))}%`,
+                      } as React.CSSProperties}
+                    >
+                      <span className="tree-connector" />
+                      {entry.callPhase && (
+                        <span className="phase-label">{entry.callPhase}</span>
+                      )}
+                      {entry.usedFallback && entry.originalExpert ? (
+                        <span className="fallback-chain">
+                          <span className="original-expert">{entry.originalExpert}</span>
+                          <span className="fallback-arrow">&rarr;</span>
+                          <span className="expert-name">{entry.expertId}</span>
+                        </span>
+                      ) : (
+                        <span className="expert-name">{entry.expertId}</span>
+                      )}
+                      <span className={`provider-badge ${entry.provider}`}>
+                        {entry.provider}
+                      </span>
+                      <span className={`latency-badge latency-${getLatencyLevel(entry.durationMs)}`}>
+                        {formatDuration(entry.durationMs)}
+                      </span>
+                      {entry.fromCache && <span className="tag cache-tag">[cached]</span>}
+                      {entry.usedFallback && (
+                        <span className="tag fallback-tag">[fallback]</span>
+                      )}
+                      {!entry.success && entry.errorMessage && (
+                        <span className="error-msg" title={entry.errorMessage}>
+                          {entry.errorMessage.slice(0, 30)}...
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
                 {activeEntries.map((call) => (
                   <div key={call.id} className="workflow-child active-child">
                     <span className="tree-connector" />
@@ -152,11 +206,19 @@ export function WorkflowTree({ history, activeCalls, workflows }: Props) {
           <span className="history-time">
             {formatTime(entry.completedAt || entry.startedAt)}
           </span>
-          <span className="expert-name">{entry.expertId}</span>
+          {entry.usedFallback && entry.originalExpert ? (
+            <span className="fallback-chain">
+              <span className="original-expert">{entry.originalExpert}</span>
+              <span className="fallback-arrow">&rarr;</span>
+              <span className="expert-name">{entry.expertId}</span>
+            </span>
+          ) : (
+            <span className="expert-name">{entry.expertId}</span>
+          )}
           <span className={`provider-badge ${entry.provider}`}>
             {entry.provider}
           </span>
-          <span className="history-duration">
+          <span className={`latency-badge latency-${getLatencyLevel(entry.durationMs)}`}>
             {formatDuration(entry.durationMs)}
           </span>
           {entry.fromCache && <span className="tag cache-tag">[cached]</span>}
