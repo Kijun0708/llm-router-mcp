@@ -1,0 +1,116 @@
+.calls-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.call-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  animation: flash-update 0.5s ease-out;
+}
+
+.call-item:last-child {
+  border-bottom: none;
+}
+
+.call-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.active {
+  background-color: var(--accent-green);
+  animation: pulse-ring 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.expert-name {
+  color: var(--accent-cyan);
+  font-weight: bold;
+  font-family: var(--font-mono);
+}
+
+.provider-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.provider-badge.openai {
+  background: rgba(0, 229, 255, 0.15);
+  color: var(--accent-cyan);
+}
+
+.provider-badge.google {
+  background: rgba(255, 179, 0, 0.15);
+  color: var(--accent-amber);
+}
+
+.call-phase {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  padding: 1px 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+.call-workflow-tag {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  background: rgba(0, 229, 255, 0.1);
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+}
+
+.timer {
+  color: var(--accent-green);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+}
+
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  background: var(--accent-cyan);
+  color: var(--bg-base);
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 0 5px;
+  margin-left: 6px;
+}
+
+@keyframes flash-update {
+  0% { background-color: rgba(0, 229, 255, 0.15); }
+  100% { background-color: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot.active {
+    animation: none;
+    border: 2px solid var(--accent-green);
+  }
+  .call-item {
+    animation: none;
+  }
+}

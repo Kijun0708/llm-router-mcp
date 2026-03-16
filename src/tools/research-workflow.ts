@@ -1,7 +1,8 @@
 // src/tools/research-workflow.ts
 
 import { z } from "zod";
-import { callExpertWithFallback } from "../services/expert-router.js";
+import { callExpertWithFallback, WorkflowCallOptions } from "../services/expert-router.js";
+import { SESSION_ID } from "../session.js";
 import { wrapMcpResponse } from "../utils/response-saver.js";
 
 export const researchTopicSchema = z.object({
@@ -65,10 +66,20 @@ ${params.context ? `\n컨텍스트:\n${params.context}` : ""}
 위 주제에 대해 ${depthGuide[params.depth]} 조사해주세요.
   `.trim();
 
-  try {
-    const result = await callExpertWithFallback('researcher', researchPrompt, params.context);
+  const startTime = Date.now();
+  const workflowId = `research_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-    const responseText = `## 조사 결과: ${params.topic}\n\n` +
+  try {
+    const workflowOptions: WorkflowCallOptions = { workflowId, workflowType: 'research_topic', callPhase: 'research', sessionId: SESSION_ID };
+    const result = await callExpertWithFallback('researcher', researchPrompt, params.context, false, undefined, false, workflowOptions);
+
+    // 소요 시간 포맷
+    const totalMs = Date.now() - startTime;
+    const minutes = Math.floor(totalMs / 60000);
+    const seconds = Math.floor((totalMs % 60000) / 1000);
+    const timeStr = minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
+
+    const responseText = `## 조사 결과: ${params.topic} (${timeStr})\n\n` +
           `### 📚 Claude Researcher\n${result.response}` +
           (result.fellBack ? `\n\n⚠️ 폴백: researcher → ${result.actualExpert}` : '');
 

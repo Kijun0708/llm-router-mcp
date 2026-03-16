@@ -1,6 +1,7 @@
 // src/tools/index.ts
 
 export { consultExpertTool, consultExpertSchema, handleConsultExpert } from './consult-expert.js';
+export { consultExpertsParallelTool, consultExpertsParallelSchema, handleConsultExpertsParallel } from './consult-experts-parallel.js';
 export { categoryTaskTool, categoryTaskSchema, handleCategoryTask } from './category-task.js';
 export {
   backgroundStartTool, backgroundStartSchema, handleBackgroundStart,

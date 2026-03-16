@@ -1,7 +1,8 @@
 // src/tools/design-workflow.ts
 
 import { z } from "zod";
-import { callExpertWithFallback, callExpertsParallel } from "../services/expert-router.js";
+import { callExpertWithFallback, callExpertsParallel, WorkflowCallOptions } from "../services/expert-router.js";
+import { SESSION_ID } from "../session.js";
 import { wrapMcpResponse } from "../utils/response-saver.js";
 
 export const designWorkflowSchema = z.object({
@@ -74,24 +75,28 @@ export async function handleDesignWorkflow(params: z.infer<typeof designWorkflow
   let review: string = '';
   let research: string = '';
   let fellBack = false;
+  const startTime = Date.now();
+  const workflowId = `design_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
     if (params.parallel) {
       // 병렬 실행: 설계 + 조사
+      const workflowOptions: WorkflowCallOptions = { workflowId, workflowType: 'design_with_experts', callPhase: 'strategy', sessionId: SESSION_ID };
       const [strategyResult, researchResult] = await callExpertsParallel([
         { expertId: 'strategist', prompt: strategyPrompt },
         {
           expertId: 'researcher',
           prompt: `[레퍼런스 조사]\n주제: ${params.topic}\n\n관련 라이브러리, 패턴, 베스트 프랙티스를 조사해주세요.`
         }
-      ]);
+      ], workflowOptions);
 
       strategy = strategyResult.response;
       research = researchResult.response;
       fellBack = strategyResult.fellBack || researchResult.fellBack;
     } else {
       // 순차 실행
-      const strategyResult = await callExpertWithFallback('strategist', strategyPrompt);
+      const workflowOptions: WorkflowCallOptions = { workflowId, workflowType: 'design_with_experts', callPhase: 'strategy', sessionId: SESSION_ID };
+      const strategyResult = await callExpertWithFallback('strategist', strategyPrompt, undefined, false, undefined, false, workflowOptions);
       strategy = strategyResult.response;
       fellBack = strategyResult.fellBack;
     }
@@ -108,13 +113,20 @@ ${strategy}
 이 설계의 문제점과 개선점을 검토해주세요.
       `.trim();
 
-      const reviewResult = await callExpertWithFallback('reviewer', reviewPrompt);
+      const workflowOptions: WorkflowCallOptions = { workflowId, workflowType: 'design_with_experts', callPhase: 'review', sessionId: SESSION_ID };
+      const reviewResult = await callExpertWithFallback('reviewer', reviewPrompt, undefined, false, undefined, false, workflowOptions);
       review = reviewResult.response;
       fellBack = fellBack || reviewResult.fellBack;
     }
 
+    // 소요 시간 포맷
+    const totalMs = Date.now() - startTime;
+    const minutes = Math.floor(totalMs / 60000);
+    const seconds = Math.floor((totalMs % 60000) / 1000);
+    const timeStr = minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
+
     // 결과 포맷팅
-    let output = `## 설계 결과: ${params.topic}\n\n`;
+    let output = `## 설계 결과: ${params.topic} (${timeStr})\n\n`;
     output += `### 🎯 GPT Strategist 제안\n${strategy}\n\n`;
 
     if (research) {

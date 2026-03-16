@@ -93,13 +93,22 @@ function logFallbackError(
   }, `Fallback attempt ${attemptNumber}/${totalFallbacks} failed`);
 }
 
+export interface WorkflowCallOptions {
+  workflowId?: string;
+  workflowType?: string;
+  parentCallId?: string;
+  callPhase?: string;
+  sessionId?: string;
+}
+
 export async function callExpertWithFallback(
   expertId: string,
   prompt: string,
   context?: string,
   skipCache: boolean = false,
   imagePath?: string,
-  applyPreamble: boolean = false
+  applyPreamble: boolean = false,
+  workflowOptions?: WorkflowCallOptions
 ): Promise<ExpertResponse> {
   const expert = experts[expertId];
 
@@ -115,7 +124,8 @@ export async function callExpertWithFallback(
     model: expert.model,
     prompt,
     context,
-    skipCache
+    skipCache,
+    ...workflowOptions
   });
 
   // Check if hooks blocked the call
@@ -145,7 +155,8 @@ export async function callExpertWithFallback(
       responseLength: result.response.length,
       durationMs,
       fromCache: result.cached || false,
-      usedFallback: false
+      usedFallback: false,
+      ...workflowOptions
     });
 
     return result;
@@ -213,7 +224,8 @@ export async function callExpertWithFallback(
           context: finalContext,
           skipCache,
           isFallback: true,
-          originalExpert: expertId
+          originalExpert: expertId,
+          ...workflowOptions
         });
 
         if (fallbackPreHookResult.decision === 'block') {
@@ -241,7 +253,8 @@ export async function callExpertWithFallback(
           fromCache: result.cached || false,
           usedFallback: true,
           originalExpert: expertId,
-          fallbackAttempts: fallbackAttempts.length
+          fallbackAttempts: fallbackAttempts.length,
+          ...workflowOptions
         });
 
         return {
@@ -347,7 +360,8 @@ export async function callExpertWithToolsAndFallback(
   skipCache: boolean = false,
   enableTools: boolean = true,
   imagePath?: string,
-  applyPreamble: boolean = false
+  applyPreamble: boolean = false,
+  workflowOptions?: WorkflowCallOptions
 ): Promise<ExpertResponse> {
   const expert = experts[expertId];
 
@@ -363,7 +377,8 @@ export async function callExpertWithToolsAndFallback(
     model: expert.model,
     prompt,
     context,
-    skipCache
+    skipCache,
+    ...workflowOptions
   });
 
   // Check if hooks blocked the call
@@ -399,7 +414,8 @@ export async function callExpertWithToolsAndFallback(
       responseLength: result.response.length,
       durationMs,
       fromCache: result.cached || false,
-      usedFallback: false
+      usedFallback: false,
+      ...workflowOptions
     });
 
     return result;
@@ -468,7 +484,8 @@ export async function callExpertWithToolsAndFallback(
           context: finalContext,
           skipCache,
           isFallback: true,
-          originalExpert: expertId
+          originalExpert: expertId,
+          ...workflowOptions
         });
 
         if (fallbackPreHookResult.decision === 'block') {
@@ -502,7 +519,8 @@ export async function callExpertWithToolsAndFallback(
           fromCache: result.cached || false,
           usedFallback: true,
           originalExpert: expertId,
-          fallbackAttempts: fallbackAttempts.length
+          fallbackAttempts: fallbackAttempts.length,
+          ...workflowOptions
         });
 
         return {
@@ -581,11 +599,12 @@ export async function callExpertWithToolsAndFallback(
 
 // 병렬 호출 지원
 export async function callExpertsParallel(
-  calls: Array<{ expertId: string; prompt: string; context?: string }>
+  calls: Array<{ expertId: string; prompt: string; context?: string }>,
+  workflowOptions?: WorkflowCallOptions
 ): Promise<ExpertResponse[]> {
   return Promise.all(
     calls.map(({ expertId, prompt, context }) =>
-      callExpertWithFallback(expertId, prompt, context)
+      callExpertWithFallback(expertId, prompt, context, false, undefined, false, workflowOptions)
     )
   );
 }

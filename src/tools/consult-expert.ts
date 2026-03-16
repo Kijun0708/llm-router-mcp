@@ -9,6 +9,89 @@ import { sessionMemory } from "../services/session-memory.js";
 import { startBackgroundTask } from "../services/background-manager.js";
 import { TimeoutError } from "../services/cliproxy-client.js";
 import { wrapMcpResponse } from "../utils/response-saver.js";
+import { logger } from "../utils/logger.js";
+
+// ============================================================================
+// Blank Expert Support
+// ============================================================================
+
+const BLANK_EXPERT_IDS = new Set([
+  'gpt_blank_1', 'gpt_blank_2', 'gemini_blank_1', 'gemini_blank_2'
+]);
+
+function isBlankExpert(expertId: string): boolean {
+  return BLANK_EXPERT_IDS.has(expertId);
+}
+
+// 정제된 페르소나 캐시 (메모리 내)
+// Key: persona 원문, Value: 정제된 페르소나 텍스트
+const personaCache = new Map<string, string>();
+const PERSONA_CACHE_MAX = 50;
+const PERSONA_REFINEMENT_TIMEOUT_MS = 30000; // 30초
+
+/**
+ * debate_moderator를 통해 페르소나를 정제합니다.
+ * 사용자의 간단한 페르소나 설명을 상세한 역할 프롬프트로 변환.
+ * 캐시 히트 시 즉시 반환, 30초 타임아웃 가드 적용.
+ */
+async function refinePersonaWithModerator(
+  persona: string,
+  question: string,
+  skipCache: boolean
+): Promise<string> {
+  // 캐시 체크 (skipCache가 아닌 경우)
+  if (!skipCache && personaCache.has(persona)) {
+    logger.debug({ persona }, 'Using cached refined persona');
+    return personaCache.get(persona)!;
+  }
+
+  const moderatorPrompt = [
+    '[페르소나 설계 요청]',
+    '',
+    `사용자가 요청한 페르소나: ${persona}`,
+    `질문 주제: ${question.substring(0, 200)}`,
+    '',
+    '요청:',
+    '1. 위 페르소나를 구체적이고 전문적인 역할 설명으로 확장하세요.',
+    '2. 해당 분야의 전문 지식, 경험, 관점을 포함하세요.',
+    '3. 이 페르소나가 답변할 때 사용해야 할 어조와 접근 방식을 명시하세요.',
+    '4. 결과는 한국어로, 3~5문장의 페르소나 설명만 반환하세요.',
+    '5. JSON이 아닌 순수 텍스트로 반환하세요.',
+  ].join('\n');
+
+  try {
+    // 30초 타임아웃 가드 - 페르소나 정제가 너무 오래 걸리면 원본 사용
+    const result = await Promise.race([
+      callExpertWithFallback(
+        'debate_moderator',
+        moderatorPrompt,
+        undefined,
+        skipCache
+      ),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Persona refinement timeout')), PERSONA_REFINEMENT_TIMEOUT_MS)
+      )
+    ]);
+
+    const refined = result.response.trim();
+
+    // 캐시 저장
+    if (personaCache.size >= PERSONA_CACHE_MAX) {
+      // 가장 오래된 항목 제거 (Map은 삽입 순서 보장)
+      const firstKey = personaCache.keys().next().value;
+      if (firstKey) personaCache.delete(firstKey);
+    }
+    personaCache.set(persona, refined);
+
+    return refined;
+  } catch (error) {
+    logger.warn(
+      { error: (error as Error).message, persona },
+      'Persona refinement failed or timed out, using original persona'
+    );
+    return persona;
+  }
+}
 
 // ============================================================================
 // Security: Image Path Validation (LFI/SSRF Prevention)
@@ -121,8 +204,16 @@ export const consultExpertSchema = z.object({
     "strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
     "librarian", "metis", "momus", "prometheus",
     // 특화 전문가 (7명)
-    "security", "tester", "data", "codex_reviewer", "devops", "reality_checker", "lsp_index_engineer"
+    "security", "tester", "data", "codex_reviewer", "devops", "reality_checker", "lsp_index_engineer",
+    // 동적 페르소나 전문가 (4명) - persona 필수
+    "gpt_blank_1", "gpt_blank_2", "gemini_blank_1", "gemini_blank_2"
   ]).describe("자문할 전문가"),
+
+  persona: z.string()
+    .min(2, "페르소나는 최소 2자 이상")
+    .max(500, "페르소나는 최대 500자")
+    .optional()
+    .describe("blank 전문가 사용 시 페르소나 설명 (예: '투자 전문가', '마케팅 전략가'). blank 전문가에게는 필수."),
 
   question: z.string()
     .min(10, "질문은 최소 10자 이상")
@@ -186,6 +277,15 @@ export const consultExpertTool = {
 - reality_checker: 현실검증/레거시 잔재 탐지 (Gemini)
 - lsp_index_engineer: 참조/심볼/인덱스 분석 (GPT)
 
+## 동적 페르소나 전문가 (persona 필수)
+- gpt_blank_1: GPT 범용 (persona 필수)
+- gpt_blank_2: GPT 코드특화 (persona 필수)
+- gemini_blank_1: Gemini 고성능 (persona 필수)
+- gemini_blank_2: Gemini 빠른응답 (persona 필수)
+
+비개발 자문(투자, 마케팅, 법률 등)에 적합. persona 파라미터로 원하는 역할 지정.
+중재자가 페르소나를 정제한 후 해당 역할로 응답합니다.
+
 Rate Limit 초과 시 자동 폴백. use_tools=false로 도구 비활성화 가능.`,
 
   inputSchema: consultExpertSchema,
@@ -200,6 +300,35 @@ Rate Limit 초과 시 자동 폴백. use_tools=false로 도구 비활성화 가�
 
 export async function handleConsultExpert(params: z.infer<typeof consultExpertSchema>) {
   try {
+    // Blank expert 유효성 검증: persona 필수
+    if (isBlankExpert(params.expert) && !params.persona) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: `## ⚠️ 페르소나 필수\n\n` +
+                `**${params.expert}**는 동적 페르소나 전문가입니다.\n` +
+                `\`persona\` 파라미터에 원하는 역할을 지정해주세요.\n\n` +
+                `### 예시\n` +
+                `\`\`\`json\n` +
+                `{\n` +
+                `  "expert": "${params.expert}",\n` +
+                `  "persona": "투자 전문가",\n` +
+                `  "question": "2024년 미국 주식 시장 전망은?"\n` +
+                `}\n` +
+                `\`\`\``
+        }],
+        isError: true
+      };
+    }
+
+    // Non-blank expert에 persona가 제공된 경우 경고
+    if (!isBlankExpert(params.expert) && params.persona) {
+      logger.warn(
+        { expert: params.expert, persona: params.persona },
+        'persona parameter provided for non-blank expert, ignoring'
+      );
+    }
+
     // use_tools가 true이면 도구 사용 가능한 함수 호출
     const enableTools = params.use_tools !== false;
 
@@ -215,9 +344,31 @@ export async function handleConsultExpert(params: z.infer<typeof consultExpertSc
       fullContext += `[추가 컨텍스트]\n${params.context}`;
     }
 
+    // Blank expert 페르소나 처리
+    let effectiveQuestion = params.question;
+    let refinedPersona: string | undefined;
+
+    if (isBlankExpert(params.expert) && params.persona) {
+      // Step 1: debate_moderator로 페르소나 정제
+      refinedPersona = await refinePersonaWithModerator(
+        params.persona,
+        params.question,
+        params.skip_cache
+      );
+
+      // Step 2: 정제된 페르소나를 질문에 주입
+      effectiveQuestion = [
+        `[페르소나 지정]`,
+        refinedPersona,
+        '',
+        `[질문]`,
+        params.question
+      ].join('\n');
+    }
+
     const result = await callExpertWithToolsAndFallback(
       params.expert,
-      params.question,
+      effectiveQuestion,
       fullContext || undefined,
       params.skip_cache,
       enableTools,
@@ -230,7 +381,13 @@ export async function handleConsultExpert(params: z.infer<typeof consultExpertSc
     const expert = experts[params.expert];
     const actualExpert = experts[result.actualExpert];
 
-    let response = `## ${actualExpert.name} 응답\n\n${result.response}`;
+    // 소요 시간 포맷
+    const latencyMs = result.latencyMs || 0;
+    const minutes = Math.floor(latencyMs / 60000);
+    const seconds = Math.floor((latencyMs % 60000) / 1000);
+    const timeStr = minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
+
+    let response = `## ${actualExpert.name} 응답 (${timeStr})\n\n${result.response}`;
 
     // 사용된 도구 표시
     if (result.toolsUsed && result.toolsUsed.length > 0) {
@@ -250,6 +407,14 @@ export async function handleConsultExpert(params: z.infer<typeof consultExpertSc
     // 이미지 분석 알림
     if (params.image_path) {
       response += `\n\n_🖼️ 이미지 분석: ${params.image_path}_`;
+    }
+
+    // 페르소나 정보 표시 (blank expert인 경우)
+    if (refinedPersona) {
+      response += `\n\n---\n🎭 **페르소나**: ${params.persona}`;
+      if (refinedPersona !== params.persona) {
+        response += `\n📝 **정제된 페르소나**: ${refinedPersona}`;
+      }
     }
 
     return wrapMcpResponse(response, {

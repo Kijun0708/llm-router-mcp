@@ -51,7 +51,7 @@ export class GeminiCliProvider implements CliProvider {
     const cliPath = config.cli.geminiPath;
     const prompt = buildPrompt(params);
 
-    const args: string[] = ['--output-format', 'json'];
+    const args: string[] = ['--output-format', 'json', '--yolo'];
 
     // 모델 지정
     if (params.model) {

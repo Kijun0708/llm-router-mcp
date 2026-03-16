@@ -18,12 +18,10 @@ function buildPrompt(params: CliCallParams): string {
   return prompt;
 }
 
-// JSON Lines 응답에서 최종 텍스트 추출
+// JSON Lines 응답에서 agent_message 텍스트만 추출
 function parseResponse(stdout: string): string {
   const lines = stdout.trim().split('\n');
-
-  // JSON Lines 형식: 각 줄이 개별 JSON 이벤트
-  let lastContent = '';
+  const agentMessages: string[] = [];
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -32,39 +30,59 @@ function parseResponse(stdout: string): string {
     try {
       const event = JSON.parse(trimmed);
 
-      // Codex exec --json 출력에서 message 타입의 content 추출
-      if (event.type === 'message' && event.content) {
-        lastContent = event.content;
+      // Primary: Codex exec --json NDJSON 형식
+      // item.completed 이벤트 중 agent_message만 추출 (command_execution 무시)
+      if (
+        event.type === 'item.completed' &&
+        event.item?.type === 'agent_message' &&
+        typeof event.item.text === 'string' &&
+        event.item.text.trim()
+      ) {
+        agentMessages.push(event.item.text);
+        continue;
       }
-      // 일부 버전에서는 다른 형태
+
+      // Legacy fallback: 이전 Codex 버전 호환
+      if (event.type === 'message' && event.content) {
+        agentMessages.push(event.content);
+        continue;
+      }
       if (event.message && typeof event.message === 'string') {
-        lastContent = event.message;
+        agentMessages.push(event.message);
+        continue;
       }
       if (event.response && typeof event.response === 'string') {
-        lastContent = event.response;
+        agentMessages.push(event.response);
+        continue;
       }
       if (event.result && typeof event.result === 'string') {
-        lastContent = event.result;
+        agentMessages.push(event.result);
+        continue;
       }
     } catch {
       // JSON이 아닌 줄은 스킵
     }
   }
 
-  // JSON Lines 파싱 실패 시 전체 stdout을 응답으로 사용
-  if (!lastContent) {
-    // 단일 JSON 객체 시도
-    try {
-      const parsed = JSON.parse(stdout);
-      if (parsed.response) return parsed.response;
-      if (parsed.result) return parsed.result;
-      if (parsed.content) return parsed.content;
-    } catch { /* ignore */ }
-
-    return stdout.trim();
+  // agent message를 찾았으면 모두 연결하여 반환
+  if (agentMessages.length > 0) {
+    return agentMessages.join('\n\n');
   }
 
-  return lastContent;
+  // 단일 JSON 객체 시도
+  try {
+    const parsed = JSON.parse(stdout);
+    if (parsed.response) return parsed.response;
+    if (parsed.result) return parsed.result;
+    if (parsed.content) return parsed.content;
+  } catch { /* ignore */ }
+
+  // 최종 폴백: raw stdout (경고 로그)
+  logger.warn(
+    { stdoutLength: stdout.length, lineCount: lines.length },
+    'Codex parseResponse: no structured content found, falling back to raw stdout'
+  );
+  return stdout.trim();
 }
 
 export class CodexCliProvider implements CliProvider {

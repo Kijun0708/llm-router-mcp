@@ -1,7 +1,8 @@
 // src/tools/review-workflow.ts
 
 import { z } from "zod";
-import { callExpertWithFallback, callExpertsParallel } from "../services/expert-router.js";
+import { callExpertWithFallback, callExpertsParallel, WorkflowCallOptions } from "../services/expert-router.js";
+import { SESSION_ID } from "../session.js";
 import { wrapMcpResponse } from "../utils/response-saver.js";
 
 export const reviewCodeSchema = z.object({
@@ -76,37 +77,50 @@ ${params.code}
 위 코드를 리뷰해주세요.
   `.trim();
 
+  const startTime = Date.now();
+  const workflowId = `review_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
   try {
     let geminiReview: string;
     let gptReview: string = '';
 
     if (params.include_strategist && params.parallel) {
       // 병렬 실행
+      const workflowOptions: WorkflowCallOptions = { workflowId, workflowType: 'review_code', callPhase: 'gemini_review', sessionId: SESSION_ID };
       const [reviewResult, strategyResult] = await callExpertsParallel([
         { expertId: 'reviewer', prompt: reviewPrompt },
         {
           expertId: 'strategist',
           prompt: `[설계 관점 코드 리뷰]\n\`\`\`\n${params.code}\n\`\`\`\n\n설계/구조 관점에서 검토해주세요.`
         }
-      ]);
+      ], workflowOptions);
 
       geminiReview = reviewResult.response;
       gptReview = strategyResult.response;
     } else {
       // 순차 실행
-      const reviewResult = await callExpertWithFallback('reviewer', reviewPrompt);
+      const geminiWorkflowOptions: WorkflowCallOptions = { workflowId, workflowType: 'review_code', callPhase: 'gemini_review', sessionId: SESSION_ID };
+      const reviewResult = await callExpertWithFallback('reviewer', reviewPrompt, undefined, false, undefined, false, geminiWorkflowOptions);
       geminiReview = reviewResult.response;
 
       if (params.include_strategist) {
+        const gptWorkflowOptions: WorkflowCallOptions = { workflowId, workflowType: 'review_code', callPhase: 'gpt_review', sessionId: SESSION_ID };
         const strategyResult = await callExpertWithFallback(
           'strategist',
-          `[설계 관점 코드 리뷰]\n\`\`\`\n${params.code}\n\`\`\`\n\n설계/구조 관점에서 검토해주세요.`
+          `[설계 관점 코드 리뷰]\n\`\`\`\n${params.code}\n\`\`\`\n\n설계/구조 관점에서 검토해주세요.`,
+          undefined, false, undefined, false, gptWorkflowOptions
         );
         gptReview = strategyResult.response;
       }
     }
 
-    let output = `## 코드 리뷰 결과\n\n`;
+    // 소요 시간 포맷
+    const totalMs = Date.now() - startTime;
+    const minutes = Math.floor(totalMs / 60000);
+    const seconds = Math.floor((totalMs % 60000) / 1000);
+    const timeStr = minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
+
+    let output = `## 코드 리뷰 결과 (${timeStr})\n\n`;
     output += `### 🔍 Gemini Reviewer\n${geminiReview}\n\n`;
 
     if (gptReview) {

@@ -7,7 +7,7 @@
  */
 
 import { logger } from '../../utils/logger.js';
-import { callExpertWithFallback } from '../../services/expert-router.js';
+import { callExpertWithFallback, WorkflowCallOptions } from '../../services/expert-router.js';
 import { experts } from '../../experts/index.js';
 import {
   EnsembleConfig,
@@ -33,7 +33,8 @@ async function executeParallel(
   query: string,
   participants: EnsembleParticipant[],
   context?: string,
-  useCache: boolean = true
+  useCache: boolean = true,
+  workflowOptions?: WorkflowCallOptions
 ): Promise<ParticipantResponse[]> {
   const startTime = Date.now();
 
@@ -45,7 +46,10 @@ async function executeParallel(
         participant.expertId,
         participant.customPrompt || query,
         context,
-        !useCache
+        !useCache,
+        undefined,
+        false,
+        workflowOptions
       );
 
       return {
@@ -102,10 +106,14 @@ async function executeSynthesize(
   participants: EnsembleParticipant[],
   synthesizer: string,
   context?: string,
-  useCache: boolean = true
+  useCache: boolean = true,
+  workflowOptions?: WorkflowCallOptions
 ): Promise<{ responses: ParticipantResponse[]; synthesis: ParticipantResponse }> {
   // 1. 병렬로 모든 전문가 응답 수집
-  const responses = await executeParallel(query, participants, context, useCache);
+  const parallelOptions: WorkflowCallOptions | undefined = workflowOptions
+    ? { ...workflowOptions, callPhase: 'parallel' }
+    : undefined;
+  const responses = await executeParallel(query, participants, context, useCache, parallelOptions);
 
   // 2. 성공한 응답들을 합성
   const successfulResponses = responses.filter(r => !r.error && r.response);
@@ -133,9 +141,12 @@ ${successfulResponses.map(r => `### ${r.expertId}\n${r.response}`).join('\n\n')}
 `.trim();
 
   const synthStartTime = Date.now();
+  const synthesisOptions: WorkflowCallOptions | undefined = workflowOptions
+    ? { ...workflowOptions, callPhase: 'synthesis' }
+    : undefined;
 
   try {
-    const result = await callExpertWithFallback(synthesizer, synthesisPrompt, undefined, !useCache);
+    const result = await callExpertWithFallback(synthesizer, synthesisPrompt, undefined, !useCache, undefined, false, synthesisOptions);
 
     return {
       responses,
@@ -174,7 +185,8 @@ async function executeDebate(
   participants: EnsembleParticipant[],
   maxRounds: number = 2,
   context?: string,
-  useCache: boolean = true
+  useCache: boolean = true,
+  workflowOptions?: WorkflowCallOptions
 ): Promise<{ responses: ParticipantResponse[]; debateHistory: DebateRound[] }> {
   const allResponses: ParticipantResponse[] = [];
   const debateHistory: DebateRound[] = [];
@@ -197,7 +209,7 @@ ${context ? `\n컨텍스트: ${context}` : ''}
 
   const firstStartTime = Date.now();
   try {
-    const firstResult = await callExpertWithFallback(firstParticipant.expertId, initialPrompt, undefined, !useCache);
+    const firstResult = await callExpertWithFallback(firstParticipant.expertId, initialPrompt, undefined, !useCache, undefined, false, workflowOptions);
 
     allResponses.push({
       expertId: firstParticipant.expertId,
@@ -239,7 +251,7 @@ ${previousSpeaker.content}
 
       const startTime = Date.now();
       try {
-        const result = await callExpertWithFallback(participant.expertId, debatePrompt, undefined, !useCache);
+        const result = await callExpertWithFallback(participant.expertId, debatePrompt, undefined, !useCache, undefined, false, workflowOptions);
 
         allResponses.push({
           expertId: participant.expertId,
@@ -280,7 +292,7 @@ ${lastResponse.content}
 
       const startTime = Date.now();
       try {
-        const result = await callExpertWithFallback(firstParticipant.expertId, rebuttalPrompt, undefined, !useCache);
+        const result = await callExpertWithFallback(firstParticipant.expertId, rebuttalPrompt, undefined, !useCache, undefined, false, workflowOptions);
 
         allResponses.push({
           expertId: firstParticipant.expertId,
@@ -315,7 +327,8 @@ async function executeVote(
   options: string[],
   participants: EnsembleParticipant[],
   context?: string,
-  useCache: boolean = true
+  useCache: boolean = true,
+  workflowOptions?: WorkflowCallOptions
 ): Promise<{ responses: ParticipantResponse[]; voteResults: VoteResult[] }> {
   const votePrompt = `
 [투표 요청]
@@ -333,7 +346,8 @@ ${options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}
     votePrompt,
     participants,
     undefined,
-    useCache
+    useCache,
+    workflowOptions
   );
 
   // 투표 집계
@@ -378,7 +392,8 @@ async function executeBestOfN(
   query: string,
   participant: EnsembleParticipant,
   n: number = 3,
-  context?: string
+  context?: string,
+  workflowOptions?: WorkflowCallOptions
 ): Promise<{ responses: ParticipantResponse[]; bestResponse: ParticipantResponse }> {
   // N번 실행 (캐시 사용 안 함)
   const responses: ParticipantResponse[] = [];
@@ -391,7 +406,10 @@ async function executeBestOfN(
         participant.expertId,
         query,
         context,
-        true  // skipCache
+        true,  // skipCache
+        undefined,
+        false,
+        workflowOptions
       );
 
       responses.push({
@@ -439,7 +457,8 @@ async function executeChain(
   query: string,
   participants: EnsembleParticipant[],
   context?: string,
-  useCache: boolean = true
+  useCache: boolean = true,
+  workflowOptions?: WorkflowCallOptions
 ): Promise<ParticipantResponse[]> {
   const responses: ParticipantResponse[] = [];
   let previousOutput = '';
@@ -464,7 +483,10 @@ ${participant.customPrompt || query}
         participant.expertId,
         chainPrompt,
         context,
-        !useCache
+        !useCache,
+        undefined,
+        false,
+        workflowOptions
       );
 
       responses.push({
@@ -505,7 +527,8 @@ export async function runEnsemble(
   query: string,
   config: EnsembleConfig,
   context?: string,
-  voteOptions?: string[]
+  voteOptions?: string[],
+  workflowOptions?: WorkflowCallOptions
 ): Promise<EnsembleResult> {
   const ensembleId = generateEnsembleId();
   const startTime = Date.now();
@@ -525,7 +548,7 @@ export async function runEnsemble(
   try {
     switch (config.strategy) {
       case 'parallel': {
-        responses = await executeParallel(query, config.participants, context, config.useCache);
+        responses = await executeParallel(query, config.participants, context, config.useCache, workflowOptions);
         finalResult = concatenateResponses(responses);
         break;
       }
@@ -539,7 +562,8 @@ export async function runEnsemble(
           config.participants,
           config.synthesizer,
           context,
-          config.useCache
+          config.useCache,
+          workflowOptions
         );
         responses = [...synthResult.responses, synthResult.synthesis];
         synthesizedBy = config.synthesizer;
@@ -558,7 +582,8 @@ export async function runEnsemble(
           voteOptions,
           config.participants,
           context,
-          config.useCache
+          config.useCache,
+          workflowOptions
         );
         responses = voteResult.responses;
         voteResults = voteResult.voteResults;
@@ -583,7 +608,8 @@ export async function runEnsemble(
           query,
           config.participants[0],
           config.n || 3,
-          context
+          context,
+          workflowOptions
         );
         responses = bestResult.responses;
         finalResult = bestResult.bestResponse.response;
@@ -591,7 +617,7 @@ export async function runEnsemble(
       }
 
       case 'chain': {
-        responses = await executeChain(query, config.participants, context, config.useCache);
+        responses = await executeChain(query, config.participants, context, config.useCache, workflowOptions);
         // 마지막 성공한 응답을 결과로
         const lastSuccess = [...responses].reverse().find(r => !r.error && r.response);
         finalResult = lastSuccess?.response || '체인 실행 실패';
@@ -643,7 +669,8 @@ export async function runPresetEnsemble(
   presetId: string,
   query: string,
   context?: string,
-  voteOptions?: string[]
+  voteOptions?: string[],
+  workflowOptions?: WorkflowCallOptions
 ): Promise<EnsembleResult> {
   const { DEFAULT_PRESETS } = await import('./types.js');
   const preset = DEFAULT_PRESETS.find(p => p.id === presetId);
@@ -652,5 +679,5 @@ export async function runPresetEnsemble(
     throw new Error(`프리셋을 찾을 수 없습니다: ${presetId}`);
   }
 
-  return runEnsemble(query, preset.config, context, voteOptions);
+  return runEnsemble(query, preset.config, context, voteOptions, workflowOptions);
 }

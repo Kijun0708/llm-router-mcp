@@ -9,6 +9,7 @@ import { logger } from "./utils/logger.js";
 import { setupHookSystem } from "./hooks/index.js";
 import { initializeHud, shutdownHud } from "./hud/index.js";
 import { shutdownPersistence } from "./services/background-manager.js";
+import { startDashboardServer, shutdownDashboardServer } from "./dashboard-server/index.js";
 
 // New tool registrations
 import { registerInteractiveBashTools } from "./tools/interactive-bash.js";
@@ -18,6 +19,7 @@ import { registerMcpManagerTools } from "./tools/mcp-manager.js";
 // 도구 임포트
 import {
   consultExpertTool, consultExpertSchema, handleConsultExpert,
+  consultExpertsParallelTool, consultExpertsParallelSchema, handleConsultExpertsParallel,
   categoryTaskTool, categoryTaskSchema, handleCategoryTask,
   backgroundStartTool, backgroundStartSchema, handleBackgroundStart,
   backgroundResultTool, backgroundResultSchema, handleBackgroundResult,
@@ -84,6 +86,13 @@ function registerTools() {
     consultExpertTool.name,
     consultExpertSchema.shape,
     (args) => handleConsultExpert(consultExpertSchema.parse(args))
+  );
+
+  // 1.5. consult_experts_parallel
+  server.tool(
+    consultExpertsParallelTool.name,
+    consultExpertsParallelSchema.shape,
+    (args) => handleConsultExpertsParallel(consultExpertsParallelSchema.parse(args))
   );
 
   // 2. route_by_category
@@ -467,10 +476,21 @@ async function main() {
 
   logger.info('Server connected via stdio');
 
+  // 대시보드 서버 시작 (기본 활성화)
+  if (process.env.DASHBOARD_ENABLED !== 'false') {
+    try {
+      const dashboard = await startDashboardServer();
+      logger.info({ url: dashboard.url, port: dashboard.port }, 'Dashboard available');
+    } catch (err) {
+      logger.warn({ error: (err as Error).message }, 'Dashboard server failed to start (non-fatal)');
+    }
+  }
+
   // 프로세스 종료 시 정리
   const gracefulShutdown = () => {
-    shutdownPersistence();  // 백그라운드 작업 상태 저장
-    shutdownHud();          // HUD 정리
+    shutdownDashboardServer(); // 대시보드 정리
+    shutdownPersistence();     // 백그라운드 작업 상태 저장
+    shutdownHud();             // HUD 정리
   };
   process.on('exit', gracefulShutdown);
   process.on('SIGINT', () => { gracefulShutdown(); process.exit(0); });

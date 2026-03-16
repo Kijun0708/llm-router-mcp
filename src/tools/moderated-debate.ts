@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { experts } from '../experts/index.js';
 import { startBackgroundWorkflow } from '../services/background-manager.js';
-import { callExpertWithFallback } from '../services/expert-router.js';
+import { callExpertWithFallback, WorkflowCallOptions } from '../services/expert-router.js';
+import { SESSION_ID } from '../session.js';
 import { logger } from '../utils/logger.js';
 
 const BLANK_EXPERT_IDS = [
@@ -134,7 +135,7 @@ function getDefaultAutoParticipants(count: number): DebateParticipant[] {
   return defaults.slice(0, count);
 }
 
-async function resolveParticipants(params: ModeratedDebateParams): Promise<ResolvedParticipants> {
+async function resolveParticipants(params: ModeratedDebateParams, workflowOptions?: WorkflowCallOptions): Promise<ResolvedParticipants> {
   if (params.participants?.length) {
     return {
       participants: params.participants.map((participant) => ({
@@ -160,8 +161,12 @@ async function resolveParticipants(params: ModeratedDebateParams): Promise<Resol
     '[{"expert_id":"gpt_blank_1","persona":"...","focus":"..."}]'
   ].filter(Boolean).join('\n\n');
 
+  const personaDesignOptions: WorkflowCallOptions | undefined = workflowOptions
+    ? { ...workflowOptions, callPhase: 'persona_design' }
+    : undefined;
+
   try {
-    const result = await callExpertWithFallback('debate_moderator', prompt, undefined, params.skip_cache ?? false);
+    const result = await callExpertWithFallback('debate_moderator', prompt, undefined, params.skip_cache ?? false, undefined, false, personaDesignOptions);
     const parsed = JSON.parse(extractJsonBlock(result.response));
     const personas = z.array(autoPersonaSchema).length(count).parse(parsed);
     return {
@@ -234,8 +239,13 @@ async function runRound(
     skipCache: boolean;
     roundBrief?: string;
     priorResponses?: Map<string, string>;
-  }
+  },
+  workflowOptions?: WorkflowCallOptions
 ): Promise<RoundResponse[]> {
+  const roundOptions: WorkflowCallOptions | undefined = workflowOptions
+    ? { ...workflowOptions, callPhase: `round_${round}` }
+    : undefined;
+
   const settled = await Promise.allSettled(
     participants.map(async (participant) => {
       const startedAt = Date.now();
@@ -250,7 +260,10 @@ async function runRound(
           options.priorResponses?.get(participant.expertId)
         ),
         undefined,
-        options.skipCache
+        options.skipCache,
+        undefined,
+        false,
+        roundOptions
       );
 
       return {
@@ -281,7 +294,8 @@ async function buildRoundBrief(
   responses: RoundResponse[],
   iteration: number,
   context?: string,
-  skipCache: boolean = false
+  skipCache: boolean = false,
+  workflowOptions?: WorkflowCallOptions
 ): Promise<string> {
   const prompt = [
     `[중재자 역할: ${iteration}차 종합 브리프 작성]`,
@@ -295,7 +309,11 @@ async function buildRoundBrief(
     '3. 특정 참여자 편을 들지 말고, 전체 토론 브리프로 작성하세요.'
   ].filter(Boolean).join('\n\n');
 
-  const result = await callExpertWithFallback('debate_moderator', prompt, undefined, skipCache);
+  const briefOptions: WorkflowCallOptions | undefined = workflowOptions
+    ? { ...workflowOptions, callPhase: `brief_${iteration}` }
+    : undefined;
+
+  const result = await callExpertWithFallback('debate_moderator', prompt, undefined, skipCache, undefined, false, briefOptions);
   return result.response;
 }
 
@@ -305,7 +323,8 @@ async function buildFinalSummary(
   roundBriefs: string[],
   followUpRounds: Array<{ round: number; responses: RoundResponse[] }>,
   context?: string,
-  skipCache: boolean = false
+  skipCache: boolean = false,
+  workflowOptions?: WorkflowCallOptions
 ): Promise<string> {
   const prompt = [
     '[중재자 역할: 최종 토론 정리]',
@@ -324,19 +343,24 @@ async function buildFinalSummary(
     '4. 결과는 실행 가능한 권고 중심으로 작성하세요.'
   ].filter(Boolean).join('\n\n');
 
-  const result = await callExpertWithFallback('debate_moderator', prompt, undefined, skipCache);
+  const summaryOptions: WorkflowCallOptions | undefined = workflowOptions
+    ? { ...workflowOptions, callPhase: 'final_summary' }
+    : undefined;
+
+  const result = await callExpertWithFallback('debate_moderator', prompt, undefined, skipCache, undefined, false, summaryOptions);
   return result.response;
 }
 
-async function executeModeratedDebate(params: ModeratedDebateParams): Promise<string> {
+async function executeModeratedDebate(params: ModeratedDebateParams, debateId: string): Promise<string> {
   const startedAt = Date.now();
-  const resolved = await resolveParticipants(params);
+  const workflowOptions: WorkflowCallOptions = { workflowId: debateId, workflowType: 'moderated_debate', sessionId: SESSION_ID };
+  const resolved = await resolveParticipants(params, workflowOptions);
   const participants = resolved.participants;
 
   const roundOne = await runRound(params.agenda, participants, 1, {
     context: params.context,
     skipCache: params.skip_cache ?? false
-  });
+  }, workflowOptions);
   const roundOneSuccesses = roundOne.filter((response) => response.response);
   if (roundOneSuccesses.length < 2) {
     throw new Error('1차 라운드에서 최소 2명 이상의 응답이 필요합니다.');
@@ -357,7 +381,8 @@ async function executeModeratedDebate(params: ModeratedDebateParams): Promise<st
       currentSuccesses,
       iteration,
       params.context,
-      params.skip_cache ?? false
+      params.skip_cache ?? false,
+      workflowOptions
     );
     roundBriefs.push(roundBrief);
 
@@ -370,7 +395,8 @@ async function executeModeratedDebate(params: ModeratedDebateParams): Promise<st
         skipCache: params.skip_cache ?? false,
         roundBrief,
         priorResponses
-      }
+      },
+      workflowOptions
     );
 
     followUpRounds.push({ round: iteration + 1, responses: followUp });
@@ -395,7 +421,8 @@ async function executeModeratedDebate(params: ModeratedDebateParams): Promise<st
       responses: round.responses.filter((response) => response.response)
     })),
     params.context,
-    params.skip_cache ?? false
+    params.skip_cache ?? false,
+    workflowOptions
   );
 
   const totalLatencyMs = Date.now() - startedAt;
@@ -461,7 +488,7 @@ export function handleModeratedDebate(params: ModeratedDebateParams): { content:
 
   const task = startBackgroundWorkflow(
     `moderated_debate:${params.agenda.substring(0, 30)}`,
-    () => executeModeratedDebate(params),
+    () => executeModeratedDebate(params, debateId),
     debateId
   );
 

@@ -82,11 +82,11 @@ export const FALLBACK_CHAIN: Record<string, string[]> = {
   devops: ['strategist', 'researcher'],
   reality_checker: ['momus', 'reviewer'],
   lsp_index_engineer: ['reviewer', 'researcher'],
-  // Blank experts (GPT/Gemini only - cross-provider fallback)
-  gpt_blank_1: ['gpt_blank_2', 'gemini_blank_1'],
-  gpt_blank_2: ['gpt_blank_1', 'gemini_blank_2'],
-  gemini_blank_1: ['gemini_blank_2', 'gpt_blank_1'],
-  gemini_blank_2: ['gemini_blank_1', 'gpt_blank_2'],
+  // Blank experts (교차 프로바이더 우선 폴백 - 같은 프로바이더 타임아웃 시 즉시 다른 프로바이더로)
+  gpt_blank_1: ['gemini_blank_1', 'gpt_blank_2'],
+  gpt_blank_2: ['gemini_blank_2', 'gpt_blank_1'],
+  gemini_blank_1: ['gpt_blank_1', 'gemini_blank_2'],
+  gemini_blank_2: ['gpt_blank_2', 'gemini_blank_1'],
   // Debate moderator
   debate_moderator: ['strategist', 'researcher']
 };

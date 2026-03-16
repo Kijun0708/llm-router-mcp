@@ -8,7 +8,7 @@ argument-hint: "<질문 또는 분석 요청>"
 
 다양한 AI 전문가에게 상담을 요청합니다. `consult_expert` MCP 도구를 사용하세요.
 
-### 전문가 목록 (19명)
+### 전문가 목록 (23명)
 
 #### 핵심 전문가
 
@@ -43,6 +43,17 @@ argument-hint: "<질문 또는 분석 요청>"
 | `reality_checker` | Gemini Pro | refactor 잔재, dead code, 혼재 경로 현실 검증 |
 | `lsp_index_engineer` | GPT | 심볼/참조/인덱스 기반 코드 인텔리전스 분석 |
 
+#### 동적 페르소나 전문가 (persona 필수)
+
+| Expert ID | 모델 | 설명 |
+|-----------|------|------|
+| `gpt_blank_1` | GPT | 사용자 정의 GPT 범용 |
+| `gpt_blank_2` | GPT | 사용자 정의 GPT 코드특화 |
+| `gemini_blank_1` | Gemini Pro | 사용자 정의 Gemini 고성능 |
+| `gemini_blank_2` | Gemini Flash | 사용자 정의 Gemini 빠른응답 |
+
+비개발 자문(투자, 마케팅, 법률 등)에 적합. `persona` 파라미터로 원하는 역할을 지정하면 중재자가 페르소나를 정제한 후 해당 역할로 응답합니다.
+
 ### 사용법
 
 ```
@@ -50,6 +61,24 @@ consult_expert({
   expert: "strategist",
   question: "이 마이크로서비스 아키텍처의 문제점을 분석해줘",
   context: "선택: 추가 컨텍스트"
+})
+```
+
+#### 동적 페르소나 전문가 사용 예시
+
+```
+consult_expert({
+  expert: "gpt_blank_1",
+  persona: "투자 전문가",
+  question: "2024년 미국 주식 시장 전망은 어떤가요?"
+})
+```
+
+```
+consult_expert({
+  expert: "gemini_blank_1",
+  persona: "마케팅 전략가",
+  question: "B2B SaaS 제품의 초기 마케팅 전략을 세워줘"
 })
 ```
 
@@ -67,3 +96,4 @@ consult_expert({
 - **테스트 전략**: `tester`
 - **리팩토링 잔재 검증**: `reality_checker`
 - **참조/심볼 추적**: `lsp_index_engineer`
+- **비개발 자문** (투자, 마케팅, 법률 등): `gpt_blank_1` 또는 `gemini_blank_1` + persona

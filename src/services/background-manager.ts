@@ -447,7 +447,7 @@ export function getTaskStatus(taskId: string): BackgroundTask | null {
   return tasks.get(taskId) || null;
 }
 
-export function getTaskResult(taskId: string): { status: string; result?: string; error?: string } {
+export function getTaskResult(taskId: string): { status: string; result?: string; error?: string; expert?: string } {
   const task = tasks.get(taskId);
   if (!task) {
     return { status: 'not_found' };
@@ -456,7 +456,8 @@ export function getTaskResult(taskId: string): { status: string; result?: string
   return {
     status: task.status,
     result: task.result,
-    error: task.error
+    error: task.error,
+    expert: task.expert
   };
 }
 

@@ -1,0 +1,34 @@
+.rl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rl-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+}
+
+.rl-item:last-child {
+  border-bottom: none;
+}
+
+.rl-model {
+  font-family: var(--font-mono);
+}
+
+.rl-status {
+  font-family: var(--font-mono);
+  font-weight: bold;
+}
+
+.rl-item.limited .rl-status {
+  color: var(--accent-red);
+}
+
+.rl-item.ok .rl-status {
+  color: var(--accent-green);
+}

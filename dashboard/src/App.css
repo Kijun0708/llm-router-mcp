@@ -1,0 +1,104 @@
+:root {
+  --bg-base: #0a0a0c;
+  --bg-panel: #141418;
+  --bg-panel-hover: #1c1c22;
+  --border-subtle: #2a2a35;
+  --border-focus: #4a4a5e;
+  --text-main: #f0f0f5;
+  --text-muted: #8a8a9e;
+  --accent-cyan: #00e5ff;
+  --accent-green: #00ff66;
+  --accent-amber: #ffb300;
+  --accent-red: #ff3366;
+  --font-ui: system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+.dashboard {
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.dashboard-title {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--accent-cyan);
+  letter-spacing: 2px;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.grid-area-active {
+  grid-column: span 8;
+}
+
+.grid-area-stats {
+  grid-column: span 4;
+}
+
+.grid-area-ratelimits {
+  grid-column: span 4;
+}
+
+.grid-area-history {
+  grid-column: span 8;
+}
+
+@media (max-width: 1199px) {
+  .grid-area-active,
+  .grid-area-stats,
+  .grid-area-ratelimits,
+  .grid-area-history {
+    grid-column: span 12;
+  }
+}
+
+/* Shared panel styles */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.panel-title {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+}
+
+.empty-state {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px;
+}

@@ -118,6 +118,12 @@ export interface OnExpertCallContext extends HookBaseContext {
   context?: string;
   /** Whether cache is being skipped */
   skipCache: boolean;
+  /** Workflow tracking */
+  workflowId?: string;
+  workflowType?: string;
+  parentCallId?: string;
+  callPhase?: string;
+  sessionId?: string;
 }
 
 /**
@@ -141,6 +147,12 @@ export interface OnExpertResultContext extends HookBaseContext {
   usedFallback: boolean;
   /** Original expert if fallback was used */
   originalExpert?: string;
+  /** Workflow tracking */
+  workflowId?: string;
+  workflowType?: string;
+  parentCallId?: string;
+  callPhase?: string;
+  sessionId?: string;
 }
 
 /**

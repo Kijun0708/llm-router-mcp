@@ -11,18 +11,22 @@ import { withRetry } from '../utils/retry.js';
 import { getProvider, getProviderSemaphore } from './providers/index.js';
 
 // 모델별 타임아웃 설정 (ms)
+// 참고: 타임아웃 재시도 버그 수정 완료 → 이 값이 실제 최대 대기시간
 function getModelTimeout(model: string): number {
   if (model.includes('gpt-5') || model.includes('codex')) {
-    return 600000;  // 10분 - GPT 5.x는 deep thinking으로 오래 걸림
+    return 1200000; // 20분 - --full-auto 자율 코드 분석 (코드리뷰 등)
   }
   if (model.includes('claude') && model.includes('opus')) {
-    return 180000;  // 3분 - Opus도 deep thinking
+    return 180000;  // 3분 - Opus deep thinking
   }
   if (model.includes('claude')) {
     return 120000;  // 2분 - Sonnet/Haiku
   }
+  if (model.includes('gemini') && model.includes('pro')) {
+    return 600000;  // 10분 - Gemini Pro --yolo 자율 실행
+  }
   if (model.includes('gemini')) {
-    return 90000;   // 1.5분 - Gemini
+    return 300000;  // 5분 - Gemini Flash --yolo 자율 실행
   }
   return 60000;     // 기본 1분
 }
@@ -301,6 +305,10 @@ export async function callExpert(
             if (error instanceof TimeoutError) return false;
             // ExpertCallError의 retryable 필드 확인
             if (error instanceof ExpertCallError) return error.retryable;
+            // cli-spawner가 plain Error로 타임아웃 throw → 메시지로 감지
+            // classifyCliError()는 retry 루프 바깥에서 실행되므로 여기서 직접 체크
+            const msg = (error as Error).message || '';
+            if (msg.includes('timeout') || msg.includes('timed out')) return false;
             return true;
           }
         }

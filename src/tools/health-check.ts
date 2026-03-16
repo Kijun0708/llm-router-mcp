@@ -7,6 +7,7 @@ import { getCacheStats, clearCache } from "../utils/cache.js";
 import { getStats as getBackgroundStats, cleanupOldTasks } from "../services/background-manager.js";
 import { experts } from "../experts/index.js";
 import { cleanupOldResponses } from "../utils/response-saver.js";
+import { getDashboardInfo } from "../dashboard-server/index.js";
 
 export const healthCheckSchema = z.object({
   include_details: z.boolean()
@@ -71,6 +72,13 @@ export async function handleHealthCheck(params: z.infer<typeof healthCheckSchema
   const backgroundStats = getBackgroundStats();
 
   let output = `## 🏥 LLM Router 상태\n\n`;
+
+  // 대시보드 정보
+  const dashboardInfo = getDashboardInfo();
+  if (dashboardInfo) {
+    output += `### 📊 대시보드\n`;
+    output += `- URL: ${dashboardInfo.url}\n\n`;
+  }
 
   output += `### CLI 도구\n`;
   output += `- Gemini: \`${config.cli.geminiPath}\`\n`;

@@ -129,6 +129,7 @@ export function handleBackgroundResult(params: z.infer<typeof backgroundResultSc
 
   if (result.status === 'completed') {
     return wrapMcpResponse(`## ✅ 작업 완료\n\n${result.result}`, {
+      expertId: result.expert,
       toolName: 'background_expert_result',
       isWorkflow: false,
     });

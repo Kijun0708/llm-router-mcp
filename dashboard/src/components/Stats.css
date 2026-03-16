@@ -1,0 +1,27 @@
+.metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.metric-label {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.accent-green { color: var(--accent-green); }
+.accent-amber { color: var(--accent-amber); }
+.accent-red { color: var(--accent-red); }

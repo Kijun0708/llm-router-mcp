@@ -57,6 +57,8 @@ export async function handleCategoryTask(params: z.infer<typeof categoryTaskSche
     ? `${params.prompt}\n\n[지침]\n${category.promptAppend}`
     : params.prompt;
 
+  const startTime = Date.now();
+
   try {
     const result = await callExpertWithFallback(
       expertId,
@@ -66,7 +68,13 @@ export async function handleCategoryTask(params: z.infer<typeof categoryTaskSche
 
     const expert = experts[result.actualExpert];
 
-    const responseText = `## ${expert.name} 응답\n` +
+    // 소요 시간 포맷
+    const totalMs = Date.now() - startTime;
+    const minutes = Math.floor(totalMs / 60000);
+    const seconds = Math.floor((totalMs % 60000) / 1000);
+    const timeStr = minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
+
+    const responseText = `## ${expert.name} 응답 (${timeStr})\n` +
           `_카테고리: ${category.description}_\n\n` +
           `${result.response}` +
           (result.fellBack ? `\n\n---\n⚠️ 폴백: ${expertId} → ${result.actualExpert}` : '');

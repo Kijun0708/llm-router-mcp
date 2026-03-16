@@ -15,6 +15,8 @@ import {
   EnsembleStrategy,
   AggregationMethod
 } from '../features/ensemble/index.js';
+import { WorkflowCallOptions } from '../services/expert-router.js';
+import { SESSION_ID } from '../session.js';
 import { wrapMcpResponse } from '../utils/response-saver.js';
 
 // ============================================================================
@@ -268,6 +270,9 @@ export async function handleEnsembleQuery(
       weight: 1.0
     }));
 
+    const workflowId = `ensemble_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const workflowOptions: WorkflowCallOptions = { workflowId, workflowType: 'ensemble_query', callPhase: 'parallel', sessionId: SESSION_ID };
+
     const result = await runEnsemble(
       params.query,
       {
@@ -279,7 +284,8 @@ export async function handleEnsembleQuery(
         useCache: !params.skip_cache
       },
       params.context,
-      params.vote_options
+      params.vote_options,
+      workflowOptions
     );
 
     let response = `## 🎭 앙상블 결과\n\n`;

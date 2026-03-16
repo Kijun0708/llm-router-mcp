@@ -38,3 +38,7 @@ release/
 
 # LLM Router runtime data
 .llm-router/
+
+# Dashboard build output & dependencies
+dashboard/dist/
+dashboard/node_modules/
