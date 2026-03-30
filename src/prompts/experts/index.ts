@@ -11,22 +11,6 @@ export {
   buildStrategistPrompt,
 } from './strategist.prompt.js';
 
-// Researcher (Librarian pattern)
-export {
-  RESEARCHER_SYSTEM_PROMPT,
-  RESEARCHER_METADATA,
-  buildResearcherPrompt,
-  type ResearchDepth,
-} from './researcher.prompt.js';
-
-// Explorer (Explore pattern)
-export {
-  EXPLORER_SYSTEM_PROMPT,
-  EXPLORER_METADATA,
-  buildExplorerPrompt,
-  type ExplorerThoroughness,
-} from './explorer.prompt.js';
-
 // Frontend (UI/UX Engineer)
 export {
   FRONTEND_SYSTEM_PROMPT,
@@ -34,36 +18,14 @@ export {
   buildFrontendPrompt,
 } from './frontend.prompt.js';
 
-// Reviewer (Code Review)
+// Codereview (Unified Code Review)
 export {
-  REVIEWER_SYSTEM_PROMPT,
-  REVIEWER_METADATA,
-  buildReviewerPrompt,
-  type ReviewFocus,
-} from './reviewer.prompt.js';
-
-// Writer (Technical Documentation)
-export {
-  WRITER_SYSTEM_PROMPT,
-  WRITER_METADATA,
-  buildWriterPrompt,
-  type DocumentationType,
-} from './writer.prompt.js';
-
-// Multimodal Looker (Visual Analysis)
-export {
-  MULTIMODAL_SYSTEM_PROMPT,
-  MULTIMODAL_METADATA,
-  buildMultimodalPrompt,
-  type MultimodalDepth,
-} from './multimodal.prompt.js';
-
-// Prometheus (Strategic Planning)
-export {
-  PROMETHEUS_SYSTEM_PROMPT,
-  PROMETHEUS_METADATA,
-  buildPrometheusPrompt,
-} from './prometheus.prompt.js';
+  CODEREVIEW_SYSTEM_PROMPT,
+  CODEREVIEW_METADATA,
+  buildCodereviewPrompt,
+  type CodereviewFocus,
+  type CodereviewDepth,
+} from './codereview.prompt.js';
 
 // Metis (Pre-planning Analysis)
 export {
@@ -78,13 +40,6 @@ export {
   MOMUS_METADATA,
   buildMomusPrompt,
 } from './momus.prompt.js';
-
-// Librarian (Multi-repo Analysis)
-export {
-  LIBRARIAN_SYSTEM_PROMPT,
-  LIBRARIAN_METADATA,
-  buildLibrarianPrompt,
-} from './librarian.prompt.js';
 
 // Security (OWASP/CWE Analysis)
 export {
@@ -109,14 +64,6 @@ export {
   buildDataPrompt,
   type DataDepth,
 } from './data.prompt.js';
-
-// Codex Reviewer (GPT Code Review)
-export {
-  CODEX_REVIEWER_SYSTEM_PROMPT,
-  CODEX_REVIEWER_METADATA,
-  buildCodexReviewerPrompt,
-  type CodexReviewDepth,
-} from './codex-reviewer.prompt.js';
 
 // DevOps (CI/CD, Docker, Kubernetes)
 export {
@@ -155,20 +102,13 @@ export {
 
 // Import for internal use
 import { STRATEGIST_SYSTEM_PROMPT, STRATEGIST_METADATA } from './strategist.prompt.js';
-import { RESEARCHER_SYSTEM_PROMPT, RESEARCHER_METADATA } from './researcher.prompt.js';
-import { EXPLORER_SYSTEM_PROMPT, EXPLORER_METADATA } from './explorer.prompt.js';
 import { FRONTEND_SYSTEM_PROMPT, FRONTEND_METADATA } from './frontend.prompt.js';
-import { REVIEWER_SYSTEM_PROMPT, REVIEWER_METADATA } from './reviewer.prompt.js';
-import { WRITER_SYSTEM_PROMPT, WRITER_METADATA } from './writer.prompt.js';
-import { MULTIMODAL_SYSTEM_PROMPT, MULTIMODAL_METADATA } from './multimodal.prompt.js';
-import { PROMETHEUS_SYSTEM_PROMPT, PROMETHEUS_METADATA } from './prometheus.prompt.js';
+import { CODEREVIEW_SYSTEM_PROMPT, CODEREVIEW_METADATA } from './codereview.prompt.js';
 import { METIS_SYSTEM_PROMPT, METIS_METADATA } from './metis.prompt.js';
 import { MOMUS_SYSTEM_PROMPT, MOMUS_METADATA } from './momus.prompt.js';
-import { LIBRARIAN_SYSTEM_PROMPT, LIBRARIAN_METADATA } from './librarian.prompt.js';
 import { SECURITY_SYSTEM_PROMPT, SECURITY_METADATA } from './security.prompt.js';
 import { TESTER_SYSTEM_PROMPT, TESTER_METADATA } from './tester.prompt.js';
 import { DATA_SYSTEM_PROMPT, DATA_METADATA } from './data.prompt.js';
-import { CODEX_REVIEWER_SYSTEM_PROMPT, CODEX_REVIEWER_METADATA } from './codex-reviewer.prompt.js';
 import { DEVOPS_SYSTEM_PROMPT, DEVOPS_METADATA } from './devops.prompt.js';
 import { REALITY_CHECKER_SYSTEM_PROMPT, REALITY_CHECKER_METADATA } from './reality-checker.prompt.js';
 import { LSP_INDEX_ENGINEER_SYSTEM_PROMPT, LSP_INDEX_ENGINEER_METADATA } from './lsp-index-engineer.prompt.js';
@@ -181,21 +121,13 @@ import type { ExpertRegistry } from '../metadata/expert-metadata.js';
  */
 export const EXPERT_REGISTRY: ExpertRegistry = {
   strategist: STRATEGIST_METADATA,
-  researcher: RESEARCHER_METADATA,
-  explorer: EXPLORER_METADATA,
   frontend: FRONTEND_METADATA,
-  reviewer: REVIEWER_METADATA,
-  writer: WRITER_METADATA,
-  multimodal: MULTIMODAL_METADATA,
-  prometheus: PROMETHEUS_METADATA,
+  codereview: CODEREVIEW_METADATA,
   metis: METIS_METADATA,
   momus: MOMUS_METADATA,
-  librarian: LIBRARIAN_METADATA,
-  // New specialized experts
   security: SECURITY_METADATA,
   tester: TESTER_METADATA,
   data: DATA_METADATA,
-  codex_reviewer: CODEX_REVIEWER_METADATA,
   devops: DEVOPS_METADATA,
   reality_checker: REALITY_CHECKER_METADATA,
   lsp_index_engineer: LSP_INDEX_ENGINEER_METADATA,
@@ -213,21 +145,13 @@ export const EXPERT_REGISTRY: ExpertRegistry = {
  */
 export const EXPERT_PROMPTS: Record<string, string> = {
   strategist: STRATEGIST_SYSTEM_PROMPT,
-  researcher: RESEARCHER_SYSTEM_PROMPT,
-  explorer: EXPLORER_SYSTEM_PROMPT,
   frontend: FRONTEND_SYSTEM_PROMPT,
-  reviewer: REVIEWER_SYSTEM_PROMPT,
-  writer: WRITER_SYSTEM_PROMPT,
-  multimodal: MULTIMODAL_SYSTEM_PROMPT,
-  prometheus: PROMETHEUS_SYSTEM_PROMPT,
+  codereview: CODEREVIEW_SYSTEM_PROMPT,
   metis: METIS_SYSTEM_PROMPT,
   momus: MOMUS_SYSTEM_PROMPT,
-  librarian: LIBRARIAN_SYSTEM_PROMPT,
-  // New specialized experts
   security: SECURITY_SYSTEM_PROMPT,
   tester: TESTER_SYSTEM_PROMPT,
   data: DATA_SYSTEM_PROMPT,
-  codex_reviewer: CODEX_REVIEWER_SYSTEM_PROMPT,
   devops: DEVOPS_SYSTEM_PROMPT,
   reality_checker: REALITY_CHECKER_SYSTEM_PROMPT,
   lsp_index_engineer: LSP_INDEX_ENGINEER_SYSTEM_PROMPT,

@@ -17,7 +17,7 @@ export const strategist: Expert = {
   temperature: 0.2,
   maxTokens: 4000,  // Increased for detailed responses
 
-  fallbacks: ["researcher", "reviewer"],
+  fallbacks: ["codereview", "momus"],
 
   useCases: STRATEGIST_METADATA.useWhen,
 

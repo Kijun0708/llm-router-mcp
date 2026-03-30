@@ -258,9 +258,9 @@ export const TESTER_METADATA: ExpertPromptMetadata = {
 
   avoidWhen: [
     'Security vulnerability analysis (use security)',
-    'General code review (use reviewer)',
+    'General code review (use codereview)',
     'Architecture decisions (use strategist)',
-    'Documentation writing (use writer)',
+    'Documentation writing (use strategist)',
   ],
 
   triggers: [

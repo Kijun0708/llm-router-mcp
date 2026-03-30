@@ -282,12 +282,8 @@ const toastOnExpertResultHook: HookDefinition<OnExpertResultContext> = {
 
     const expertNames: Record<string, string> = {
       strategist: 'Strategist',
-      researcher: 'Researcher',
-      reviewer: 'Reviewer',
-      frontend: 'Frontend Expert',
-      writer: 'Writer',
-      explorer: 'Explorer',
-      multimodal: 'Multimodal Looker'
+      codereview: 'Code Reviewer',
+      frontend: 'Frontend Expert'
     };
 
     const expertName = expertNames[context.expertId] || context.expertId;

@@ -169,7 +169,7 @@ export const DEVOPS_METADATA: ExpertPromptMetadata = {
   ],
 
   avoidWhen: [
-    'Application code review (use reviewer)',
+    'Application code review (use codereview)',
     'Security vulnerability analysis (use security)',
     'Database optimization (use data)',
     'Frontend development (use frontend)',

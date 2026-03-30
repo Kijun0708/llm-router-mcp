@@ -47,22 +47,14 @@ export function loadConfig(): Config {
 
     models: {
       strategist: process.env.MODEL_STRATEGIST || DEFAULT_MODEL_IDS.strategist,
-      researcher: process.env.MODEL_RESEARCHER || DEFAULT_MODEL_IDS.researcher,
-      reviewer: process.env.MODEL_REVIEWER || DEFAULT_MODEL_IDS.reviewer,
+      codereview: process.env.MODEL_CODEREVIEW || DEFAULT_MODEL_IDS.codereview,
       frontend: process.env.MODEL_FRONTEND || DEFAULT_MODEL_IDS.frontend,
-      writer: process.env.MODEL_WRITER || DEFAULT_MODEL_IDS.writer,
-      explorer: process.env.MODEL_EXPLORER || DEFAULT_MODEL_IDS.explorer,
-      multimodal: process.env.MODEL_MULTIMODAL || DEFAULT_MODEL_IDS.multimodal,
-      // Planning Agents
-      prometheus: process.env.MODEL_PROMETHEUS || DEFAULT_MODEL_IDS.prometheus,
       metis: process.env.MODEL_METIS || DEFAULT_MODEL_IDS.metis,
       momus: process.env.MODEL_MOMUS || DEFAULT_MODEL_IDS.momus,
-      librarian: process.env.MODEL_LIBRARIAN || DEFAULT_MODEL_IDS.librarian,
       // 특화 전문가
       security: process.env.MODEL_SECURITY || DEFAULT_MODEL_IDS.security,
       tester: process.env.MODEL_TESTER || DEFAULT_MODEL_IDS.tester,
       data: process.env.MODEL_DATA || DEFAULT_MODEL_IDS.data,
-      codex_reviewer: process.env.MODEL_CODEX_REVIEWER || DEFAULT_MODEL_IDS.codex_reviewer,
       devops: process.env.MODEL_DEVOPS || DEFAULT_MODEL_IDS.devops,
       reality_checker: process.env.MODEL_REALITY_CHECKER || DEFAULT_MODEL_IDS.reality_checker,
       lsp_index_engineer: process.env.MODEL_LSP_INDEX_ENGINEER || DEFAULT_MODEL_IDS.lsp_index_engineer,

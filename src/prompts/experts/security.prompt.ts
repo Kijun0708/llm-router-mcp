@@ -234,8 +234,8 @@ export const SECURITY_METADATA: ExpertPromptMetadata = {
   ],
 
   avoidWhen: [
-    'General code review (use reviewer)',
-    'Performance optimization (use reviewer)',
+    'General code review (use codereview)',
+    'Performance optimization (use codereview)',
     'Architecture decisions (use strategist)',
     'Feature implementation (use frontend/strategist)',
   ],

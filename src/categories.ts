@@ -23,8 +23,8 @@ export const categories: Record<string, Category> = {
 
   research: {
     id: 'research',
-    defaultExpert: 'researcher',
-    model: 'gemini-3.1-pro-preview',
+    defaultExpert: 'strategist',
+    model: 'gpt-5.4',
     temperature: 0.1,
     description: '조사, 분석, 문서 탐색',
     promptAppend: '근거를 명확히 제시하고 출처를 밝히세요.'
@@ -32,16 +32,16 @@ export const categories: Record<string, Category> = {
 
   quick: {
     id: 'quick',
-    defaultExpert: 'explorer',
-    model: 'gemini-3-flash-preview',
+    defaultExpert: 'momus',
+    model: 'gemini-3.1-pro-preview',
     temperature: 0.1,
-    description: '빠른 탐색, 간단한 질문, 파일 찾기',
+    description: '빠른 판단, 간단한 질문',
     promptAppend: '최대한 빠르고 간결하게 답변하세요.'
   },
 
   review: {
     id: 'review',
-    defaultExpert: 'reviewer',
+    defaultExpert: 'codereview',
     model: 'gemini-3.1-pro-preview',
     temperature: 0.1,
     description: '코드 리뷰, 버그 탐지, 품질 검사',
@@ -50,8 +50,8 @@ export const categories: Record<string, Category> = {
 
   documentation: {
     id: 'documentation',
-    defaultExpert: 'writer',
-    model: 'gemini-3-flash-preview',
+    defaultExpert: 'strategist',
+    model: 'gpt-5.4',
     temperature: 0.2,
     description: '문서 작성, README, API 문서화',
     promptAppend: '명확하고 구조화된 문서를 작성하세요.'

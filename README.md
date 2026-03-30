@@ -14,15 +14,17 @@ LLM Router MCP는 Claude Code가 팀 리더 역할을 하며, GPT/Gemini 전문�
 
 | 항목 | 수량 |
 |------|------|
-| MCP 도구 | 108개 |
+| MCP 도구 | 109개 |
 | 내장 훅 | 38개 |
-| AI 전문가 | 19개 |
-| 내장 스킬 | 12개 |
+| AI 전문가 | 16개 |
+| 내장 스킬 | 15개 |
 
 ### 주요 특징
 
 - **멀티 LLM 협업**: Claude Code(리더) + GPT/Gemini 전문가 협업
+- **역할 분담**: GPT(`codex --full-auto`)는 코드 변경 가능, Gemini(`--yolo`)는 리뷰/분석 전용
 - **자동 폴백**: Rate limit 발생 시 자동으로 다른 전문가로 전환
+- **병렬 위임**: `delegate_task`로 GPT 에이전트 1~3명에게 구현 작업 병렬 위임
 - **중재형 토론**: 중재자가 2라운드 패널 토론을 진행하고 최종 요약 반환
 - **백그라운드 실행**: 장시간 작업을 백그라운드에서 비동기 실행
 - **HUD Statusline**: 실시간 비용, 컨텍스트, 전문가 활동 모니터링
@@ -44,8 +46,8 @@ npm run build
 
 터미널에서 사용할 LLM CLI 도구가 인증된 상태여야 합니다:
 
-- `gemini` — Google Gemini CLI
-- `codex` — OpenAI Codex CLI
+- `gemini` — Google Gemini CLI (`--yolo` 모드로 자율 실행, 코드 변경 불가)
+- `codex` — OpenAI Codex CLI (`--full-auto` 모드로 자율 실행, 코드 변경 가능)
 
 > **Note**: `claude` CLI는 필요하지 않습니다. Claude Code가 직접 Claude 역할을 수행합니다.
 
@@ -78,37 +80,42 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 
 ---
 
+## 역할 분담
+
+| CLI 도구 | 모드 | 코드 변경 | 용도 | 자동 로드 |
+|----------|------|----------|------|----------|
+| `codex` (GPT) | `--full-auto` | 가능 | `delegate_task` 전용 구현 작업 | `AGENTS.md` |
+| `gemini` (Gemini) | `--yolo` | 불가 | 리뷰/분석 전용 | `GEMINI.md` |
+
+- 두 CLI 도구 모두 파일 경로를 넘기면 직접 읽음 (토큰 절약)
+- 2명 이상 전문가 호출 시 반드시 병렬 (`consult_experts_parallel`)
+
+---
+
 ## 전문가 시스템
 
 > GPT/Gemini 전문가만 MCP를 통해 호출됩니다. Claude 관련 분석/판단은 Claude Code가 직접 수행합니다.
 
-### 기본 전문가 (11명)
+### 기본 전문가 (5명)
 
 | 전문가 | 모델 | 역할 | 폴백 |
 |--------|------|------|------|
-| `strategist` | GPT | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
-| `researcher` | Gemini Pro | 문서 분석, 코드베이스 탐색 | reviewer → explorer |
-| `reviewer` | Gemini Pro | 코드 리뷰, 보안 분석 | explorer → codex_reviewer |
-| `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | writer → explorer |
-| `writer` | Gemini Flash | 기술 문서 작성 | explorer |
-| `explorer` | Gemini Flash | 빠른 검색, 간단한 쿼리 | - |
-| `multimodal` | Gemini Pro | 이미지 분석, 시각적 콘텐츠 | strategist → researcher |
-| `librarian` | Gemini Flash | 지식 관리, 세션 히스토리 | researcher → explorer |
-| `metis` | GPT | 전략적 계획, 문제 분해 | strategist → researcher |
-| `momus` | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → explorer |
-| `prometheus` | GPT | 창의적 솔루션, 혁신적 접근 | strategist → metis |
+| `strategist` | GPT | 아키텍처 설계, 디버깅 전략 | codereview → momus |
+| `codereview` | Gemini Pro + GPT | 통합 코드 리뷰 (perspectives로 GPT+Gemini 병렬 리뷰) | strategist → momus |
+| `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | strategist → momus |
+| `metis` | GPT | 전략적 계획, 문제 분해 | strategist → codereview |
+| `momus` | Gemini Pro | 비판적 분석, 품질 평가 | codereview → strategist |
 
-### 특화 전문가 (7명)
+### 특화 전문가 (6명)
 
 | 전문가 | 모델 | 역할 | 폴백 |
 |--------|------|------|------|
-| `security` | Gemini Pro | OWASP/CWE 보안 취약점 분석 | reviewer → strategist |
-| `tester` | GPT | TDD/테스트 전략 설계 | reviewer → researcher |
-| `data` | GPT | DB 설계, 쿼리 최적화 | strategist → researcher |
-| `codex_reviewer` | GPT | GPT 관점 코드 리뷰 | reviewer → strategist |
-| `devops` | GPT | CI/CD, Docker, K8s, 인프라 자동화 | strategist → researcher |
-| `reality_checker` | Gemini Pro | refactor 잔재, dead code, 혼재 경로 현실 검증 | momus → reviewer |
-| `lsp_index_engineer` | GPT | 참조/심볼/인덱스 기반 코드 인텔리전스 분석 | reviewer → researcher |
+| `security` | GPT | OWASP/CWE 보안 분석 | codereview → strategist |
+| `tester` | GPT | TDD/테스트 전략 | codereview → strategist |
+| `data` | GPT | DB 설계, 쿼리 최적화 | strategist → codereview |
+| `devops` | GPT | CI/CD, Docker, K8s | strategist → codereview |
+| `reality_checker` | Gemini Pro | 현실 검증, dead code 탐지 | momus → codereview |
+| `lsp_index_engineer` | GPT | 심볼/참조 분석 | codereview → strategist |
 
 ### 동적 페르소나 전문가 (4명)
 
@@ -136,9 +143,17 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 | 도구 | 설명 |
 |------|------|
 | `consult_expert` | 전문가에게 직접 질문 |
+| `consult_experts_parallel` | 2명 이상 전문가 병렬 상담 |
 | `route_by_category` | 카테고리 기반 자동 라우팅 |
 | `ensemble_query` | 여러 전문가 의견 종합 |
 | `moderated_debate` | 중재자가 2라운드 패널 토론 진행 |
+
+### 작업 위임
+
+| 도구 | 설명 |
+|------|------|
+| `delegate_task` | GPT 에이전트 1~3명에게 구현 작업 병렬 위임 (plan → execute → report) |
+| `review_code` | 멀티 관점 코드 리뷰 (files 경로 기반, context_docs, 1~3 perspectives 병렬) |
 
 ### 백그라운드 실행
 
@@ -154,7 +169,6 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 | 도구 | 설명 |
 |------|------|
 | `design_with_experts` | 다중 전문가 설계 워크플로우 |
-| `review_code` | 코드 리뷰 워크플로우 |
 | `research_topic` | 주제 연구 (quick/normal/deep) |
 
 ### 코드 분석
@@ -219,28 +233,31 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 | `auto-update-checker` | 버전 업데이트 알림 |
 | `task-toast-manager` | 작업 완료 알림 |
 | `hud-state-updater` | HUD 상태 업데이트 |
-| `directory-injector` | AGENTS.md/README.md 자동 로드 |
+| `directory-injector` | AGENTS.md/GEMINI.md 자동 로드 |
 
 ---
 
 ## 스킬 시스템
 
-12개 내장 스킬이 자연어 요청을 인식하여 자동으로 호출됩니다:
+15개 내장 스킬이 자연어 요청을 인식하여 자동으로 호출됩니다:
 
 | 스킬 | 설명 | 호출 방식 |
 |------|------|----------|
-| `consult-expert` | 18명의 AI 전문가 상담 라우팅 | 자동 |
-| `code-review` | GPT + Gemini 교차 검증 코드 리뷰 | 자동 |
-| `deep-analyze` | 아키텍처/시스템 깊은 분석 | 자동 |
-| `security-audit` | OWASP Top 10 보안 감사 | 자동 |
-| `research-topic` | API/라이브러리/기술 리서치 | 자동 |
-| `cross-verify` | 서로 다른 LLM 교차 검증 | 자동 |
-| `code-validate` | 빌드/타입/참조 오류 자동 탐지 | 자동 |
-| `design-workflow` | 다중 전문가 설계 워크플로우 | 자동 (확인 후) |
-| `moderated-debate` | 멀티 전문가 토론 및 비교 분석 | 자동 (확인 후) |
-| `tdd-workflow` | TDD 테스트 주도 개발 | 자동 (확인 후) |
-| `background-task` | 백그라운드 비동기 전문가 실행 | 자동 (확인 후) |
-| `llm-router-guide` | 시스템 레퍼런스 (Claude 전용) | 자동 참조 |
+| `llm-plan` | Claude 설계 → GPT 전체 구현 위임 | 자동 |
+| `llm-planAll` | Claude + GPT 동시 작업 | 자동 |
+| `llm-codereview` | 9단계 코드 리뷰 파이프라인 | 자동 |
+| `llm-validate` | 코드 검증 (빌드/타입/참조) | 자동 |
+| `llm-security` | OWASP 보안 감사 | 자동 |
+| `llm-research` | 기술 리서치 | 자동 |
+| `llm-design` | 설계 워크플로우 | 자동 (확인 후) |
+| `llm-tdd` | TDD 워크플로우 | 자동 (확인 후) |
+| `llm-background` | 백그라운드 작업 | 자동 (확인 후) |
+| `llm-debate` | 중재형 토론 | 자동 (확인 후) |
+| `llm-consult` | 전문가 상담 | 자동 |
+| `llm-verify` | 교차 검증 | 자동 |
+| `llm-analyze` | 깊은 분석 | 자동 |
+| `llm-health` | 헬스체크 | 자동 |
+| `llm-guide` | 시스템 가이드 | 자동 참조 |
 
 ---
 
@@ -276,9 +293,9 @@ moderated_debate({
 
 | 모델 | 타임아웃 | 이유 |
 |------|---------|--------|
-| GPT 5.x / Codex | 5분 | Deep thinking |
-| Gemini Pro | 2분 | 일반 추론 |
-| Gemini Flash | 1.5분 | 빠른 응답 |
+| GPT 5.x / Codex | 20분 | `--full-auto` 자율 실행 |
+| Gemini Pro | 10분 | `--yolo` 자율 실행 |
+| Gemini Flash | 5분 | `--yolo` 자율 실행 |
 | 기타 | 1분 | 기본값 |
 
 ---
@@ -289,8 +306,8 @@ moderated_debate({
 llm-router-mcp/
 ├── src/
 │   ├── index.ts              # MCP 서버 진입점
-│   ├── experts/              # 전문가 정의 (19개 + 토론 전용 슬롯)
-│   ├── tools/                # MCP 도구 (108개)
+│   ├── experts/              # 전문가 정의 (11개 + 토론 전용 슬롯)
+│   ├── tools/                # MCP 도구 (109개)
 │   ├── hooks/builtin/        # 내장 훅 (38개)
 │   ├── hud/                  # HUD 상태 관리
 │   ├── features/             # 기능 모듈
@@ -303,7 +320,7 @@ llm-router-mcp/
 │   │   ├── providers/         # CLI 프로바이더 (Gemini/Codex only)
 │   │   └── background-manager.ts # 백그라운드 작업 관리
 │   └── utils/                # 유틸리티
-├── skills/                   # 내장 스킬 (10개)
+├── plugin/skills/            # 내장 스킬 (15개)
 └── dist/                     # 빌드 출력
 ```
 
@@ -315,8 +332,8 @@ llm-router-mcp/
 
 ### 지원 CLI 도구
 
-- `gemini` — Gemini Pro/Flash 모델
-- `codex` — GPT 계열 모델
+- `gemini` — Gemini Pro/Flash 모델 (`--yolo` 모드, 리뷰/분석 전용)
+- `codex` — GPT 계열 모델 (`--full-auto` 모드, 코드 변경 가능)
 
 > **Note**: `claude` CLI는 사용하지 않습니다. Claude Code가 직접 Claude 역할을 수행합니다.
 

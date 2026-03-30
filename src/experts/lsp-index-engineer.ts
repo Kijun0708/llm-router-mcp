@@ -10,7 +10,7 @@ export const lspIndexEngineer: Expert = {
   systemPrompt: LSP_INDEX_ENGINEER_SYSTEM_PROMPT,
   temperature: 0.1,
   maxTokens: 4000,
-  fallbacks: ['reviewer', 'researcher'],
+  fallbacks: ['codereview', 'strategist'],
   useCases: LSP_INDEX_ENGINEER_METADATA.useWhen,
   toolChoice: 'auto'
 };

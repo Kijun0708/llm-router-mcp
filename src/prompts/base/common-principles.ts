@@ -72,7 +72,7 @@ export const EFFORT_ESTIMATE_GUIDE = `
 /**
  * Response Structure Template
  *
- * Standard response format for advisory experts (strategist, reviewer).
+ * Standard response format for advisory experts (strategist, codereview).
  * Ensures consistent, scannable output.
  */
 export const RESPONSE_STRUCTURE = `

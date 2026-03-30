@@ -13,9 +13,9 @@ import { logger } from "../utils/logger.js";
 
 const expertItemSchema = z.object({
   expert: z.enum([
-    "strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
-    "librarian", "metis", "momus", "prometheus",
-    "security", "tester", "data", "codex_reviewer", "devops", "reality_checker", "lsp_index_engineer",
+    "strategist", "codereview", "frontend",
+    "metis", "momus",
+    "security", "tester", "data", "devops", "reality_checker", "lsp_index_engineer",
     "gpt_blank_1", "gpt_blank_2", "gemini_blank_1", "gemini_blank_2"
   ]).describe("자문할 전문가"),
   question: z.string()
@@ -55,7 +55,7 @@ consult_expert를 여러 번 호출하면 순차 실행되지만, 이 도구는 
 \`\`\`json
 {
   "experts": [
-    { "expert": "reviewer", "question": "이 코드의 버그를 찾아줘" },
+    { "expert": "codereview", "question": "이 코드의 버그를 찾아줘" },
     { "expert": "strategist", "question": "이 설계의 문제점을 분석해줘" }
   ],
   "context": "공유할 코드나 문서"

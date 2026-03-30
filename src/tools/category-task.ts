@@ -19,8 +19,8 @@ export const categoryTaskSchema = z.object({
     .describe("추가 컨텍스트"),
 
   override_expert: z.enum([
-    "strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
-    "librarian", "metis", "momus", "prometheus", "security", "tester", "data", "codex_reviewer", "devops", "reality_checker", "lsp_index_engineer"
+    "strategist", "codereview", "frontend",
+    "metis", "momus", "security", "tester", "data", "devops", "reality_checker", "lsp_index_engineer"
   ]).optional()
     .describe("카테고리 기본 전문가 대신 사용할 전문가")
 }).strict();
@@ -35,7 +35,7 @@ export const categoryTaskTool = {
 - business-logic: strategist (아키텍처)
 - research: researcher (조사/분석)
 - quick: explorer (빠른탐색)
-- review: reviewer (코드리뷰)
+- review: codereview (코드리뷰)
 - documentation: writer (문서작성)`,
 
   inputSchema: categoryTaskSchema,

@@ -158,3 +158,7 @@ export {
 export {
   moderatedDebateTool, moderatedDebateSchema, handleModeratedDebate
 } from './moderated-debate.js';
+
+export {
+  delegateTaskTool, delegateTaskSchema, handleDelegateTask
+} from './delegate-task.js';

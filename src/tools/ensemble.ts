@@ -25,11 +25,11 @@ import { wrapMcpResponse } from '../utils/response-saver.js';
 
 const allExpertIds = [
   // Core experts
-  'strategist', 'researcher', 'reviewer', 'frontend', 'writer', 'explorer', 'multimodal',
+  'strategist', 'codereview', 'frontend',
   // Planning experts
-  'prometheus', 'metis', 'momus', 'librarian',
+  'metis', 'momus',
   // Specialized experts
-  'security', 'tester', 'data', 'codex_reviewer', 'devops', 'reality_checker', 'lsp_index_engineer',
+  'security', 'tester', 'data', 'devops', 'reality_checker', 'lsp_index_engineer',
   // Blank experts (GPT/Gemini only)
   'gpt_blank_1', 'gpt_blank_2', 'gemini_blank_1', 'gemini_blank_2',
   // Debate moderator
@@ -61,7 +61,7 @@ export const ensembleQuerySchema = z.object({
   experts: z.array(z.enum(allExpertIds))
     .min(1)
     .max(10)
-    .default(['strategist', 'researcher', 'reviewer'])
+    .default(['strategist', 'momus', 'codereview'])
     .describe('참여할 전문가 목록'),
 
   synthesizer: z.enum(allExpertIds)
@@ -192,7 +192,7 @@ export const ensembleQueryTool = {
   description: `여러 LLM 전문가를 조합하여 앙상블 쿼리 실행.
 
 전략: parallel(병렬), synthesize(합성), vote(투표), best_of_n, chain(순차)
-전문가: strategist, researcher, reviewer, frontend, writer, explorer, multimodal, security, tester, data, codex_reviewer, devops, reality_checker, lsp_index_engineer + blank 전문가(gpt_blank_*, gemini_blank_*)
+전문가: strategist, codereview, frontend, metis, momus, security, tester, data, devops, reality_checker, lsp_index_engineer + blank 전문가(gpt_blank_*, gemini_blank_*)
 
 synthesize 전략: synthesizer 필수. vote 전략: vote_options 필수.`,
 

@@ -6,8 +6,9 @@ import { experts } from "../experts/index.js";
 import { DEFAULT_MODEL_FAMILIES } from "../model-defaults.js";
 
 const expertIds = [
-  "strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
-  "librarian", "metis", "momus", "prometheus", "security", "tester", "data", "codex_reviewer", "devops", "reality_checker", "lsp_index_engineer"
+  "strategist", "codereview", "frontend",
+  "metis", "momus", "security", "tester", "data", "devops", "reality_checker", "lsp_index_engineer",
+  "gpt_blank_1", "gpt_blank_2", "gemini_blank_1", "gemini_blank_2", "debate_moderator"
 ] as const;
 
 export const setExpertModelSchema = z.object({
@@ -31,7 +32,7 @@ ${expertIds.map((expertId) => `- ${expertId}: ${DEFAULT_MODEL_FAMILIES[expertId]
 
 ## 사용 예시
 - expert: "strategist", model: "your-model-name"
-- expert: "researcher", model: "your-model-name"
+- expert: "codereview", model: "your-model-name"
 
 ## 참고
 - 변경사항은 MCP 세션 동안만 유지됩니다

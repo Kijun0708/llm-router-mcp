@@ -8,7 +8,7 @@
  * - Gathers structural context (imports, exports, dependencies)
  * - Prepares context for the implementation phase
  *
- * Uses the explorer expert for efficient codebase search.
+ * Uses the momus expert for efficient codebase search.
  */
 
 import {
@@ -102,7 +102,7 @@ function extractKeywords(request: string): string[] {
 }
 
 /**
- * Builds the assessment query for the explorer.
+ * Builds the assessment query for the momus expert.
  */
 function buildAssessmentQuery(
   request: string,
@@ -136,7 +136,7 @@ What should be done in the implementation phase.`;
 }
 
 /**
- * Parses file paths from the explorer's response.
+ * Parses file paths from the momus expert's response.
  */
 function parseRelevantFiles(response: string): string[] {
   const files: string[] = [];
@@ -186,9 +186,9 @@ export const phase1Assessment: PhaseHandler = {
       // Build assessment query
       const query = buildAssessmentQuery(originalRequest, intent, keywords);
 
-      // Use explorer expert for assessment
-      const explorer = experts.explorer;
-      const response = await callExpert(explorer, query, {
+      // Use momus expert for assessment
+      const momus = experts.momus;
+      const response = await callExpert(momus, query, {
         skipCache: true  // Always get fresh results for assessment
       });
 
@@ -208,7 +208,7 @@ export const phase1Assessment: PhaseHandler = {
         metadata: {
           keywords,
           fileCount: relevantFiles.length,
-          explorerUsed: response.actualExpert
+          momusUsed: response.actualExpert
         }
       };
     } catch (error) {
@@ -263,7 +263,7 @@ function buildAssessmentOutput(
 ${relevantFiles.length > 0 ? `### Files Identified
 ${relevantFiles.map(f => `- \`${f}\``).join('\n')}` : '### No specific files identified'}
 
-### Explorer Analysis
+### Momus Analysis
 ${explorerResponse.substring(0, 1000)}${explorerResponse.length > 1000 ? '...' : ''}`;
 }
 

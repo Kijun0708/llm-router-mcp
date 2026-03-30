@@ -96,7 +96,7 @@ async function executeExplorationQueries(
   queries: ExplorationQuery[],
   parallel: boolean
 ): Promise<string[]> {
-  const explorer = experts.explorer;
+  const momus = experts.momus;
   const results: string[] = [];
 
   if (parallel && queries.length > 1) {
@@ -110,7 +110,7 @@ async function executeExplorationQueries(
 
     for (const batch of batches) {
       const batchResults = await Promise.allSettled(
-        batch.map(q => callExpert(explorer, q.query, { skipCache: true }))
+        batch.map(q => callExpert(momus, q.query, { skipCache: true }))
       );
 
       for (const result of batchResults) {
@@ -126,7 +126,7 @@ async function executeExplorationQueries(
     // Execute sequentially
     for (const query of queries) {
       try {
-        const response = await callExpert(explorer, query.query, { skipCache: true });
+        const response = await callExpert(momus, query.query, { skipCache: true });
         results.push(response.response);
       } catch (error) {
         logger.warn({ error, query: query.type }, 'Exploration query failed');

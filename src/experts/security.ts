@@ -16,7 +16,7 @@ export const security: Expert = {
   temperature: 0.1,  // Conservative for accurate security analysis
   maxTokens: 4000,
 
-  fallbacks: ["reviewer", "strategist"],
+  fallbacks: ["codereview", "strategist"],
 
   useCases: SECURITY_METADATA.useWhen,
 

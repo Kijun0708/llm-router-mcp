@@ -127,13 +127,13 @@ const COMPLEXITY_INDICATORS = {
  * Expert recommendations by intent type.
  */
 const EXPERT_RECOMMENDATIONS: Record<IntentType, string[]> = {
-  conceptual: ['strategist', 'researcher'],
-  implementation: ['strategist', 'frontend', 'writer'],
-  debugging: ['strategist', 'reviewer'],
-  refactoring: ['strategist', 'reviewer'],
-  research: ['researcher', 'explorer'],
-  review: ['reviewer', 'strategist'],
-  documentation: ['writer', 'researcher']
+  conceptual: ['strategist', 'momus'],
+  implementation: ['strategist', 'frontend', 'momus'],
+  debugging: ['strategist', 'codereview'],
+  refactoring: ['strategist', 'codereview'],
+  research: ['strategist', 'momus'],
+  review: ['codereview', 'strategist'],
+  documentation: ['strategist', 'momus']
 };
 
 /**

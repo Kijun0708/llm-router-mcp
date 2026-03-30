@@ -30,9 +30,9 @@ const INTENT_TO_EXPERT: Record<string, string> = {
   conceptual: 'strategist',
   implementation: 'strategist',
   debugging: 'strategist',
-  refactoring: 'reviewer',
-  research: 'researcher',
-  review: 'reviewer',
+  refactoring: 'codereview',
+  research: 'strategist',
+  review: 'codereview',
   documentation: 'writer'
 };
 
@@ -234,7 +234,7 @@ async function handleRalphLoopMode(
     const result = await manager.execute(taskId, request, {
       maxIterations,
       completionPromise,
-      expert: expert as 'strategist' | 'researcher' | 'reviewer' | 'frontend' | 'writer' | 'explorer' | 'multimodal',
+      expert: expert as 'strategist' | 'codereview' | 'frontend' | 'metis' | 'momus',
       context
     });
 

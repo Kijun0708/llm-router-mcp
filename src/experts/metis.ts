@@ -16,7 +16,7 @@ export const metis: Expert = {
   temperature: 0.2,
   maxTokens: 3500,
 
-  fallbacks: ["prometheus", "strategist"],
+  fallbacks: ["strategist", "codereview"],
 
   useCases: METIS_METADATA.useWhen,
 

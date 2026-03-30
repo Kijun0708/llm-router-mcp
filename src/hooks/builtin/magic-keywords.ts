@@ -98,7 +98,7 @@ const MAGIC_KEYWORDS: MagicKeywordDefinition[] = [
       /\b어디.*있/
     ],
     description: '멀티 에이전트 병렬 검색 모드',
-    recommendedExpert: 'explorer',
+    recommendedExpert: 'momus',
     contextInjection: `
 🔍 **SEARCH 모드 활성화**
 
@@ -122,7 +122,7 @@ const MAGIC_KEYWORDS: MagicKeywordDefinition[] = [
       /\b살펴\s*(?:봐|봐줘|주세요)\b/
     ],
     description: '멀티 페이즈 전문가 분석 모드',
-    recommendedExpert: 'researcher',
+    recommendedExpert: 'strategist',
     recommendedWorkflow: 'research_topic',
     contextInjection: `
 🔬 **ANALYZE 모드 활성화**
@@ -149,7 +149,7 @@ const MAGIC_KEYWORDS: MagicKeywordDefinition[] = [
       /\b상세\s*(?:히|하게)\b/
     ],
     description: '철저한 심층 연구 모드',
-    recommendedExpert: 'researcher',
+    recommendedExpert: 'strategist',
     recommendedWorkflow: 'research_topic',
     contextInjection: `
 🏊 **DEEPDIVE 모드 활성화**
@@ -203,7 +203,7 @@ const MAGIC_KEYWORDS: MagicKeywordDefinition[] = [
       /\b코드\s*정리\b/
     ],
     description: '코드 리팩토링 모드',
-    recommendedExpert: 'reviewer',
+    recommendedExpert: 'codereview',
     recommendedWorkflow: 'review_code',
     contextInjection: `
 🔧 **REFACTOR 모드 활성화**
@@ -230,7 +230,7 @@ const MAGIC_KEYWORDS: MagicKeywordDefinition[] = [
       /\b봐\s*(?:줘|주세요)\b/
     ],
     description: '코드 리뷰 모드',
-    recommendedExpert: 'reviewer',
+    recommendedExpert: 'codereview',
     recommendedWorkflow: 'review_code',
     contextInjection: `
 👀 **REVIEW 모드 활성화**
@@ -257,7 +257,7 @@ const MAGIC_KEYWORDS: MagicKeywordDefinition[] = [
       /\bAPI\s*문서\b/i
     ],
     description: '문서화 모드',
-    recommendedExpert: 'writer',
+    recommendedExpert: 'strategist',
     contextInjection: `
 📝 **DOCUMENT 모드 활성화**
 

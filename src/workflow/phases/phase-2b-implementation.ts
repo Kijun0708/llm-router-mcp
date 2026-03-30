@@ -30,53 +30,53 @@ import { EXPERT_TOOL_RESTRICTIONS } from '../../prompts/base/tool-restrictions.j
  */
 const EXPERT_SELECTION_MATRIX: Record<IntentType, Record<ComplexityLevel, string[]>> = {
   conceptual: {
-    trivial: ['explorer'],
-    simple: ['researcher'],
-    moderate: ['researcher', 'strategist'],
-    complex: ['strategist', 'researcher'],
+    trivial: ['momus'],
+    simple: ['strategist'],
+    moderate: ['strategist', 'momus'],
+    complex: ['strategist', 'momus'],
     epic: ['strategist']
   },
   implementation: {
-    trivial: ['explorer', 'writer'],
-    simple: ['frontend', 'writer'],
+    trivial: ['momus', 'strategist'],
+    simple: ['frontend', 'strategist'],
     moderate: ['strategist', 'frontend'],
     complex: ['strategist'],
     epic: ['strategist']
   },
   debugging: {
-    trivial: ['explorer'],
-    simple: ['reviewer'],
-    moderate: ['reviewer', 'strategist'],
-    complex: ['strategist', 'reviewer'],
+    trivial: ['momus'],
+    simple: ['codereview'],
+    moderate: ['codereview', 'strategist'],
+    complex: ['strategist', 'codereview'],
     epic: ['strategist']
   },
   refactoring: {
-    trivial: ['reviewer'],
-    simple: ['reviewer'],
-    moderate: ['strategist', 'reviewer'],
+    trivial: ['codereview'],
+    simple: ['codereview'],
+    moderate: ['strategist', 'codereview'],
     complex: ['strategist'],
     epic: ['strategist']
   },
   research: {
-    trivial: ['explorer'],
-    simple: ['explorer', 'researcher'],
-    moderate: ['researcher'],
-    complex: ['researcher', 'strategist'],
-    epic: ['strategist', 'researcher']
+    trivial: ['momus'],
+    simple: ['momus', 'strategist'],
+    moderate: ['strategist'],
+    complex: ['strategist', 'momus'],
+    epic: ['strategist', 'momus']
   },
   review: {
-    trivial: ['reviewer'],
-    simple: ['reviewer'],
-    moderate: ['reviewer', 'strategist'],
-    complex: ['strategist', 'reviewer'],
+    trivial: ['codereview'],
+    simple: ['codereview'],
+    moderate: ['codereview', 'strategist'],
+    complex: ['strategist', 'codereview'],
     epic: ['strategist']
   },
   documentation: {
-    trivial: ['writer'],
-    simple: ['writer'],
-    moderate: ['writer', 'researcher'],
-    complex: ['writer', 'strategist'],
-    epic: ['strategist', 'writer']
+    trivial: ['strategist'],
+    simple: ['strategist'],
+    moderate: ['strategist', 'momus'],
+    complex: ['strategist', 'momus'],
+    epic: ['strategist', 'momus']
   }
 };
 

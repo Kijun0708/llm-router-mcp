@@ -106,18 +106,6 @@ const EXPERT_PATTERNS: ExpertPattern[] = [
     description: '아키텍처 및 전략적 결정'
   },
   {
-    expertId: 'prometheus',
-    keywords: ['plan', 'planning', 'project', 'roadmap', 'phases', '계획', '프로젝트', '로드맵'],
-    patterns: [
-      /plan (for|to|out)/i,
-      /how (do|should) (i|we) (start|begin|approach)/i,
-      /break (this|it) (down|into)/i,
-      /계획을? 세워/i,
-      /어디서부터 시작/i
-    ],
-    description: '프로젝트 계획 및 단계 설계'
-  },
-  {
     expertId: 'metis',
     keywords: ['requirements', 'feasibility', 'scope', 'analysis', '요구사항', '가능성', '범위', '분석'],
     patterns: [
@@ -142,31 +130,7 @@ const EXPERT_PATTERNS: ExpertPattern[] = [
     description: '계획 검증 및 QA'
   },
   {
-    expertId: 'researcher',
-    keywords: ['research', 'documentation', 'docs', 'library', 'api', '문서', '라이브러리', '조사'],
-    patterns: [
-      /how does .+ work/i,
-      /documentation for/i,
-      /what (is|are) .+ (api|library|framework)/i,
-      /어떻게 작동/i,
-      /문서 찾아/i
-    ],
-    description: '문서 분석 및 조사'
-  },
-  {
-    expertId: 'librarian',
-    keywords: ['repository', 'codebase', 'multiple', 'repos', 'cross', '레포', '코드베이스', '여러'],
-    patterns: [
-      /across (multiple|different) (repos|repositories|projects)/i,
-      /compare .+ (repos|codebases)/i,
-      /relationship between/i,
-      /여러 (레포|프로젝트)/i,
-      /비교해/i
-    ],
-    description: '멀티 레포지토리 분석'
-  },
-  {
-    expertId: 'reviewer',
+    expertId: 'codereview',
     keywords: ['code review', 'bug', 'security', 'performance', '코드 리뷰', '버그', '보안', '성능'],
     patterns: [
       /review (this|my) code/i,
@@ -189,41 +153,6 @@ const EXPERT_PATTERNS: ExpertPattern[] = [
     ],
     description: 'UI/UX 및 프론트엔드'
   },
-  {
-    expertId: 'writer',
-    keywords: ['documentation', 'readme', 'api docs', 'tutorial', '문서화', 'README', '튜토리얼'],
-    patterns: [
-      /write (documentation|docs|readme)/i,
-      /document (this|the)/i,
-      /create .+ (guide|tutorial)/i,
-      /문서화 해/i,
-      /README 작성/i
-    ],
-    description: '기술 문서 작성'
-  },
-  {
-    expertId: 'explorer',
-    keywords: ['find', 'search', 'locate', 'where', '찾아', '검색', '어디'],
-    patterns: [
-      /where (is|are|can i find)/i,
-      /find (all|the) .+ files/i,
-      /search for/i,
-      /어디에 있/i,
-      /파일 찾아/i
-    ],
-    description: '코드베이스 탐색'
-  },
-  {
-    expertId: 'multimodal',
-    keywords: ['image', 'screenshot', 'diagram', 'visual', '이미지', '스크린샷', '다이어그램'],
-    patterns: [
-      /look at (this|the) (image|screenshot|diagram)/i,
-      /analyze (this|the) (image|visual)/i,
-      /이미지 분석/i,
-      /스크린샷 봐/i
-    ],
-    description: '이미지/시각 자료 분석'
-  }
 ];
 
 /**

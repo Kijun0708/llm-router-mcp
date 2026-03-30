@@ -16,7 +16,7 @@ export const tester: Expert = {
   temperature: 0.2,  // Slightly creative for edge case discovery
   maxTokens: 4000,
 
-  fallbacks: ["reviewer", "researcher"],
+  fallbacks: ["codereview", "strategist"],
 
   useCases: TESTER_METADATA.useWhen,
 

@@ -68,7 +68,7 @@ export const BLANK_METADATA: ExpertPromptMetadata = {
   avoidWhen: [
     'Specialized technical tasks (use specific experts)',
     'Security analysis (use security)',
-    'Code review (use reviewer/codex_reviewer)',
+    'Code review (use codereview)',
     'Database optimization (use data)',
   ],
 

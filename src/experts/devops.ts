@@ -16,7 +16,7 @@ export const devops: Expert = {
   temperature: 0.2,
   maxTokens: 4000,
 
-  fallbacks: ["strategist", "researcher"],
+  fallbacks: ["strategist", "codereview"],
 
   useCases: DEVOPS_METADATA.useWhen,
 

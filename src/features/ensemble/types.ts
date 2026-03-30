@@ -158,13 +158,13 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
   {
     id: 'diverse_perspectives',
     name: '다양한 관점',
-    description: 'GPT, Claude, Gemini의 다양한 관점을 수집',
+    description: 'GPT와 Gemini의 다양한 관점을 수집',
     config: {
       strategy: 'parallel',
       participants: [
         { expertId: 'strategist', weight: 1.0 },   // GPT
-        { expertId: 'researcher', weight: 1.0 },   // Claude
-        { expertId: 'reviewer', weight: 1.0 }      // Gemini
+        { expertId: 'momus', weight: 1.0 },         // Gemini
+        { expertId: 'codereview', weight: 1.0 }     // Gemini
       ],
       aggregation: 'concatenate'
     },
@@ -178,8 +178,8 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
       strategy: 'synthesize',
       participants: [
         { expertId: 'strategist', weight: 1.0 },
-        { expertId: 'researcher', weight: 1.0 },
-        { expertId: 'reviewer', weight: 0.8 }
+        { expertId: 'momus', weight: 1.0 },
+        { expertId: 'codereview', weight: 0.8 }
       ],
       aggregation: 'synthesize',
       synthesizer: 'strategist'
@@ -193,7 +193,7 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
     config: {
       strategy: 'parallel',
       participants: [
-        { expertId: 'reviewer', role: '버그/보안 검토' },
+        { expertId: 'codereview', role: '버그/보안 검토' },
         { expertId: 'strategist', role: '아키텍처 검토' },
         { expertId: 'frontend', role: 'UX/접근성 검토' }
       ],
@@ -208,8 +208,8 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
     config: {
       strategy: 'parallel',
       participants: [
-        { expertId: 'explorer', weight: 1.0 },
-        { expertId: 'writer', weight: 1.0 }
+        { expertId: 'momus', weight: 1.0 },
+        { expertId: 'codereview', weight: 1.0 }
       ],
       aggregation: 'concatenate'
     },
@@ -221,12 +221,12 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
   {
     id: 'multi_review',
     name: '다중 관점 코드리뷰',
-    description: 'Gemini + GPT Codex 코드리뷰',
+    description: '통합 코드리뷰 + 전략가 관점',
     config: {
       strategy: 'parallel',
       participants: [
-        { expertId: 'reviewer', role: 'Gemini 관점' },
-        { expertId: 'codex_reviewer', role: 'GPT Codex 관점' }
+        { expertId: 'codereview', role: '통합 코드리뷰' },
+        { expertId: 'strategist', role: '아키텍처 관점' }
       ],
       aggregation: 'concatenate'
     },
@@ -240,7 +240,7 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
       strategy: 'parallel',
       participants: [
         { expertId: 'tester', role: '테스트 전략가' },
-        { expertId: 'reviewer', role: '코드 품질' }
+        { expertId: 'codereview', role: '코드 품질' }
       ],
       aggregation: 'synthesize',
       synthesizer: 'tester'
@@ -254,23 +254,17 @@ export const DEFAULT_PRESETS: EnsemblePreset[] = [
  */
 export const EXPERT_PROVIDERS: Record<string, string> = {
   strategist: 'OpenAI (GPT)',
-  researcher: 'Google (Gemini Pro)',
-  reviewer: 'Google (Gemini Pro)',
+  codereview: 'Google (Gemini Pro)',
   frontend: 'Google (Gemini Pro)',
-  writer: 'Google (Gemini Flash)',
-  explorer: 'Google (Gemini Flash)',
-  multimodal: 'Google (Gemini Pro)',
-  // Planning agents
-  prometheus: 'OpenAI (GPT)',
   metis: 'OpenAI (GPT)',
   momus: 'Google (Gemini Pro)',
-  librarian: 'Google (Gemini Flash)',
   // Specialized experts
   security: 'OpenAI (GPT 5.4)',
   tester: 'OpenAI (GPT 5.4)',
   data: 'OpenAI (GPT 5.4)',
-  codex_reviewer: 'OpenAI (GPT 5.4)',
   devops: 'OpenAI (GPT 5.4)',
+  reality_checker: 'Google (Gemini Pro)',
+  lsp_index_engineer: 'OpenAI (GPT 5.4)',
   // Blank experts (GPT/Gemini only)
   gpt_blank_1: 'OpenAI (GPT 5.4)',
   gpt_blank_2: 'OpenAI (GPT 5.4)',

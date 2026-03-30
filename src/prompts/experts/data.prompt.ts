@@ -289,7 +289,7 @@ export const DATA_METADATA: ExpertPromptMetadata = {
   ],
 
   avoidWhen: [
-    'Application code review (use reviewer)',
+    'Application code review (use codereview)',
     'Security audit (use security)',
     'Frontend development (use frontend)',
     'General architecture (use strategist)',

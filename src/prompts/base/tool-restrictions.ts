@@ -152,11 +152,8 @@ export const DOCUMENTATION_TOOLS: ToolRestriction = {
  */
 export const EXPERT_TOOL_RESTRICTIONS: Record<string, ToolRestriction> = {
   strategist: READ_ONLY_TOOLS,
-  researcher: RESEARCH_TOOLS,
-  reviewer: READ_ONLY_TOOLS,
+  codereview: READ_ONLY_TOOLS,
   frontend: FULL_TOOLS,
-  writer: DOCUMENTATION_TOOLS,
-  explorer: EXPLORATION_TOOLS,
 };
 
 /**

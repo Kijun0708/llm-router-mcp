@@ -21,7 +21,7 @@ export const ralphLoopStartSchema = z.object({
     .describe('최대 반복 횟수 (기본: 10, 최대: 50)'),
   completion_promise: z.string().default('DONE').optional()
     .describe('완료 시 출력할 프라미스 텍스트 (기본: "DONE")'),
-  expert: z.enum(['strategist', 'researcher', 'reviewer', 'frontend', 'writer', 'explorer', 'multimodal'])
+  expert: z.enum(['strategist', 'codereview', 'frontend', 'metis', 'momus', 'security', 'tester', 'data', 'devops', 'reality_checker', 'lsp_index_engineer'])
     .default('strategist').optional()
     .describe('작업에 사용할 전문가 (기본: strategist)'),
   context: z.string().optional()

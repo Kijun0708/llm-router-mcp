@@ -145,7 +145,7 @@ const builtinCommands: CommandDefinition[] = [
     description: 'Search across codebase',
     handler: (args, rawArgs) => ({
       handled: true,
-      routeToExpert: 'explorer',
+      routeToExpert: 'momus',
       modifyPrompt: `Search for: ${rawArgs}`,
       shouldContinue: true
     })
@@ -156,7 +156,7 @@ const builtinCommands: CommandDefinition[] = [
     description: 'Code review mode',
     handler: (args, rawArgs) => ({
       handled: true,
-      routeToExpert: 'reviewer',
+      routeToExpert: 'codereview',
       modifyPrompt: `Review: ${rawArgs}`,
       shouldContinue: true
     })
@@ -178,7 +178,7 @@ const builtinCommands: CommandDefinition[] = [
     description: 'Documentation mode',
     handler: (args, rawArgs) => ({
       handled: true,
-      routeToExpert: 'writer',
+      routeToExpert: 'strategist',
       modifyPrompt: `Document: ${rawArgs}`,
       shouldContinue: true
     })
@@ -200,7 +200,7 @@ const builtinCommands: CommandDefinition[] = [
     description: 'Research mode',
     handler: (args, rawArgs) => ({
       handled: true,
-      routeToExpert: 'researcher',
+      routeToExpert: 'strategist',
       modifyPrompt: `Research: ${rawArgs}`,
       shouldContinue: true
     })

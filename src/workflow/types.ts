@@ -116,7 +116,7 @@ export const DEFAULT_WORKFLOW_CONFIG: WorkflowConfig = {
   timeoutMs: 900000,  // 15 minutes (overall)
   phaseTimeouts: {
     intent: 30000,        // 30초
-    assessment: 300000,   // 5분 (explorer 호출)
+    assessment: 300000,   // 5분 (momus 호출)
     exploration: 300000,  // 5분 (병렬 탐색)
     implementation: 600000, // 10분 (전문가 호출 - oh-my-opencode 스타일)
     verification: 180000, // 3분 (검증 - Sisyphus mode)

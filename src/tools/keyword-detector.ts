@@ -17,7 +17,7 @@ import {
 // Tool Schemas
 // ============================================================================
 
-const expertIdEnum = z.enum(['strategist', 'researcher', 'reviewer', 'frontend', 'writer', 'explorer', 'multimodal']);
+const expertIdEnum = z.enum(['strategist', 'codereview', 'frontend', 'metis', 'momus', 'security', 'tester', 'data', 'devops', 'reality_checker', 'lsp_index_engineer']);
 const matchTypeEnum = z.enum(['exact', 'contains', 'startsWith', 'endsWith', 'regex']);
 
 export const keywordAddSchema = z.object({
@@ -108,7 +108,7 @@ export const keywordAddTool = {
 
 ## 예시
 \`\`\`
-keyword_add name="Security Check" keywords=["보안", "security", "XSS"] target_expert="reviewer" priority=90
+keyword_add name="Security Check" keywords=["보안", "security", "XSS"] target_expert="codereview" priority=90
 \`\`\``,
 
   inputSchema: keywordAddSchema,

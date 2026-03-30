@@ -2,21 +2,13 @@
 
 import { Expert } from '../types.js';
 import { strategist, STRATEGIST_METADATA } from './strategist.js';
-import { researcher, RESEARCHER_METADATA } from './researcher.js';
-import { reviewer, REVIEWER_METADATA } from './reviewer.js';
+import { codereview, CODEREVIEW_METADATA } from './codereview.js';
 import { frontend, FRONTEND_METADATA } from './frontend.js';
-import { writer, WRITER_METADATA } from './writer.js';
-import { explorer, EXPLORER_METADATA } from './explorer.js';
-import { multimodal, MULTIMODAL_METADATA } from './multimodal.js';
-import { prometheus, PROMETHEUS_METADATA } from './prometheus.js';
 import { metis, METIS_METADATA } from './metis.js';
 import { momus, MOMUS_METADATA } from './momus.js';
-import { librarian, LIBRARIAN_METADATA } from './librarian.js';
-// New specialized experts
 import { security, SECURITY_METADATA } from './security.js';
 import { tester, TESTER_METADATA } from './tester.js';
 import { data, DATA_METADATA } from './data.js';
-import { codexReviewer, CODEX_REVIEWER_METADATA } from './codex-reviewer.js';
 import { devops, DEVOPS_METADATA } from './devops.js';
 import { realityChecker, REALITY_CHECKER_METADATA } from './reality-checker.js';
 import { lspIndexEngineer, LSP_INDEX_ENGINEER_METADATA } from './lsp-index-engineer.js';
@@ -32,21 +24,13 @@ import type { ExpertPromptMetadata } from '../prompts/metadata/expert-metadata.j
 
 export const experts: Record<string, Expert> = {
   strategist,
-  researcher,
-  reviewer,
+  codereview,
   frontend,
-  writer,
-  explorer,
-  multimodal,
-  prometheus,
   metis,
   momus,
-  librarian,
-  // New specialized experts
   security,
   tester,
   data,
-  codex_reviewer: codexReviewer,
   devops,
   reality_checker: realityChecker,
   lsp_index_engineer: lspIndexEngineer,
@@ -63,39 +47,31 @@ export type ExpertId = keyof typeof experts;
 
 // 폴백 매핑
 export const FALLBACK_CHAIN: Record<string, string[]> = {
-  strategist: ['researcher', 'reviewer'],
-  researcher: ['reviewer', 'explorer'],
-  reviewer: ['explorer', 'writer', 'codex_reviewer'],  // Added codex_reviewer
-  frontend: ['writer', 'explorer'],
-  writer: ['explorer', 'reviewer'],
-  explorer: ['writer', 'researcher'],
-  multimodal: ['researcher', 'reviewer'],  // Multimodal fallback chain
-  prometheus: ['strategist', 'metis'],     // Planning agents
-  metis: ['prometheus', 'strategist'],
-  momus: ['reviewer', 'strategist'],
-  librarian: ['researcher', 'explorer'],
-  // New specialized experts
-  security: ['reviewer', 'strategist'],
-  tester: ['reviewer', 'researcher'],
-  data: ['strategist', 'researcher'],
-  codex_reviewer: ['reviewer', 'strategist'],
-  devops: ['strategist', 'researcher'],
-  reality_checker: ['momus', 'reviewer'],
-  lsp_index_engineer: ['reviewer', 'researcher'],
-  // Blank experts (교차 프로바이더 우선 폴백 - 같은 프로바이더 타임아웃 시 즉시 다른 프로바이더로)
+  strategist: ['codereview', 'momus'],
+  codereview: ['strategist', 'momus'],
+  frontend: ['strategist', 'momus'],
+  metis: ['strategist', 'codereview'],
+  momus: ['codereview', 'strategist'],
+  security: ['codereview', 'strategist'],
+  tester: ['codereview', 'strategist'],
+  data: ['strategist', 'codereview'],
+  devops: ['strategist', 'codereview'],
+  reality_checker: ['momus', 'codereview'],
+  lsp_index_engineer: ['codereview', 'strategist'],
+  // Blank experts (교차 프로바이더 우선 폴백)
   gpt_blank_1: ['gemini_blank_1', 'gpt_blank_2'],
   gpt_blank_2: ['gemini_blank_2', 'gpt_blank_1'],
   gemini_blank_1: ['gpt_blank_1', 'gemini_blank_2'],
   gemini_blank_2: ['gpt_blank_2', 'gemini_blank_1'],
   // Debate moderator
-  debate_moderator: ['strategist', 'researcher']
+  debate_moderator: ['strategist', 'momus']
 };
 
 // Export individual experts
 export {
-  strategist, researcher, reviewer, frontend, writer, explorer, multimodal,
-  prometheus, metis, momus, librarian,
-  security, tester, data, codexReviewer, devops, realityChecker, lspIndexEngineer,
+  strategist, codereview, frontend,
+  metis, momus,
+  security, tester, data, devops, realityChecker, lspIndexEngineer,
   gptBlank1, gptBlank2, geminiBlank1, geminiBlank2,
   debateModerator
 };
@@ -103,20 +79,13 @@ export {
 // Export metadata
 export {
   STRATEGIST_METADATA,
-  RESEARCHER_METADATA,
-  REVIEWER_METADATA,
+  CODEREVIEW_METADATA,
   FRONTEND_METADATA,
-  WRITER_METADATA,
-  EXPLORER_METADATA,
-  MULTIMODAL_METADATA,
-  PROMETHEUS_METADATA,
   METIS_METADATA,
   MOMUS_METADATA,
-  LIBRARIAN_METADATA,
   SECURITY_METADATA,
   TESTER_METADATA,
   DATA_METADATA,
-  CODEX_REVIEWER_METADATA,
   DEVOPS_METADATA,
   REALITY_CHECKER_METADATA,
   LSP_INDEX_ENGINEER_METADATA,
@@ -129,21 +98,13 @@ export {
  */
 export const EXPERT_METADATA_REGISTRY: Record<string, ExpertPromptMetadata> = {
   strategist: STRATEGIST_METADATA,
-  researcher: RESEARCHER_METADATA,
-  reviewer: REVIEWER_METADATA,
+  codereview: CODEREVIEW_METADATA,
   frontend: FRONTEND_METADATA,
-  writer: WRITER_METADATA,
-  explorer: EXPLORER_METADATA,
-  multimodal: MULTIMODAL_METADATA,
-  prometheus: PROMETHEUS_METADATA,
   metis: METIS_METADATA,
   momus: MOMUS_METADATA,
-  librarian: LIBRARIAN_METADATA,
-  // New specialized experts
   security: SECURITY_METADATA,
   tester: TESTER_METADATA,
   data: DATA_METADATA,
-  codex_reviewer: CODEX_REVIEWER_METADATA,
   devops: DEVOPS_METADATA,
   reality_checker: REALITY_CHECKER_METADATA,
   lsp_index_engineer: LSP_INDEX_ENGINEER_METADATA,

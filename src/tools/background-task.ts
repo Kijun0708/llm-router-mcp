@@ -12,8 +12,8 @@ import { wrapMcpResponse } from "../utils/response-saver.js";
 
 // 백그라운드 시작
 export const backgroundStartSchema = z.object({
-  expert: z.enum(["strategist", "researcher", "reviewer", "frontend", "writer", "explorer", "multimodal",
-    "librarian", "metis", "momus", "prometheus", "security", "tester", "data", "codex_reviewer", "devops", "reality_checker", "lsp_index_engineer"])
+  expert: z.enum(["strategist", "codereview", "frontend",
+    "metis", "momus", "security", "tester", "data", "devops", "reality_checker", "lsp_index_engineer"])
     .describe("실행할 전문가"),
 
   prompt: z.string()
@@ -49,8 +49,8 @@ background_expert_result(task_id) 도구로 조회
 
 ## 사용 예시
 1. 병렬 조사 시작:
-   - background_expert_start(expert="researcher", prompt="라이브러리A 분석")
-   - background_expert_start(expert="researcher", prompt="라이브러리B 분석")
+   - background_expert_start(expert="strategist", prompt="라이브러리A 분석")
+   - background_expert_start(expert="strategist", prompt="라이브러리B 분석")
 2. 다른 작업 진행
 3. 결과 수집: background_expert_result(task_id)`,
 

@@ -23,8 +23,8 @@ export const designWorkflowSchema = z.object({
     .describe("리뷰 단계 건너뛰기 (기본: false)"),
 
   parallel: z.boolean()
-    .default(false)
-    .describe("설계와 조사를 병렬로 실행 (기본: false)")
+    .default(true)
+    .describe("설계와 조사를 병렬로 실행 (기본: true)")
 }).strict();
 
 export const designWorkflowTool = {
@@ -36,7 +36,7 @@ export const designWorkflowTool = {
 
 ## 자동 워크플로우
 1. **GPT Strategist**: 설계 방향 및 아키텍처 제안
-2. **Gemini Reviewer**: 설계안 검토 및 피드백 (skip_review=false일 때)
+2. **Code Reviewer**: 설계안 검토 및 피드백 (skip_review=false일 때)
 
 ## 옵션
 - parallel=true: Claude Researcher가 관련 레퍼런스 병렬 조사
@@ -114,7 +114,7 @@ ${strategy}
       `.trim();
 
       const workflowOptions: WorkflowCallOptions = { workflowId, workflowType: 'design_with_experts', callPhase: 'review', sessionId: SESSION_ID };
-      const reviewResult = await callExpertWithFallback('reviewer', reviewPrompt, undefined, false, undefined, false, workflowOptions);
+      const reviewResult = await callExpertWithFallback('codereview', reviewPrompt, undefined, false, undefined, false, workflowOptions);
       review = reviewResult.response;
       fellBack = fellBack || reviewResult.fellBack;
     }
@@ -134,7 +134,7 @@ ${strategy}
     }
 
     if (review) {
-      output += `### 🔍 Gemini Reviewer 검토\n${review}\n\n`;
+      output += `### 🔍 Code Reviewer 검토\n${review}\n\n`;
     }
 
     output += `---\n위 전문가 의견을 참고하여 설계를 진행하세요.`;

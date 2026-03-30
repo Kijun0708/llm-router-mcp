@@ -1,19 +1,12 @@
 export const DEFAULT_MODEL_IDS = {
   strategist: 'gpt-5.4',
-  researcher: 'gemini-3.1-pro-preview',
-  reviewer: 'gemini-3.1-pro-preview',
+  codereview: 'gemini-3.1-pro-preview',
   frontend: 'gemini-3.1-pro-preview',
-  writer: 'gemini-3-flash-preview',
-  explorer: 'gemini-3-flash-preview',
-  multimodal: 'gemini-3.1-pro-preview',
-  prometheus: 'gpt-5.4',
   metis: 'gpt-5.4',
   momus: 'gemini-3.1-pro-preview',
-  librarian: 'gemini-3-flash-preview',
   security: 'gpt-5.4',
   tester: 'gpt-5.4',
   data: 'gpt-5.4',
-  codex_reviewer: 'gpt-5.4',
   devops: 'gpt-5.4',
   reality_checker: 'gemini-3.1-pro-preview',
   lsp_index_engineer: 'gpt-5.4',
@@ -26,20 +19,13 @@ export const DEFAULT_MODEL_IDS = {
 
 export const DEFAULT_MODEL_FAMILIES = {
   strategist: 'GPT',
-  researcher: 'Gemini Pro',
-  reviewer: 'Gemini Pro',
+  codereview: 'Gemini Pro',
   frontend: 'Gemini Pro',
-  writer: 'Gemini Flash',
-  explorer: 'Gemini Flash',
-  multimodal: 'Gemini Pro',
-  prometheus: 'GPT',
   metis: 'GPT',
   momus: 'Gemini Pro',
-  librarian: 'Gemini Flash',
   security: 'GPT',
   tester: 'GPT',
   data: 'GPT',
-  codex_reviewer: 'GPT',
   devops: 'GPT',
   reality_checker: 'Gemini Pro',
   lsp_index_engineer: 'GPT',
@@ -52,5 +38,5 @@ export const DEFAULT_MODEL_FAMILIES = {
 
 export const DEFAULT_MODEL_CONCURRENCY = {
   [DEFAULT_MODEL_IDS.strategist]: 3,
-  [DEFAULT_MODEL_IDS.explorer]: 10
+  [DEFAULT_MODEL_IDS.codereview]: 10
 } as const;

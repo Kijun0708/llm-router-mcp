@@ -165,11 +165,8 @@ export function canExpertUseTools(expert: Expert): boolean {
 export function getRecommendedTools(expertId: string): string[] {
   const toolRecommendations: Record<string, string[]> = {
     strategist: ["web_search", "get_library_docs"],  // 설계 시 최신 트렌드 + 문서 필요
-    researcher: ["web_search", "get_library_docs", "search_libraries"],  // 모든 도구 활용
-    reviewer: ["get_library_docs"],  // 코드 리뷰 시 문서 참조
+    codereview: ["get_library_docs"],  // 코드 리뷰 시 문서 참조
     frontend: ["get_library_docs", "web_search"],  // UI 라이브러리 문서 + 트렌드
-    writer: ["get_library_docs"],  // 문서 작성 시 참조
-    explorer: []  // 빠른 응답 위해 도구 미사용
   };
 
   return toolRecommendations[expertId] || [];

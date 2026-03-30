@@ -73,7 +73,7 @@ const VERIFICATION_CRITERIA: Record<IntentType, string[]> = {
 };
 
 /**
- * Builds verification prompt for reviewer expert.
+ * Builds verification prompt for codereview expert.
  */
 function buildVerificationPrompt(context: WorkflowContext): string {
   const { intent, originalRequest, lastImplementationOutput, verificationAttempts } = context;
@@ -211,9 +211,9 @@ export const phase2dVerification: PhaseHandler = {
       // Build verification prompt
       const verificationPrompt = buildVerificationPrompt(context);
 
-      // Use reviewer expert for verification
+      // Use codereview expert for verification
       const response = await callExpertWithFallback(
-        'reviewer',
+        'codereview',
         verificationPrompt,
         context.codebaseContext,
         true,  // skipCache

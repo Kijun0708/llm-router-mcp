@@ -16,7 +16,7 @@ export const data: Expert = {
   temperature: 0.1,  // Conservative for accurate query optimization
   maxTokens: 4000,
 
-  fallbacks: ["strategist", "researcher"],
+  fallbacks: ["strategist", "codereview"],
 
   useCases: DATA_METADATA.useWhen,
 

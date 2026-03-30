@@ -16,7 +16,7 @@ export const debateModerator: Expert = {
   temperature: 0.2,
   maxTokens: 3000,
 
-  fallbacks: ["strategist", "researcher"],
+  fallbacks: ["strategist", "momus"],
 
   useCases: DEBATE_MODERATOR_METADATA.useWhen,
 

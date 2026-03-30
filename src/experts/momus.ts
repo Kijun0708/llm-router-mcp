@@ -16,7 +16,7 @@ export const momus: Expert = {
   temperature: 0.3,
   maxTokens: 3500,
 
-  fallbacks: ["reviewer", "strategist"],
+  fallbacks: ["codereview", "strategist"],
 
   useCases: MOMUS_METADATA.useWhen,
 

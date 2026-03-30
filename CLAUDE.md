@@ -36,35 +36,28 @@ node dist/index.js
 
 ### Expert System
 
-19 primary AI experts with specialized roles and automatic fallback chains (GPT/Gemini only), plus 4 blank debate slots and 1 debate moderator:
+11 primary AI experts with specialized roles and automatic fallback chains (GPT/Gemini only), plus 4 blank debate slots and 1 debate moderator (16 total):
 
-#### 기본 전문가 (11명)
-
-| Expert | Model | Role | Fallbacks |
-|--------|-------|------|-----------|
-| `strategist` | GPT | 아키텍처 설계, 디버깅 전략 | researcher → reviewer |
-| `researcher` | Gemini Pro | 문서 분석, 코드베이스 탐색 | reviewer → explorer |
-| `reviewer` | Gemini Pro | 코드 리뷰, 보안 분석 | explorer → codex_reviewer |
-| `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | writer → explorer |
-| `writer` | Gemini Flash | 기술 문서 작성 | explorer |
-| `explorer` | Gemini Flash | 빠른 검색, 간단한 쿼리 | - |
-| `multimodal` | Gemini Pro | 이미지 분석, 시각적 콘텐츠 | strategist → researcher |
-| `librarian` | Gemini Flash | 지식 관리, 세션 히스토리 검색 | researcher → explorer |
-| `metis` | GPT | 전략적 계획, 복잡한 문제 분해 | strategist → researcher |
-| `momus` | Gemini Pro | 비판적 분석, 품질 평가 | reviewer → explorer |
-| `prometheus` | GPT | 창의적 솔루션, 혁신적 접근 | strategist → metis |
-
-#### 특화 전문가 (7명)
+#### 기본 전문가 (5명)
 
 | Expert | Model | Role | Fallbacks |
 |--------|-------|------|-----------|
-| `security` | Gemini Pro | OWASP/CWE 보안 취약점 분석 | reviewer → strategist |
-| `tester` | GPT | TDD/테스트 전략 설계 | reviewer → researcher |
-| `data` | GPT | DB 설계, 쿼리 최적화 | strategist → researcher |
-| `codex_reviewer` | GPT | GPT 관점 코드 리뷰 | reviewer → strategist |
-| `devops` | GPT | CI/CD, Docker, K8s, 인프라 자동화 | strategist → researcher |
-| `reality_checker` | Gemini Pro | refactor 잔재/혼재 경로 현실 검증 | momus → reviewer |
-| `lsp_index_engineer` | GPT | 심볼/참조/인덱스 기반 코드 인텔리전스 분석 | reviewer → researcher |
+| `strategist` | GPT | 아키텍처 설계, 디버깅 전략 | codereview → momus |
+| `codereview` | Gemini Pro + GPT | 통합 코드 리뷰 (perspectives로 GPT+Gemini 병렬 리뷰) | strategist → momus |
+| `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | strategist → momus |
+| `metis` | GPT | 전략적 계획, 문제 분해 | strategist → codereview |
+| `momus` | Gemini Pro | 비판적 분석, 품질 평가 | codereview → strategist |
+
+#### 특화 전문가 (6명)
+
+| Expert | Model | Role | Fallbacks |
+|--------|-------|------|-----------|
+| `security` | GPT | OWASP/CWE 보안 분석 | codereview → strategist |
+| `tester` | GPT | TDD/테스트 전략 | codereview → strategist |
+| `data` | GPT | DB 설계, 쿼리 최적화 | strategist → codereview |
+| `devops` | GPT | CI/CD, Docker, K8s | strategist → codereview |
+| `reality_checker` | Gemini Pro | 현실 검증, dead code | momus → codereview |
+| `lsp_index_engineer` | GPT | 심볼/참조 분석 | codereview → strategist |
 
 #### 동적 페르소나 전문가 (4명) - 토론용
 
@@ -81,11 +74,23 @@ node dist/index.js
 |--------|-------|------|
 | `debate_moderator` | Gemini Pro | 패널 토론 중재 및 최종 요약 |
 
+### Role Division (GPT vs Gemini)
+
+| | GPT (codex) | Gemini |
+|---|---|---|
+| 코드 변경 | delegate_task | 금지 |
+| 코드 리뷰 | 설계 관점 | 버그/보안/비판 |
+| 파일 읽기 | 가능 | 가능 |
+
 ### MCP Tools
 
 **Core Tools:**
 - `consult_expert` - Direct expert consultation with automatic fallback
+- `consult_experts_parallel` - 2명 이상 전문가 병렬 호출 (반드시 사용)
 - `route_by_category` - Category-based routing (visual, business-logic, research, quick, review, documentation)
+
+**Task Delegation:**
+- `delegate_task` - GPT(codex) 에이전트 1~3명에게 구현 위임 (병렬, plan->execute->report)
 
 **Background Execution:**
 - `background_expert_start` - Async expert execution
@@ -94,12 +99,27 @@ node dist/index.js
 - `background_expert_list` - List all background tasks
 
 **Workflows:**
-- `design_with_experts` - Multi-expert design workflow (strategist + optional researcher/reviewer)
-- `review_code` - Code review workflow with optional design perspective
+- `design_with_experts` - Multi-expert design workflow (strategist + codereview, parallel=true 기본)
+- `review_code` - Code review with files parameter, context_docs, perspectives (1~3 멀티관점 병렬)
 - `research_topic` - Topic research with depth options (quick/normal/deep)
 
 **Administration:**
 - `llm_router_health` - Server health check, cache management, task cleanup
+
+### Category Routing
+
+| Category | Default Expert | Description |
+|----------|---------------|-------------|
+| visual | frontend | UI/UX, 디자인, 프론트엔드 |
+| business-logic | strategist | 백엔드 로직, 아키텍처 |
+| research | strategist | 조사, 분석, 문서 탐색 |
+| quick | momus | 빠른 판단, 간단한 질문 |
+| review | codereview | 코드 리뷰, 버그 탐지 |
+| documentation | strategist | 문서 작성, API 문서화 |
+
+### Skills (15, all with llm- prefix)
+
+llm-plan, llm-planAll, llm-codereview, llm-validate, llm-security, llm-research, llm-design, llm-tdd, llm-background, llm-debate, llm-consult, llm-verify, llm-analyze, llm-health, llm-guide
 
 ### Key Services
 
@@ -123,6 +143,11 @@ node dist/index.js
 - 허용된 디렉토리: `./uploads`, `./images`, `./screenshots`, `./assets`
 - 허용된 확장자: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.svg`
 
+**File Path Validation** - `src/tools/delegate-task.ts`, `src/tools/review-workflow.ts`
+- 상대 경로만 허용 (절대경로 차단)
+- 경로 탈출(..) 차단
+- Windows 절대경로 (C:\) 차단
+
 ### Memory & Performance
 
 **Doom Loop Detector** - `src/hooks/builtin/doom-loop-detector.ts`
@@ -144,9 +169,9 @@ node dist/index.js
 
 | Model | Timeout | Reason |
 |-------|---------|--------|
-| GPT 5.x / Codex | 5분 | Deep thinking 모드 |
-| Gemini Pro | 2분 | 일반 추론 |
-| Gemini Flash | 1.5분 | 빠른 응답 |
+| GPT 5.x / Codex | 20분 | --full-auto 자율 실행 |
+| Gemini Pro | 10분 | --yolo 자율 실행 |
+| Gemini Flash | 5분 | --yolo 자율 실행 |
 | 기타 | 1분 | 기본값 |
 
 ### Error Classification for Fallback
@@ -155,12 +180,12 @@ node dist/index.js
 
 | 에러 유형 | 폴백 시도 | 이유 |
 |----------|----------|------|
-| Rate Limit (429) | ✅ | 다른 모델로 대체 가능 |
-| Timeout | ✅ | 다른 모델이 더 빠를 수 있음 |
-| Server Error (5xx) | ✅ | 일시적 문제 가능성 |
-| Overloaded | ✅ | 다른 모델로 분산 |
-| Auth Error (401/403) | ❌ | 폴백해도 동일 문제 |
-| Bad Request (400) | ❌ | 요청 자체 문제 |
+| Rate Limit (429) | O | 다른 모델로 대체 가능 |
+| Timeout | O | 다른 모델이 더 빠를 수 있음 |
+| Server Error (5xx) | O | 일시적 문제 가능성 |
+| Overloaded | O | 다른 모델로 분산 |
+| Auth Error (401/403) | X | 폴백해도 동일 문제 |
+| Bad Request (400) | X | 요청 자체 문제 |
 
 ### Ensemble Strategy Validation
 
@@ -173,6 +198,13 @@ node dist/index.js
 | best_of_n | experts 1개만 | error |
 | chain | experts 2개 이상 | error |
 | parallel/synthesize | experts 2개 이상 권장 | warning |
+
+## Key Principles
+
+- 2명 이상 전문가 호출 시 반드시 병렬 (consult_experts_parallel 사용)
+- delegate_task는 GPT만 사용 (Gemini 코드 변경 불가)
+- 파일 경로만 넘기면 CLI가 직접 읽음 (토큰 절약)
+- codex는 AGENTS.md, gemini는 GEMINI.md 프로젝트 루트에서 자동 읽음
 
 ## Configuration
 

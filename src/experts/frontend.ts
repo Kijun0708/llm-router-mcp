@@ -17,7 +17,7 @@ export const frontend: Expert = {
   temperature: 0.3,
   maxTokens: 4000,  // Increased for detailed UI implementations
 
-  fallbacks: ["writer", "explorer"],
+  fallbacks: ["strategist", "momus"],
 
   useCases: FRONTEND_METADATA.useWhen,
 

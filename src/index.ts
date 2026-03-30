@@ -70,7 +70,8 @@ import {
   listCommandsTool, listCommandsSchema, handleListCommands,
   runCommandTool, runCommandSchema, handleRunCommand,
   searchCommandsTool, searchCommandsSchema, handleSearchCommands,
-  moderatedDebateTool, moderatedDebateSchema, handleModeratedDebate
+  moderatedDebateTool, moderatedDebateSchema, handleModeratedDebate,
+  delegateTaskTool, delegateTaskSchema, handleDelegateTask
 } from "./tools/index.js";
 
 // 서버 초기화
@@ -140,8 +141,8 @@ function registerTools() {
   // 8. review_code
   server.tool(
     reviewCodeTool.name,
-    reviewCodeSchema.shape,
-    (args) => handleReviewCode(reviewCodeSchema.parse(args))
+    (reviewCodeSchema as any)._def.schema.shape,
+    (args: any) => handleReviewCode(reviewCodeSchema.parse(args))
   );
 
   // 9. research_topic
@@ -443,6 +444,13 @@ function registerTools() {
     moderatedDebateTool.name,
     moderatedDebateSchema.shape,
     (args) => handleModeratedDebate(moderatedDebateSchema.parse(args))
+  );
+
+  // delegate_task
+  server.tool(
+    delegateTaskTool.name,
+    (delegateTaskSchema as any)._def.schema.shape,
+    (args: any) => handleDelegateTask(delegateTaskSchema.parse(args))
   );
 
   // 109-113. Interactive Bash Tools (5 tools)

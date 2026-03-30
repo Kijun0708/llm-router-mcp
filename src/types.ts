@@ -135,21 +135,14 @@ export interface Config {
   };
   models: {
     strategist: string;
-    researcher: string;
-    reviewer: string;
+    codereview: string;
     frontend: string;
-    writer: string;
-    explorer: string;
-    multimodal: string;
-    prometheus: string;
     metis: string;
     momus: string;
-    librarian: string;
     // 특화 전문가
     security: string;
     tester: string;
     data: string;
-    codex_reviewer: string;
     devops: string;
     reality_checker: string;
     lsp_index_engineer: string;

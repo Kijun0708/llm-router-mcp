@@ -243,10 +243,10 @@ function mapAgentToExpert(agent: LoadedAgent): string {
     return 'strategist';
   }
   if (model?.includes('gemini')) {
-    return 'reviewer';
+    return 'codereview';
   }
   if (model?.includes('claude') || model?.includes('sonnet')) {
-    return 'researcher';
+    return 'strategist';
   }
 
   // Default based on agent name/description
@@ -254,19 +254,19 @@ function mapAgentToExpert(agent: LoadedAgent): string {
   const desc = (agent.metadata.description || '').toLowerCase();
 
   if (name.includes('research') || desc.includes('research')) {
-    return 'researcher';
+    return 'strategist';
   }
   if (name.includes('review') || desc.includes('review')) {
-    return 'reviewer';
+    return 'codereview';
   }
   if (name.includes('frontend') || desc.includes('ui')) {
     return 'frontend';
   }
   if (name.includes('doc') || desc.includes('write')) {
-    return 'writer';
+    return 'strategist';
   }
 
-  return 'researcher'; // Default
+  return 'strategist'; // Default
 }
 
 // ============================================================================

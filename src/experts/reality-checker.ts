@@ -10,7 +10,7 @@ export const realityChecker: Expert = {
   systemPrompt: REALITY_CHECKER_SYSTEM_PROMPT,
   temperature: 0.1,
   maxTokens: 4000,
-  fallbacks: ['momus', 'reviewer'],
+  fallbacks: ['momus', 'codereview'],
   useCases: REALITY_CHECKER_METADATA.useWhen,
   toolChoice: 'auto'
 };

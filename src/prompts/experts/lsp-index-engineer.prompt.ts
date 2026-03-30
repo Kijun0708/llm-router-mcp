@@ -77,7 +77,7 @@ export const LSP_INDEX_ENGINEER_METADATA: ExpertPromptMetadata = {
     'Pure product strategy questions',
     'Visual/UI critique (use frontend)',
     'Database-specific tuning (use data)',
-    'General code review without semantic graph concerns (use reviewer)',
+    'General code review without semantic graph concerns (use codereview)',
   ],
   triggers: [
     { domain: 'LSP', trigger: 'lsp index references symbols definitions rename semantic graph' },
