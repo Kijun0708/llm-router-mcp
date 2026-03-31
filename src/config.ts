@@ -58,6 +58,7 @@ export function loadConfig(): Config {
       devops: process.env.MODEL_DEVOPS || DEFAULT_MODEL_IDS.devops,
       reality_checker: process.env.MODEL_REALITY_CHECKER || DEFAULT_MODEL_IDS.reality_checker,
       lsp_index_engineer: process.env.MODEL_LSP_INDEX_ENGINEER || DEFAULT_MODEL_IDS.lsp_index_engineer,
+      codereview_gpt: process.env.MODEL_CODEREVIEW_GPT || DEFAULT_MODEL_IDS.codereview_gpt,
       // Blank 전문가 (동적 페르소나 토론용 - GPT/Gemini만 사용)
       gpt_blank_1: process.env.MODEL_GPT_BLANK_1 || DEFAULT_MODEL_IDS.gpt_blank_1,
       gpt_blank_2: process.env.MODEL_GPT_BLANK_2 || DEFAULT_MODEL_IDS.gpt_blank_2,

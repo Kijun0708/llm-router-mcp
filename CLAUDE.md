@@ -36,7 +36,7 @@ node dist/index.js
 
 ### Expert System
 
-11 primary AI experts with specialized roles and automatic fallback chains (GPT/Gemini only), plus 4 blank debate slots and 1 debate moderator (16 total):
+12 primary AI experts with specialized roles and automatic fallback chains (GPT/Gemini only), plus 4 blank debate slots and 1 debate moderator (17 total):
 
 #### 기본 전문가 (5명)
 
@@ -48,7 +48,7 @@ node dist/index.js
 | `metis` | GPT | 전략적 계획, 문제 분해 | strategist → codereview |
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가 | codereview → strategist |
 
-#### 특화 전문가 (6명)
+#### 특화 전문가 (7명)
 
 | Expert | Model | Role | Fallbacks |
 |--------|-------|------|-----------|
@@ -58,6 +58,7 @@ node dist/index.js
 | `devops` | GPT | CI/CD, Docker, K8s | strategist → codereview |
 | `reality_checker` | Gemini Pro | 현실 검증, dead code | momus → codereview |
 | `lsp_index_engineer` | GPT | 심볼/참조 분석 | codereview → strategist |
+| `codereview_gpt` | GPT | GPT 코드리뷰 - SOLID/설계/실무 관점 (READ-ONLY) | codereview → momus |
 
 #### 동적 페르소나 전문가 (4명) - 토론용
 

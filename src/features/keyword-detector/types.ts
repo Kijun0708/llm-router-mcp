@@ -6,7 +6,7 @@
  * 특정 키워드/패턴 감지 시 자동으로 적절한 expert로 라우팅하는 시스템
  */
 
-export type ExpertId = 'strategist' | 'codereview' | 'frontend' | 'metis' | 'momus' | 'security' | 'tester' | 'data' | 'devops' | 'reality_checker' | 'lsp_index_engineer';
+export type ExpertId = 'strategist' | 'codereview' | 'frontend' | 'metis' | 'momus' | 'security' | 'tester' | 'data' | 'devops' | 'reality_checker' | 'lsp_index_engineer' | 'codereview_gpt';
 
 /**
  * 키워드 매칭 타입

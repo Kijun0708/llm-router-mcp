@@ -16,6 +16,7 @@ const expertItemSchema = z.object({
     "strategist", "codereview", "frontend",
     "metis", "momus",
     "security", "tester", "data", "devops", "reality_checker", "lsp_index_engineer",
+    "codereview_gpt",
     "gpt_blank_1", "gpt_blank_2", "gemini_blank_1", "gemini_blank_2"
   ]).describe("자문할 전문가"),
   question: z.string()

@@ -71,9 +71,9 @@ review_code({
 
 | 관점 | 포커스 | Gemini 전문가 | GPT 전문가 |
 |------|--------|-------------|-----------|
-| 1. 버그/보안 | 버그, 보안 취약점, 성능, 에러 처리 | codereview | strategist |
-| 2. 아키텍처 | SOLID, 코드 스멜, 설계 패턴, 리팩토링 | codereview | strategist |
-| 3. 비판적 | 숨겨진 가정, 리스크, 확장성, 유지보수 | momus | strategist |
+| 1. 버그/보안 | 버그, 보안 취약점, 성능, 에러 처리 | codereview | codereview_gpt |
+| 2. 아키텍처 | SOLID, 코드 스멜, 설계 패턴, 리팩토링 | codereview | codereview_gpt |
+| 3. 비판적 | 숨겨진 가정, 리스크, 확장성, 유지보수 | momus | codereview_gpt |
 
 ### 병렬 실행 원칙
 

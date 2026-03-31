@@ -25,7 +25,7 @@ user-invocable: false
 | `metis` | GPT | 전략적 계획, 문제 분해 | strategist → codereview |
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가 | codereview → strategist |
 
-#### 특화 전문가 (6명)
+#### 특화 전문가 (7명)
 
 | ID | 모델 | 역할 | 폴백 |
 |----|------|------|------|
@@ -35,6 +35,7 @@ user-invocable: false
 | `devops` | GPT | CI/CD, Docker, K8s, 인프라 | strategist → codereview |
 | `reality_checker` | Gemini Pro | 현실 검증, dead code 탐지 | momus → codereview |
 | `lsp_index_engineer` | GPT | 심볼/참조 분석 | codereview → strategist |
+| `codereview_gpt` | GPT | GPT 코드리뷰 - SOLID/설계/실무 관점 | codereview → momus |
 
 #### 동적 페르소나 (4명) — 토론 전용
 
@@ -143,6 +144,7 @@ Claude는 전문가 응답을 사용자에게 전달할 때 내부 용어를 자
 | data | 데이터베이스 전문가 |
 | reality_checker | 현실 검증 전문가 |
 | lsp_index_engineer | 코드 인텔리전스 전문가 |
+| codereview_gpt | GPT 코드 리뷰 전문가 |
 | "폴백 발생" | "자동으로 다른 전문가로 전환되었습니다" |
 | "rate limit" | 언급하지 않음 (자동 처리) |
 

@@ -119,7 +119,7 @@ const PERSPECTIVES: PerspectiveDef[] = [
     geminiLabel: '🔍 Gemini (버그/보안/품질)',
     gptLabel: '🎯 GPT (버그/보안/품질)',
     geminiExpert: 'codereview',
-    gptExpert: 'strategist',
+    gptExpert: 'codereview_gpt',
     buildGeminiPrompt: (target, context, lang, focus) => {
       const focusHint = focus && focus !== 'all' ? `\n집중 영역: ${focus}` : '';
       return `[Gemini 코드 리뷰 - 버그/보안 관점]\n언어: ${lang}${focusHint}${context}\n\n${target}\n\n코드의 버그, 보안 취약점, 성능 이슈, 에러 처리 누락을 찾아주세요.\n구체적 코드 위치(파일:라인)와 수정 예시를 포함하세요.\n심각도(Critical/High/Medium/Low)와 신뢰도(%)를 표시하세요.`;
@@ -134,7 +134,7 @@ const PERSPECTIVES: PerspectiveDef[] = [
     geminiLabel: '🏗️ Gemini (아키텍처/설계)',
     gptLabel: '🏛️ GPT (아키텍처/설계)',
     geminiExpert: 'codereview',
-    gptExpert: 'strategist',
+    gptExpert: 'codereview_gpt',
     buildGeminiPrompt: (target, context, lang) =>
       `[Gemini 코드 리뷰 - 아키텍처/설계 관점]\n언어: ${lang}${context}\n\n${target}\n\nSOLID 원칙 위반, 코드 스멜(Bloaters/Couplers/Dispensables), 설계 패턴 기회를 분석해주세요.\n각 이슈에 대해 리팩토링 전/후 코드 예시를 포함하세요.`,
     buildGptPrompt: (target, context, lang) =>
@@ -145,7 +145,7 @@ const PERSPECTIVES: PerspectiveDef[] = [
     geminiLabel: '⚡ Gemini (비판적 분석)',
     gptLabel: '🔥 GPT (비판적 분석)',
     geminiExpert: 'momus',
-    gptExpert: 'strategist',
+    gptExpert: 'codereview_gpt',
     buildGeminiPrompt: (target, context, lang) =>
       `[Gemini 비판적 코드 분석]\n언어: ${lang}${context}\n\n${target}\n\n이 코드에 숨겨진 가정, 암묵적 의존성, 확장성 한계를 찾아주세요.\n"이 코드가 실패할 수 있는 시나리오"를 구체적으로 나열하세요.`,
     buildGptPrompt: (target, context, lang) =>
@@ -258,6 +258,7 @@ export async function handleReviewCode(params: z.infer<typeof reviewCodeSchema>)
 
     return wrapMcpResponse(output, {
       toolName: 'review_code',
+      expertId: 'codereview',
       isWorkflow: true,
       expertInfo: { name: `Code Review (${totalAgents} agents)` }
     });

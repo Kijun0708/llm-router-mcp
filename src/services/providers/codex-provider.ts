@@ -93,7 +93,7 @@ export class CodexCliProvider implements CliProvider {
     const prompt = buildPrompt(params);
 
     // stdin으로 프롬프트 전달 (특수문자/긴 프롬프트 안전 처리)
-    const args: string[] = ['exec', '-', '--json', '--full-auto'];
+    const args: string[] = ['exec', '-', '--json', '--full-auto', '-c', 'model_reasoning_effort=medium'];
 
     logger.debug({
       provider: 'codex',

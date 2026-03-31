@@ -279,6 +279,7 @@ export async function handleDelegateTask(params: z.infer<typeof delegateTaskSche
 
     return wrapMcpResponse(output, {
       toolName: 'delegate_task',
+      expertId: 'delegate_task',
       isWorkflow: true,
       expertInfo: { name: `Delegation (${agentCount} agents)` },
     });

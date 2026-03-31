@@ -205,6 +205,7 @@ export const consultExpertSchema = z.object({
     "metis", "momus",
     // 특화 전문가
     "security", "tester", "data", "devops", "reality_checker", "lsp_index_engineer",
+    "codereview_gpt",
     // 동적 페르소나 전문가 (4명) - persona 필수
     "gpt_blank_1", "gpt_blank_2", "gemini_blank_1", "gemini_blank_2"
   ]).describe("자문할 전문가"),
@@ -269,6 +270,7 @@ export const consultExpertTool = {
 - devops: CI/CD, 인프라 (GPT)
 - reality_checker: 현실검증/레거시 잔재 탐지 (Gemini)
 - lsp_index_engineer: 참조/심볼/인덱스 분석 (GPT)
+- codereview_gpt: GPT 코드리뷰 - SOLID/설계/실무 관점 (GPT)
 
 ## 동적 페르소나 전문가 (persona 필수)
 - gpt_blank_1: GPT 범용 (persona 필수)

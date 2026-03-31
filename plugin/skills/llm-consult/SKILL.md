@@ -35,6 +35,7 @@ argument-hint: "<질문 또는 분석 요청>"
 | `devops` | GPT | CI/CD, Docker, Kubernetes, 인프라 자동화 |
 | `reality_checker` | Gemini Pro | refactor 잔재, dead code, 혼재 경로 현실 검증 |
 | `lsp_index_engineer` | GPT | 심볼/참조/인덱스 기반 코드 인텔리전스 분석 |
+| `codereview_gpt` | GPT | GPT 코드리뷰 - SOLID/설계/실무 관점 (READ-ONLY) |
 
 #### 동적 페르소나 전문가 (persona 필수)
 

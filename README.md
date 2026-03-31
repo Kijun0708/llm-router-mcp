@@ -16,7 +16,7 @@ LLM Router MCP는 Claude Code가 팀 리더 역할을 하며, GPT/Gemini 전문�
 |------|------|
 | MCP 도구 | 109개 |
 | 내장 훅 | 38개 |
-| AI 전문가 | 16개 |
+| AI 전문가 | 17개 |
 | 내장 스킬 | 15개 |
 
 ### 주요 특징
@@ -106,7 +106,7 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 | `metis` | GPT | 전략적 계획, 문제 분해 | strategist → codereview |
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가 | codereview → strategist |
 
-### 특화 전문가 (6명)
+### 특화 전문가 (7명)
 
 | 전문가 | 모델 | 역할 | 폴백 |
 |--------|------|------|------|
@@ -116,6 +116,7 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 | `devops` | GPT | CI/CD, Docker, K8s | strategist → codereview |
 | `reality_checker` | Gemini Pro | 현실 검증, dead code 탐지 | momus → codereview |
 | `lsp_index_engineer` | GPT | 심볼/참조 분석 | codereview → strategist |
+| `codereview_gpt` | GPT | GPT 코드리뷰 - SOLID/설계/실무 관점 (READ-ONLY) | codereview → momus |
 
 ### 동적 페르소나 전문가 (4명)
 
