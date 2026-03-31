@@ -12,6 +12,7 @@
 
 import { z } from "zod";
 import { callExpertsParallel, WorkflowCallOptions } from "../services/expert-router.js";
+import { startBackgroundWorkflow } from "../services/background-manager.js";
 import { SESSION_ID } from "../session.js";
 import { wrapMcpResponse } from "../utils/response-saver.js";
 
@@ -164,6 +165,7 @@ export async function handleReviewCode(params: z.infer<typeof reviewCodeSchema>)
     : params.perspectives;
 
   const language = params.language || '자동 감지';
+  const totalAgents = perspectives * 2;
 
   // 리뷰 대상 프롬프트
   let targetSection: string;
@@ -179,29 +181,26 @@ export async function handleReviewCode(params: z.infer<typeof reviewCodeSchema>)
     contextSection = `\n\n리뷰 전에 먼저 이 문서들을 읽어:\n${params.context_docs.map(d => `- ${d}`).join('\n')}`;
   }
 
-  const startTime = Date.now();
-  const workflowId = `review_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-  const workflowOptions: WorkflowCallOptions = { workflowId, workflowType: 'review_code', callPhase: 'parallel_review', sessionId: SESSION_ID };
+  // 백그라운드 executor
+  const executor = async (): Promise<string> => {
+    const startTime = Date.now();
+    const workflowId = `review_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const workflowOptions: WorkflowCallOptions = { workflowId, workflowType: 'review_code', callPhase: 'parallel_review', sessionId: SESSION_ID };
 
-  try {
-    // 관점별 GPT+Gemini 쌍 구성
     type ReviewCall = { expertId: string; prompt: string };
     const calls: ReviewCall[] = [];
     const labels: string[] = [];
 
     for (let i = 0; i < perspectives; i++) {
       const perspective = PERSPECTIVES[i];
-      // focus 파라미터는 관점1(버그/보안)에만 적용
       const focus = i === 0 ? params.focus : undefined;
 
-      // Gemini 에이전트
       calls.push({
         expertId: perspective.geminiExpert,
         prompt: perspective.buildGeminiPrompt(targetSection, contextSection, language, focus),
       });
       labels.push(perspective.geminiLabel);
 
-      // GPT 에이전트
       calls.push({
         expertId: perspective.gptExpert,
         prompt: perspective.buildGptPrompt(targetSection, contextSection, language, focus),
@@ -209,19 +208,15 @@ export async function handleReviewCode(params: z.infer<typeof reviewCodeSchema>)
       labels.push(perspective.gptLabel);
     }
 
-    // 전체 병렬 실행 (Promise.all)
     const results = await callExpertsParallel(calls, workflowOptions);
 
-    // 소요 시간
     const totalMs = Date.now() - startTime;
     const minutes = Math.floor(totalMs / 60000);
     const seconds = Math.floor((totalMs % 60000) / 1000);
     const timeStr = minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
 
-    const totalAgents = perspectives * 2;
     let output = `## 코드 리뷰 결과 (${timeStr}, ${perspectives}관점 × GPT+Gemini = ${totalAgents} 에이전트)\n\n`;
 
-    // 관점별 그룹 출력
     for (let p = 0; p < perspectives; p++) {
       const perspective = PERSPECTIVES[p];
       const geminiIdx = p * 2;
@@ -229,7 +224,6 @@ export async function handleReviewCode(params: z.infer<typeof reviewCodeSchema>)
 
       output += `## 관점 ${p + 1}: ${perspective.name}\n\n`;
 
-      // Gemini 결과
       const geminiResult = results[geminiIdx];
       const geminiMs = geminiResult.latencyMs || 0;
       const geminiTime = geminiMs >= 60000
@@ -237,7 +231,6 @@ export async function handleReviewCode(params: z.infer<typeof reviewCodeSchema>)
         : `${Math.floor(geminiMs / 1000)}초`;
       output += `### ${labels[geminiIdx]} (${geminiTime})\n${geminiResult.response}\n\n`;
 
-      // GPT 결과
       const gptResult = results[gptIdx];
       const gptMs = gptResult.latencyMs || 0;
       const gptTime = gptMs >= 60000
@@ -250,26 +243,27 @@ export async function handleReviewCode(params: z.infer<typeof reviewCodeSchema>)
       }
     }
 
-    // 교차 검증 요약
     output += `---\n\n### 📊 교차 검증 요약\n`;
     output += `- **${perspectives}관점 × 2모델 = ${totalAgents}명**의 전문가가 독립 리뷰했습니다.\n`;
     output += `- 같은 관점에서 GPT와 Gemini가 동일하게 지적한 이슈는 **높은 신뢰도**입니다.\n`;
     output += `- 여러 관점에서 반복 지적된 이슈를 **최우선 수정 대상**으로 판단하세요.\n`;
 
-    return wrapMcpResponse(output, {
-      toolName: 'review_code',
-      expertId: 'codereview',
-      isWorkflow: true,
-      expertInfo: { name: `Code Review (${totalAgents} agents)` }
-    });
+    return output;
+  };
 
-  } catch (error) {
-    return {
-      content: [{
-        type: "text" as const,
-        text: `## ⚠️ 코드 리뷰 실패\n\n**오류**: ${(error as Error).message}`
-      }],
-      isError: true
-    };
-  }
+  // 백그라운드로 시작, task_id 즉시 반환
+  const task = startBackgroundWorkflow(`review_code(${totalAgents} agents)`, executor);
+
+  const targetDesc = params.files ? params.files.join(', ') : '인라인 코드';
+
+  return {
+    content: [{
+      type: "text" as const,
+      text: `## 코드 리뷰 시작 (백그라운드)\n\n`
+        + `- **task_id**: \`${task.id}\`\n`
+        + `- **관점**: ${perspectives}관점 × GPT+Gemini = ${totalAgents} 에이전트\n`
+        + `- **대상**: ${targetDesc}\n\n`
+        + `결과 확인: \`background_expert_result({ task_id: "${task.id}" })\``,
+    }],
+  };
 }

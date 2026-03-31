@@ -10,6 +10,7 @@
 
 import { z } from "zod";
 import { callExpertsParallel } from "../services/expert-router.js";
+import { startBackgroundWorkflow } from "../services/background-manager.js";
 import { wrapMcpResponse } from "../utils/response-saver.js";
 import { logger } from "../utils/logger.js";
 
@@ -204,20 +205,21 @@ function parseReport(rawResponse: string, agentIndex: number, subtask: string, d
 // ============================================================================
 
 export async function handleDelegateTask(params: z.infer<typeof delegateTaskSchema>) {
-  const startTime = Date.now();
   const agentCount = params.parallel_agents;
+  const subtasks = params.agent_tasks || [params.task];
 
   logger.info({
     task: params.task.substring(0, 100),
     agentCount,
     files: params.files,
-  }, 'Task delegation started');
+  }, 'Task delegation started (background)');
 
-  try {
-    // Build prompts for each agent
-    const subtasks = params.agent_tasks || [params.task];
+  // 백그라운드 executor: 실제 작업을 비동기로 실행
+  const executor = async (): Promise<string> => {
+    const startTime = Date.now();
+
     const calls = subtasks.map((subtask) => ({
-      expertId: 'strategist' as const,  // GPT → CodexCliProvider → codex --full-auto
+      expertId: 'strategist' as const,
       prompt: buildDelegationPrompt({
         subtask,
         files: params.files,
@@ -226,11 +228,9 @@ export async function handleDelegateTask(params: z.infer<typeof delegateTaskSche
       }),
     }));
 
-    // 병렬 실행 (Promise.all)
     const agentStartTimes = calls.map(() => Date.now());
     const results = await callExpertsParallel(calls);
 
-    // Parse reports
     const reports: DelegationReport[] = results.map((result, i) =>
       parseReport(
         result.response,
@@ -240,7 +240,6 @@ export async function handleDelegateTask(params: z.infer<typeof delegateTaskSche
       )
     );
 
-    // Format output
     const totalMs = Date.now() - startTime;
     const minutes = Math.floor(totalMs / 60000);
     const seconds = Math.floor((totalMs % 60000) / 1000);
@@ -248,13 +247,11 @@ export async function handleDelegateTask(params: z.infer<typeof delegateTaskSche
 
     let output = `## 작업 위임 결과 (${timeStr}, 에이전트 ${agentCount}명)\n\n`;
 
-    // All changed files
     const allChangedFiles = reports.flatMap(r => r.filesChanged);
     if (allChangedFiles.length > 0) {
       output += `### 📁 변경된 파일\n${[...new Set(allChangedFiles)].map(f => `- ${f}`).join('\n')}\n\n`;
     }
 
-    // Per-agent reports
     reports.forEach((report) => {
       const min = Math.floor(report.durationMs / 60000);
       const sec = Math.floor((report.durationMs % 60000) / 1000);
@@ -277,23 +274,20 @@ export async function handleDelegateTask(params: z.infer<typeof delegateTaskSche
       success: reports.every(r => r.success),
     }, 'Task delegation completed');
 
-    return wrapMcpResponse(output, {
-      toolName: 'delegate_task',
-      expertId: 'delegate_task',
-      isWorkflow: true,
-      expertInfo: { name: `Delegation (${agentCount} agents)` },
-    });
+    return output;
+  };
 
-  } catch (error) {
-    const totalMs = Date.now() - startTime;
-    logger.error({ error, totalMs }, 'Task delegation failed');
+  // 백그라운드로 시작, task_id 즉시 반환
+  const task = startBackgroundWorkflow(`delegate_task(${agentCount} agents)`, executor);
 
-    return {
-      content: [{
-        type: "text" as const,
-        text: `## ⚠️ 작업 위임 실패\n\n**오류**: ${(error as Error).message}\n**소요 시간**: ${Math.floor(totalMs / 1000)}초`,
-      }],
-      isError: true,
-    };
-  }
+  return {
+    content: [{
+      type: "text" as const,
+      text: `## 작업 위임 시작 (백그라운드)\n\n`
+        + `- **task_id**: \`${task.id}\`\n`
+        + `- **에이전트**: ${agentCount}명 병렬\n`
+        + `- **서브태스크**: ${subtasks.map((t, i) => `\n  ${i + 1}. ${t}`).join('')}\n\n`
+        + `결과 확인: \`background_expert_result({ task_id: "${task.id}" })\``,
+    }],
+  };
 }
