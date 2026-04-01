@@ -8,6 +8,14 @@ import { getStats as getBackgroundStats, cleanupOldTasks } from "../services/bac
 import { experts } from "../experts/index.js";
 import { cleanupOldResponses } from "../utils/response-saver.js";
 import { getDashboardInfo } from "../dashboard-server/index.js";
+import { readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const pkg = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf-8'));
+const VERSION = pkg.version as string;
 
 export const healthCheckSchema = z.object({
   include_details: z.boolean()
@@ -71,7 +79,7 @@ export async function handleHealthCheck(params: z.infer<typeof healthCheckSchema
   const cacheStats = getCacheStats();
   const backgroundStats = getBackgroundStats();
 
-  let output = `## 🏥 LLM Router 상태\n\n`;
+  let output = `## 🏥 LLM Router v${VERSION}\n\n`;
 
   // 대시보드 정보
   const dashboardInfo = getDashboardInfo();

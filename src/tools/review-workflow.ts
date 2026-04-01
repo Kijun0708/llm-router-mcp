@@ -1,20 +1,18 @@
 // src/tools/review-workflow.ts
 
 /**
- * Code Review MCP Tool
+ * Code Review MCP Tool (GPT Only)
  *
- * 기본 단위: GPT + Gemini 2중 병렬 리뷰 (항상)
- * perspectives: 몇 가지 관점에서 이 2중 리뷰를 할 건지
- *   1: [버그/보안] → GPT + Gemini = 2 에이전트
- *   2: [버그/보안] + [아키텍처] → (GPT+Gemini) × 2 = 4 에이전트
- *   3: [버그/보안] + [아키텍처] + [비판적] → (GPT+Gemini) × 3 = 6 에이전트
+ * perspectives: 몇 가지 관점에서 리뷰할 건지
+ *   1: [버그/보안] → 1 GPT 에이전트
+ *   2: [버그/보안] + [아키텍처] → 2 GPT 에이전트
+ *   3: [버그/보안] + [아키텍처] + [비판적] → 3 GPT 에이전트
  */
 
 import { z } from "zod";
 import { callExpertsParallel, WorkflowCallOptions } from "../services/expert-router.js";
 import { startBackgroundWorkflow } from "../services/background-manager.js";
 import { SESSION_ID } from "../session.js";
-import { wrapMcpResponse } from "../utils/response-saver.js";
 
 export const reviewCodeSchema = z.object({
   code: z.string()
@@ -47,7 +45,7 @@ export const reviewCodeSchema = z.object({
   perspectives: z.number()
     .int().min(1).max(3)
     .default(1)
-    .describe("리뷰 관점 수 (1: 버그/보안, 2: +아키텍처, 3: +비판적). 각 관점마다 GPT+Gemini 2중 병렬"),
+    .describe("리뷰 관점 수 (1: 버그/보안, 2: +아키텍처, 3: +비판적). 각 관점마다 GPT 1 에이전트"),
 
   // 기존 호환
   include_strategist: z.boolean()
@@ -65,21 +63,18 @@ export const reviewCodeSchema = z.object({
 export const reviewCodeTool = {
   name: "review_code",
 
-  title: "코드 리뷰 (GPT+Gemini 2중 병렬)",
+  title: "코드 리뷰 (GPT 멀티 관점)",
 
-  description: `GPT + Gemini 2중 병렬 코드 리뷰.
-
-## 핵심: 항상 GPT+Gemini 동시 리뷰
-모든 관점에서 GPT(codex)와 Gemini가 동시에 리뷰합니다.
+  description: `GPT 코드 리뷰 (관점별 병렬).
 
 ## 리뷰 대상 (둘 중 하나 필수)
 - **code**: 인라인 코드 문자열
 - **files**: 파일 경로 배열 (CLI가 직접 읽음)
 
 ## perspectives (관점 수)
-- **1** (기본): [버그/보안] GPT+Gemini = 2 에이전트
-- **2**: [버그/보안] + [아키텍처] (GPT+Gemini)×2 = 4 에이전트
-- **3**: [버그/보안] + [아키텍처] + [비판적] (GPT+Gemini)×3 = 6 에이전트
+- **1** (기본): [버그/보안] = 1 GPT 에이전트
+- **2**: [버그/보안] + [아키텍처] = 2 GPT 에이전트
+- **3**: [버그/보안] + [아키텍처] + [비판적] = 3 GPT 에이전트
 
 ## 사용 예시
 \`\`\`json
@@ -106,51 +101,34 @@ export const reviewCodeTool = {
 
 interface PerspectiveDef {
   name: string;
-  geminiLabel: string;
-  gptLabel: string;
-  geminiExpert: string;
-  gptExpert: string;
-  buildGeminiPrompt: (target: string, context: string, language: string, focus?: string) => string;
-  buildGptPrompt: (target: string, context: string, language: string, focus?: string) => string;
+  label: string;
+  expertId: string;
+  buildPrompt: (target: string, context: string, language: string, focus?: string) => string;
 }
 
 const PERSPECTIVES: PerspectiveDef[] = [
   {
     name: '버그/보안',
-    geminiLabel: '🔍 Gemini (버그/보안/품질)',
-    gptLabel: '🎯 GPT (버그/보안/품질)',
-    geminiExpert: 'codereview',
-    gptExpert: 'codereview_gpt',
-    buildGeminiPrompt: (target, context, lang, focus) => {
-      const focusHint = focus && focus !== 'all' ? `\n집중 영역: ${focus}` : '';
-      return `[Gemini 코드 리뷰 - 버그/보안 관점]\n언어: ${lang}${focusHint}${context}\n\n${target}\n\n코드의 버그, 보안 취약점, 성능 이슈, 에러 처리 누락을 찾아주세요.\n구체적 코드 위치(파일:라인)와 수정 예시를 포함하세요.\n심각도(Critical/High/Medium/Low)와 신뢰도(%)를 표시하세요.`;
-    },
-    buildGptPrompt: (target, context, lang, focus) => {
+    label: '🎯 GPT (버그/보안/품질)',
+    expertId: 'codereview_gpt',
+    buildPrompt: (target, context, lang, focus) => {
       const focusHint = focus && focus !== 'all' ? `\n집중 영역: ${focus}` : '';
       return `[GPT 코드 리뷰 - 버그/보안 관점]\n언어: ${lang}${focusHint}${context}\n\n${target}\n\n실무 관점에서 프로덕션 장애를 유발할 수 있는 버그, 보안 취약점, 성능 병목을 찾아주세요.\n과거 프로덕션 인시던트 사례를 참고하여 실제 위험도를 평가하세요.\n심각도(Critical/High/Medium/Low)와 신뢰도(%)를 표시하세요.`;
     },
   },
   {
     name: '아키텍처/설계',
-    geminiLabel: '🏗️ Gemini (아키텍처/설계)',
-    gptLabel: '🏛️ GPT (아키텍처/설계)',
-    geminiExpert: 'codereview',
-    gptExpert: 'codereview_gpt',
-    buildGeminiPrompt: (target, context, lang) =>
-      `[Gemini 코드 리뷰 - 아키텍처/설계 관점]\n언어: ${lang}${context}\n\n${target}\n\nSOLID 원칙 위반, 코드 스멜(Bloaters/Couplers/Dispensables), 설계 패턴 기회를 분석해주세요.\n각 이슈에 대해 리팩토링 전/후 코드 예시를 포함하세요.`,
-    buildGptPrompt: (target, context, lang) =>
-      `[GPT 코드 리뷰 - 아키텍처/설계 관점]\n언어: ${lang}${context}\n\n${target}\n\n장기 유지보수 관점에서 모듈 경계, 의존성 방향, 추상화 수준을 평가해주세요.\n복잡도 메트릭(Cyclomatic/Cognitive)과 구체적 리팩토링 패턴(Extract Method, Replace Conditional 등)을 제안하세요.`,
+    label: '🏛️ GPT (아키텍처/설계)',
+    expertId: 'codereview_gpt',
+    buildPrompt: (target, context, lang) =>
+      `[GPT 코드 리뷰 - 아키텍처/설계 관점]\n언어: ${lang}${context}\n\n${target}\n\n장기 유지보수 관점에서 모듈 경계, 의존성 방향, 추상화 수준을 평가해주세요.\nSOLID 원칙, 복잡도 메트릭(Cyclomatic/Cognitive), 구체적 리팩토링 패턴을 제안하세요.`,
   },
   {
     name: '비판적 분석',
-    geminiLabel: '⚡ Gemini (비판적 분석)',
-    gptLabel: '🔥 GPT (비판적 분석)',
-    geminiExpert: 'momus',
-    gptExpert: 'codereview_gpt',
-    buildGeminiPrompt: (target, context, lang) =>
-      `[Gemini 비판적 코드 분석]\n언어: ${lang}${context}\n\n${target}\n\n이 코드에 숨겨진 가정, 암묵적 의존성, 확장성 한계를 찾아주세요.\n"이 코드가 실패할 수 있는 시나리오"를 구체적으로 나열하세요.`,
-    buildGptPrompt: (target, context, lang) =>
-      `[GPT 비판적 코드 분석]\n언어: ${lang}${context}\n\n${target}\n\n이 코드의 장기 유지보수 위험, 기술 부채 축적 가능성, 팀 확장 시 병목을 분석해주세요.\n"6개월 후 이 코드가 문제가 될 이유"를 구체적으로 제시하세요.`,
+    label: '🔥 GPT (비판적 분석)',
+    expertId: 'codereview_gpt',
+    buildPrompt: (target, context, lang) =>
+      `[GPT 비판적 코드 분석]\n언어: ${lang}${context}\n\n${target}\n\n이 코드의 장기 유지보수 위험, 기술 부채 축적 가능성, 팀 확장 시 병목을 분석해주세요.\n숨겨진 가정, 암묵적 의존성, 확장성 한계를 찾고 "6개월 후 이 코드가 문제가 될 이유"를 구체적으로 제시하세요.`,
   },
 ];
 
@@ -165,7 +143,7 @@ export async function handleReviewCode(params: z.infer<typeof reviewCodeSchema>)
     : params.perspectives;
 
   const language = params.language || '자동 감지';
-  const totalAgents = perspectives * 2;
+  const totalAgents = perspectives;
 
   // 리뷰 대상 프롬프트
   let targetSection: string;
@@ -189,23 +167,15 @@ export async function handleReviewCode(params: z.infer<typeof reviewCodeSchema>)
 
     type ReviewCall = { expertId: string; prompt: string };
     const calls: ReviewCall[] = [];
-    const labels: string[] = [];
 
     for (let i = 0; i < perspectives; i++) {
       const perspective = PERSPECTIVES[i];
       const focus = i === 0 ? params.focus : undefined;
 
       calls.push({
-        expertId: perspective.geminiExpert,
-        prompt: perspective.buildGeminiPrompt(targetSection, contextSection, language, focus),
+        expertId: perspective.expertId,
+        prompt: perspective.buildPrompt(targetSection, contextSection, language, focus),
       });
-      labels.push(perspective.geminiLabel);
-
-      calls.push({
-        expertId: perspective.gptExpert,
-        prompt: perspective.buildGptPrompt(targetSection, contextSection, language, focus),
-      });
-      labels.push(perspective.gptLabel);
     }
 
     const results = await callExpertsParallel(calls, workflowOptions);
@@ -215,37 +185,26 @@ export async function handleReviewCode(params: z.infer<typeof reviewCodeSchema>)
     const seconds = Math.floor((totalMs % 60000) / 1000);
     const timeStr = minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
 
-    let output = `## 코드 리뷰 결과 (${timeStr}, ${perspectives}관점 × GPT+Gemini = ${totalAgents} 에이전트)\n\n`;
+    let output = `## 코드 리뷰 결과 (${timeStr}, ${perspectives}관점 = ${totalAgents} GPT 에이전트)\n\n`;
 
     for (let p = 0; p < perspectives; p++) {
       const perspective = PERSPECTIVES[p];
-      const geminiIdx = p * 2;
-      const gptIdx = p * 2 + 1;
+      const result = results[p];
+      const ms = result.latencyMs || 0;
+      const time = ms >= 60000
+        ? `${Math.floor(ms / 60000)}분 ${Math.floor((ms % 60000) / 1000)}초`
+        : `${Math.floor(ms / 1000)}초`;
 
       output += `## 관점 ${p + 1}: ${perspective.name}\n\n`;
-
-      const geminiResult = results[geminiIdx];
-      const geminiMs = geminiResult.latencyMs || 0;
-      const geminiTime = geminiMs >= 60000
-        ? `${Math.floor(geminiMs / 60000)}분 ${Math.floor((geminiMs % 60000) / 1000)}초`
-        : `${Math.floor(geminiMs / 1000)}초`;
-      output += `### ${labels[geminiIdx]} (${geminiTime})\n${geminiResult.response}\n\n`;
-
-      const gptResult = results[gptIdx];
-      const gptMs = gptResult.latencyMs || 0;
-      const gptTime = gptMs >= 60000
-        ? `${Math.floor(gptMs / 60000)}분 ${Math.floor((gptMs % 60000) / 1000)}초`
-        : `${Math.floor(gptMs / 1000)}초`;
-      output += `### ${labels[gptIdx]} (${gptTime})\n${gptResult.response}\n\n`;
+      output += `### ${perspective.label} (${time})\n${result.response}\n\n`;
 
       if (p < perspectives - 1) {
         output += `---\n\n`;
       }
     }
 
-    output += `---\n\n### 📊 교차 검증 요약\n`;
-    output += `- **${perspectives}관점 × 2모델 = ${totalAgents}명**의 전문가가 독립 리뷰했습니다.\n`;
-    output += `- 같은 관점에서 GPT와 Gemini가 동일하게 지적한 이슈는 **높은 신뢰도**입니다.\n`;
+    output += `---\n\n### 📊 리뷰 요약\n`;
+    output += `- **${perspectives}관점 = ${totalAgents}명**의 GPT 전문가가 독립 리뷰했습니다.\n`;
     output += `- 여러 관점에서 반복 지적된 이슈를 **최우선 수정 대상**으로 판단하세요.\n`;
 
     return output;
@@ -261,7 +220,7 @@ export async function handleReviewCode(params: z.infer<typeof reviewCodeSchema>)
       type: "text" as const,
       text: `## 코드 리뷰 시작 (백그라운드)\n\n`
         + `- **task_id**: \`${task.id}\`\n`
-        + `- **관점**: ${perspectives}관점 × GPT+Gemini = ${totalAgents} 에이전트\n`
+        + `- **관점**: ${perspectives}관점 = ${totalAgents} GPT 에이전트\n`
         + `- **대상**: ${targetDesc}\n\n`
         + `결과 확인: \`background_expert_result({ task_id: "${task.id}" })\``,
     }],
