@@ -36,7 +36,7 @@ node dist/index.js
 
 ### Expert System
 
-12 primary AI experts with specialized roles and automatic fallback chains (GPT/Gemini only), plus 4 blank debate slots and 1 debate moderator (17 total):
+13 primary AI experts with specialized roles and automatic fallback chains (GPT/Gemini only), plus 4 blank debate slots and 1 debate moderator (18 total):
 
 #### 기본 전문가 (5명)
 
@@ -48,7 +48,7 @@ node dist/index.js
 | `metis` | GPT | 전략적 계획, 문제 분해 | strategist → codereview |
 | `momus` | Gemini Pro | 비판적 분석, 품질 평가 | codereview → strategist |
 
-#### 특화 전문가 (7명)
+#### 특화 전문가 (8명)
 
 | Expert | Model | Role | Fallbacks |
 |--------|-------|------|-----------|
@@ -59,6 +59,7 @@ node dist/index.js
 | `reality_checker` | Gemini Pro | 현실 검증, dead code | momus → codereview |
 | `lsp_index_engineer` | GPT | 심볼/참조 분석 | codereview → strategist |
 | `codereview_gpt` | GPT | GPT 코드리뷰 - SOLID/설계/실무 관점 (READ-ONLY) | codereview → momus |
+| `implementer` | GPT | 코드 구현 에이전트 (READ-WRITE, delegate_task 전용) | strategist → codereview_gpt |
 
 #### 동적 페르소나 전문가 (4명) - 토론용
 
@@ -203,7 +204,7 @@ llm-plan, llm-planAll, llm-codereview, llm-validate, llm-security, llm-research,
 ## Key Principles
 
 - 2명 이상 전문가 호출 시 반드시 병렬 (consult_experts_parallel 사용)
-- delegate_task는 GPT만 사용 (Gemini 코드 변경 불가)
+- delegate_task는 implementer 전문가 사용 (GPT, READ-WRITE)
 - 파일 경로만 넘기면 CLI가 직접 읽음 (토큰 절약)
 - codex는 AGENTS.md, gemini는 GEMINI.md 프로젝트 루트에서 자동 읽음
 

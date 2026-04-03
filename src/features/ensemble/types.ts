@@ -266,6 +266,7 @@ export const EXPERT_PROVIDERS: Record<string, string> = {
   reality_checker: 'Google (Gemini Pro)',
   lsp_index_engineer: 'OpenAI (GPT 5.4)',
   codereview_gpt: 'OpenAI (GPT 5.4)',
+  implementer: 'OpenAI (GPT 5.4)',
   // Blank experts (GPT/Gemini only)
   gpt_blank_1: 'OpenAI (GPT 5.4)',
   gpt_blank_2: 'OpenAI (GPT 5.4)',

@@ -154,6 +154,7 @@ export const EXPERT_TOOL_RESTRICTIONS: Record<string, ToolRestriction> = {
   strategist: READ_ONLY_TOOLS,
   codereview: READ_ONLY_TOOLS,
   frontend: FULL_TOOLS,
+  implementer: FULL_TOOLS,
 };
 
 /**

@@ -93,6 +93,12 @@ export {
   type CodereviewGptDepth,
 } from './codereview-gpt.prompt.js';
 
+// Implementer (Implementation Expert)
+export {
+  IMPLEMENTER_SYSTEM_PROMPT,
+  IMPLEMENTER_METADATA,
+} from './implementer.prompt.js';
+
 // Blank (Dynamic Persona)
 export {
   BLANK_SYSTEM_PROMPT,
@@ -121,6 +127,7 @@ import { DEVOPS_SYSTEM_PROMPT, DEVOPS_METADATA } from './devops.prompt.js';
 import { REALITY_CHECKER_SYSTEM_PROMPT, REALITY_CHECKER_METADATA } from './reality-checker.prompt.js';
 import { LSP_INDEX_ENGINEER_SYSTEM_PROMPT, LSP_INDEX_ENGINEER_METADATA } from './lsp-index-engineer.prompt.js';
 import { CODEREVIEW_GPT_SYSTEM_PROMPT, CODEREVIEW_GPT_METADATA } from './codereview-gpt.prompt.js';
+import { IMPLEMENTER_SYSTEM_PROMPT, IMPLEMENTER_METADATA } from './implementer.prompt.js';
 import { BLANK_SYSTEM_PROMPT, BLANK_METADATA } from './blank.prompt.js';
 import { DEBATE_MODERATOR_SYSTEM_PROMPT, DEBATE_MODERATOR_METADATA } from './debate-moderator.prompt.js';
 import type { ExpertRegistry } from '../metadata/expert-metadata.js';
@@ -141,6 +148,7 @@ export const EXPERT_REGISTRY: ExpertRegistry = {
   reality_checker: REALITY_CHECKER_METADATA,
   lsp_index_engineer: LSP_INDEX_ENGINEER_METADATA,
   codereview_gpt: CODEREVIEW_GPT_METADATA,
+  implementer: IMPLEMENTER_METADATA,
   // Blank experts (share same metadata) - GPT/Gemini only
   gpt_blank_1: BLANK_METADATA,
   gpt_blank_2: BLANK_METADATA,
@@ -166,6 +174,7 @@ export const EXPERT_PROMPTS: Record<string, string> = {
   reality_checker: REALITY_CHECKER_SYSTEM_PROMPT,
   lsp_index_engineer: LSP_INDEX_ENGINEER_SYSTEM_PROMPT,
   codereview_gpt: CODEREVIEW_GPT_SYSTEM_PROMPT,
+  implementer: IMPLEMENTER_SYSTEM_PROMPT,
   // Blank experts (share same minimal prompt) - GPT/Gemini only
   gpt_blank_1: BLANK_SYSTEM_PROMPT,
   gpt_blank_2: BLANK_SYSTEM_PROMPT,

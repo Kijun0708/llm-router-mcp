@@ -219,7 +219,7 @@ export async function handleDelegateTask(params: z.infer<typeof delegateTaskSche
     const startTime = Date.now();
 
     const calls = subtasks.map((subtask) => ({
-      expertId: 'strategist' as const,
+      expertId: 'implementer' as const,
       prompt: buildDelegationPrompt({
         subtask,
         files: params.files,

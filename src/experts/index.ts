@@ -13,6 +13,7 @@ import { devops, DEVOPS_METADATA } from './devops.js';
 import { realityChecker, REALITY_CHECKER_METADATA } from './reality-checker.js';
 import { lspIndexEngineer, LSP_INDEX_ENGINEER_METADATA } from './lsp-index-engineer.js';
 import { codereviewGpt, CODEREVIEW_GPT_METADATA } from './codereview-gpt.js';
+import { implementer, IMPLEMENTER_METADATA } from './implementer.js';
 // Blank experts for dynamic persona debates (GPT/Gemini only - Claude Code handles Claude)
 import { gptBlank1 } from './gpt-blank-1.js';
 import { gptBlank2 } from './gpt-blank-2.js';
@@ -36,6 +37,7 @@ export const experts: Record<string, Expert> = {
   reality_checker: realityChecker,
   lsp_index_engineer: lspIndexEngineer,
   codereview_gpt: codereviewGpt,
+  implementer,
   // Blank experts for dynamic persona debates (GPT/Gemini only)
   gpt_blank_1: gptBlank1,
   gpt_blank_2: gptBlank2,
@@ -61,6 +63,7 @@ export const FALLBACK_CHAIN: Record<string, string[]> = {
   reality_checker: ['momus', 'codereview'],
   lsp_index_engineer: ['codereview', 'strategist'],
   codereview_gpt: ['codereview', 'momus'],
+  implementer: ['strategist', 'codereview_gpt'],
   // Blank experts (교차 프로바이더 우선 폴백)
   gpt_blank_1: ['gemini_blank_1', 'gpt_blank_2'],
   gpt_blank_2: ['gemini_blank_2', 'gpt_blank_1'],
@@ -76,6 +79,7 @@ export {
   metis, momus,
   security, tester, data, devops, realityChecker, lspIndexEngineer,
   codereviewGpt,
+  implementer,
   gptBlank1, gptBlank2, geminiBlank1, geminiBlank2,
   debateModerator
 };
@@ -94,6 +98,7 @@ export {
   REALITY_CHECKER_METADATA,
   LSP_INDEX_ENGINEER_METADATA,
   CODEREVIEW_GPT_METADATA,
+  IMPLEMENTER_METADATA,
   BLANK_METADATA,
   DEBATE_MODERATOR_METADATA
 };
@@ -114,6 +119,7 @@ export const EXPERT_METADATA_REGISTRY: Record<string, ExpertPromptMetadata> = {
   reality_checker: REALITY_CHECKER_METADATA,
   lsp_index_engineer: LSP_INDEX_ENGINEER_METADATA,
   codereview_gpt: CODEREVIEW_GPT_METADATA,
+  implementer: IMPLEMENTER_METADATA,
   // Blank experts (shared metadata, GPT/Gemini only)
   gpt_blank_1: BLANK_METADATA,
   gpt_blank_2: BLANK_METADATA,

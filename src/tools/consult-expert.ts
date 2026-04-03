@@ -206,6 +206,7 @@ export const consultExpertSchema = z.object({
     // 특화 전문가
     "security", "tester", "data", "devops", "reality_checker", "lsp_index_engineer",
     "codereview_gpt",
+    "implementer",
     // 동적 페르소나 전문가 (4명) - persona 필수
     "gpt_blank_1", "gpt_blank_2", "gemini_blank_1", "gemini_blank_2"
   ]).describe("자문할 전문가"),

@@ -9,6 +9,7 @@ const expertIds = [
   "strategist", "codereview", "frontend",
   "metis", "momus", "security", "tester", "data", "devops", "reality_checker", "lsp_index_engineer",
   "codereview_gpt",
+  "implementer",
   "gpt_blank_1", "gpt_blank_2", "gemini_blank_1", "gemini_blank_2", "debate_moderator"
 ] as const;
 

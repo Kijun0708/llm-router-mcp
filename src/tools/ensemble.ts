@@ -31,6 +31,7 @@ const allExpertIds = [
   // Specialized experts
   'security', 'tester', 'data', 'devops', 'reality_checker', 'lsp_index_engineer',
   'codereview_gpt',
+  'implementer',
   // Blank experts (GPT/Gemini only)
   'gpt_blank_1', 'gpt_blank_2', 'gemini_blank_1', 'gemini_blank_2',
   // Debate moderator
