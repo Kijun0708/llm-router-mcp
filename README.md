@@ -33,6 +33,25 @@ LLM Router MCP는 Claude Code가 팀 리더 역할을 하며, GPT/Gemini 전문�
 
 ## 빠른 시작
 
+### AI로 다른 프로젝트에 적용시키기
+
+다른 프로젝트에서 AI에게 아래처럼 요청하면 이 저장소의 문서를 읽고 플러그인 적용 작업을 진행하도록 유도할 수 있습니다.
+
+예시 프롬프트:
+
+```text
+이 저장소의 README.md를 읽고 우리 프로젝트에 llm-router 플러그인을 적용해줘.
+프로젝트 CLAUDE.md는 300줄 이내로 유지해야 하니, 공용 사용법 문서는 별도 참조 문서로 연결해줘.
+```
+
+AI가 수행해야 하는 적용 작업:
+1. 이 저장소의 `README.md`와 `plugin/README.md`를 읽고 설치 방식 확인
+2. `llm-router-mcp` 저장소를 clone, `npm install`, `npm run build` 수행
+3. 대상 환경의 Claude Code 설정 또는 플러그인 경로에 `plugin/.mcp.json` 기준으로 MCP 연결
+4. 대상 프로젝트의 `CLAUDE.md`에 공용 템플릿 구조 반영
+5. 프로젝트 `CLAUDE.md`에는 플러그인 사용 시 `plugin/docs/USAGE.md`를 읽으라고 적고, 프로젝트 고유 규칙만 유지
+6. 설치 후 `llm_router_health` 등으로 연결 확인
+
 ### 1. 설치
 
 ```bash
@@ -77,6 +96,8 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
   }
 }
 ```
+
+프로젝트별 사용 규칙을 빠르게 붙이고 싶으면 공용 템플릿 [plugin/templates/CLAUDE.md](c:/Users/GJ.PARK/Desktop/auto/custommcp/plugin/templates/CLAUDE.md)를 프로젝트 루트 `CLAUDE.md`의 시작점으로 사용하고, 플러그인 상세 운영 규칙은 [plugin/docs/USAGE.md](c:/Users/GJ.PARK/Desktop/auto/custommcp/plugin/docs/USAGE.md)를 참조하면 됩니다.
 
 ---
 
@@ -244,8 +265,8 @@ CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
 
 | 스킬 | 설명 | 호출 방식 |
 |------|------|----------|
-| `llm-plan` | Claude 설계 → GPT 전체 구현 위임 | 자동 |
-| `llm-planAll` | Claude + GPT 동시 작업 | 자동 |
+| `llm-plan` | Claude 설계 후 Agent 자체 검토 + GPT 설계 검토를 거쳐 GPT 전체 구현 위임 | 자동 |
+| `llm-planAll` | Claude와 GPT가 설계 검토를 거친 뒤 역할을 나눠 동시 작업 | 자동 |
 | `llm-codereview` | 9단계 코드 리뷰 파이프라인 | 자동 |
 | `llm-validate` | 코드 검증 (빌드/타입/참조) | 자동 |
 | `llm-security` | OWASP 보안 감사 | 자동 |
@@ -275,6 +296,41 @@ moderated_debate({
 ```
 
 직접 페르소나를 주고 싶으면 `participants`를 넘기고, 아니면 `participant_count`(2-4)만 넘겨 자동 페르소나 배정을 사용합니다.
+
+---
+
+## 설계 위임 스킬
+
+`llm-plan`과 `llm-planAll`은 바로 구현에 들어가지 않고, 설계 검토 게이트를 먼저 통과합니다.
+
+### `llm-plan`
+
+흐름:
+1. Claude가 plan 모드에서 설계와 GPT 서브태스크를 작성
+2. Claude가 `Agent` 도구로 설계 검토를 수행
+3. GPT 설계 전문가가 2차 검토
+4. 두 검토를 통과하면 사용자 확인 후 GPT 에이전트 1~3명에게 구현 위임
+5. 구현 결과를 멀티 관점으로 리뷰
+
+특징:
+- Claude는 설계와 리뷰만 수행
+- 실제 코드 변경은 GPT만 수행
+- 설계 검토 중 이슈가 나오면 plan으로 돌아가 수정 후 재검토
+
+### `llm-planAll`
+
+흐름:
+1. Claude가 plan 모드에서 자신의 작업과 GPT 작업을 분리해 설계
+2. Claude가 `Agent` 도구로 설계 검토를 수행
+3. GPT 설계 전문가가 2차 검토
+4. 두 검토를 통과하면 사용자 확인
+5. GPT 작업을 먼저 백그라운드 위임하고, Claude도 자기 파일 범위에서 동시 구현
+6. 전체 결과를 통합 리뷰
+
+특징:
+- Claude와 GPT가 같은 파일을 수정하면 안 됨
+- Claude 작업과 GPT 작업은 독립적이어야 함
+- 설계 검토 전에는 위임이나 구현을 시작하지 않음
 
 ---
 

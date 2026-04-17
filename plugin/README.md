@@ -4,6 +4,25 @@ GPT와 Gemini 전문가 팀을 통한 코드 리뷰, 보안 감사, 아키텍처
 
 ## 설치
 
+### AI에게 적용 작업 맡기기
+
+다른 프로젝트에서 AI에게 아래처럼 요청하면 이 문서를 읽고 플러그인 적용 작업을 수행하도록 유도할 수 있습니다.
+
+예시 프롬프트:
+
+```text
+README.md를 읽고 우리 프로젝트에 llm-router 플러그인을 적용해줘.
+CLAUDE.md는 짧게 유지하고, 플러그인 사용법은 별도 문서를 참조하도록 구성해줘.
+```
+
+AI가 해야 할 일:
+1. 이 문서와 루트 `README.md`를 읽고 설치 구조 파악
+2. `npm install`, `npm run build`로 플러그인 빌드
+3. `plugin/.mcp.json` 또는 Claude Code 설정으로 MCP 서버 연결
+4. 프로젝트 루트 `CLAUDE.md`를 [plugin/templates/CLAUDE.md](c:/Users/GJ.PARK/Desktop/auto/custommcp/plugin/templates/CLAUDE.md) 구조로 반영
+5. 플러그인 상세 운영 규칙은 [plugin/docs/USAGE.md](c:/Users/GJ.PARK/Desktop/auto/custommcp/plugin/docs/USAGE.md)를 참조하도록 연결
+6. `LLM Router 서버 상태 확인해줘` 같은 요청으로 연결 확인
+
 ### 사전 요구사항
 
 - **Node.js** 18+
@@ -69,6 +88,22 @@ LLM Router 서버 상태 확인해줘
 
 `llm_router_health` 도구가 호출되고 서버 상태가 표시되면 설치 성공입니다.
 
+### Step 6: 프로젝트용 `CLAUDE.md` 준비
+
+프로젝트 루트의 `CLAUDE.md`는 짧게 유지하고, 플러그인 사용법은 공용 문서를 참조하도록 두는 방식을 권장합니다.
+
+권장 구성:
+
+```text
+plugin/templates/CLAUDE.md
+plugin/docs/USAGE.md
+```
+
+- `plugin/templates/CLAUDE.md`: 프로젝트 루트에 복사해 쓰는 짧은 템플릿
+- `plugin/docs/USAGE.md`: 플러그인 전체 운영 가이드
+
+즉, 프로젝트 `CLAUDE.md`에는 "이 플러그인을 사용할 때는 `plugin/docs/USAGE.md`를 읽을 것"만 적고, 프로젝트 고유 규칙만 추가하면 됩니다.
+
 ### 설치 문제 해결
 
 | 증상 | 원인 | 해결 |
@@ -130,6 +165,32 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 
 ## 워크플로우
 
+### 설계 위임
+
+```
+설계만 하고 GPT한테 구현 맡겨줘
+
+1. Claude가 plan 모드에서 설계와 GPT 서브태스크 작성
+2. Claude가 Agent 도구로 설계 검토 수행
+3. GPT 설계 전문가가 2차 검토
+4. 검토 통과 후 사용자 승인
+5. GPT 에이전트 1~3명에게 병렬 구현 위임
+6. 구현 결과를 통합 리뷰
+```
+
+### 설계 분업
+
+```
+같이 나눠서 구현하자
+
+1. Claude가 plan 모드에서 Claude 작업과 GPT 작업을 분리 설계
+2. Claude가 Agent 도구로 설계 검토 수행
+3. GPT 설계 전문가가 2차 검토
+4. 검토 통과 후 사용자 승인
+5. GPT 작업은 먼저 위임하고 Claude도 자기 범위 구현 시작
+6. 전체 결과를 통합 리뷰
+```
+
 ### 설계 → 구현
 
 ```
@@ -177,23 +238,26 @@ Claude: A안(Redis 캐시)과 B안(인메모리 캐시) 중 어떤 걸로 하시
 
 ---
 
-## 포함된 Skills (12개)
+## 포함된 Skills
 
 ### 자동 호출 (Claude가 자연어 요청을 인식하여 자동 실행)
 
 | 스킬 | 설명 | 비고 |
 |------|------|------|
-| `consult-expert` | 18명의 AI 전문가 상담 라우팅 | |
-| `code-review` | GPT + Gemini 교차 검증 코드 리뷰 → plan 모드로 수정 계획 | |
-| `deep-analyze` | 아키텍처/시스템 깊은 분석 | |
-| `security-audit` | OWASP Top 10 보안 감사 | |
-| `research-topic` | API/라이브러리/기술 리서치 | |
-| `cross-verify` | 서로 다른 LLM 교차 검증 | |
-| `code-validate` | 빌드 체크, 변수 참조 오류, 타입 에러 자동 탐지 | |
-| `design-workflow` | 다중 전문가 설계 워크플로우 | 사용자 확인 후 실행 |
-| `moderated-debate` | 중재형 전문가 토론 및 비교 분석 | 사용자 확인 후 실행 |
-| `tdd-workflow` | TDD 테스트 주도 개발 | 사용자 확인 후 실행 |
-| `background-task` | 백그라운드 비동기 전문가 실행 | 사용자 확인 후 실행 |
+| `llm-plan` | Claude 설계 후 Agent 자체 검토 + GPT 설계 검토를 거쳐 GPT 전체 구현 위임 | 사용자 확인 후 실행 |
+| `llm-planAll` | Claude와 GPT가 설계 검토를 거친 뒤 역할을 나눠 동시 구현 | 사용자 확인 후 실행 |
+| `llm-codereview` | GPT + Gemini 교차 검증 코드 리뷰 → plan 모드로 수정 계획 | |
+| `llm-validate` | 빌드 체크, 변수 참조 오류, 타입 에러 자동 탐지 | |
+| `llm-security` | OWASP Top 10 보안 감사 | |
+| `llm-research` | API/라이브러리/기술 리서치 | |
+| `llm-design` | 다중 전문가 설계 워크플로우 | 사용자 확인 후 실행 |
+| `llm-tdd` | TDD 테스트 주도 개발 | 사용자 확인 후 실행 |
+| `llm-background` | 백그라운드 비동기 전문가 실행 | 사용자 확인 후 실행 |
+| `llm-debate` | 중재형 전문가 토론 및 비교 분석 | 사용자 확인 후 실행 |
+| `llm-consult` | AI 전문가 상담 라우팅 | |
+| `llm-verify` | 서로 다른 LLM 교차 검증 | |
+| `llm-analyze` | 아키텍처/시스템 깊은 분석 | |
+| `llm-health` | 서버/환경 상태 점검 | |
 
 ### Claude 전용 (자동 참조)
 
