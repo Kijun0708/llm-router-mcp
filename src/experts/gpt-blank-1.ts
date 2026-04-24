@@ -9,7 +9,7 @@ export const gptBlank1: Expert = {
   name: "GPT Blank #1",
   model: config.models.gpt_blank_1,
 
-  role: "사용자 정의 페르소나 (GPT 5.4 기반)",
+  role: "사용자 정의 페르소나 (GPT 5.5 기반)",
 
   systemPrompt: BLANK_SYSTEM_PROMPT,
 

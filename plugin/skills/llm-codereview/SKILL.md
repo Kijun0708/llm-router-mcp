@@ -1,19 +1,19 @@
 ---
 name: llm-codereview
-description: "코드 리뷰 - GPT 멀티 관점 리뷰. 관점별로 GPT가 독립 분석합니다. '코드 봐줘', '리뷰해줘', '이거 괜찮아?', '버그 있는지 확인', '코드 점검' 같은 요청에 반응합니다"
+description: "코드 리뷰 - GPT+Gemini 2중 병렬 리뷰. 각 관점마다 GPT와 Gemini가 동시에 분석하여 교차 검증합니다. '코드 봐줘', '리뷰해줘', '이거 괜찮아?', '버그 있는지 확인', '코드 점검' 같은 요청에 반응합니다"
 argument-hint: "<리뷰할 파일/PR/코드 범위>"
 ---
 
-## Code Review (GPT 멀티 관점)
+## Code Review (GPT+Gemini 2중 병렬)
 
-GPT(codex)가 관점별로 독립 리뷰합니다.
+각 관점마다 GPT와 Gemini가 독립적으로 분석하여 교차 검증합니다.
 
 ### 핵심 구조
 
 ```
-perspectives=1: [버그/보안] → 1 GPT 에이전트
-perspectives=2: [버그/보안] + [아키텍처] → 2 GPT 에이전트
-perspectives=3: [버그/보안] + [아키텍처] + [비판적] → 3 GPT 에이전트
+perspectives=1: [버그/보안] → GPT + Gemini = 2 에이전트
+perspectives=2: [버그/보안] + [아키텍처] → 각각 GPT+Gemini = 4 에이전트
+perspectives=3: [버그/보안] + [아키텍처] + [비판적] → 각각 GPT+Gemini = 6 에이전트
 ```
 
 ### 실행 흐름
@@ -33,17 +33,18 @@ review_code({
 })
 ```
 
-**이 한 번의 호출로** GPT 멀티 관점 리뷰가 자동 실행됩니다.
+**이 한 번의 호출로** GPT+Gemini 2중 병렬 리뷰가 자동 실행됩니다.
 
-- perspectives=1: 1 GPT 에이전트 (버그/보안)
-- perspectives=2: 2 GPT 에이전트 (버그/보안 + 아키텍처)
-- perspectives=3: 3 GPT 에이전트 (버그/보안 + 아키텍처 + 비판적)
+- perspectives=1: 2 에이전트 (GPT + Gemini)
+- perspectives=2: 4 에이전트 (2관점 × GPT+Gemini)
+- perspectives=3: 6 에이전트 (3관점 × GPT+Gemini)
 
 #### 3단계: 관점 종합
 
 결과에서 다음을 확인합니다:
-- **여러 관점에서 반복 지적** → 최우선 수정 대상
-- **단일 관점에서만 지적** → 추가 검토 필요
+- **GPT와 Gemini 모두 지적** → 신뢰도 높음, 최우선 수정 대상
+- **한쪽만 지적** → 추가 검토 필요
+- **여러 관점에서 반복 지적** → 구조적 문제 가능성
 
 #### 4단계: Plan 모드 진입
 
@@ -61,13 +62,27 @@ review_code({
 
 ### 리뷰 관점별 포커스
 
-| 관점 | 포커스 | GPT 전문가 |
-|------|--------|-----------|
-| 1. 버그/보안 | 버그, 보안 취약점, 성능, 에러 처리 | codereview_gpt |
-| 2. 아키텍처 | SOLID, 코드 스멜, 설계 패턴, 리팩토링 | codereview_gpt |
-| 3. 비판적 | 숨겨진 가정, 리스크, 확장성, 유지보수 | codereview_gpt |
+| 관점 | 포커스 | GPT 전문가 | Gemini 전문가 |
+|------|--------|-----------|-------------|
+| 1. 버그/보안 | 버그, 보안 취약점, 성능, 에러 처리 | codereview_gpt | codereview |
+| 2. 아키텍처 | SOLID, 코드 스멜, 설계 패턴, 리팩토링 | codereview_gpt | codereview |
+| 3. 비판적 | 숨겨진 가정, 리스크, 확장성, 유지보수 | codereview_gpt | codereview |
 
 ### 병렬 실행 원칙
 
 > **`review_code` 도구가 내부적으로 모든 에이전트를 Promise.all로 병렬 실행합니다.**
 > 별도로 `consult_experts_parallel`를 호출할 필요 없습니다.
+
+### 백그라운드 결과 확인 주기
+
+`review_code`는 백그라운드로 실행됩니다. 다음 간격으로 `background_expert_result`를 호출하여 결과를 확인하세요:
+
+| 회차 | 대기 시간 | 누적 |
+|------|----------|------|
+| 1차 | 3분 | 3분 |
+| 2차 | 2분 | 5분 |
+| 3차 | 1분 | 6분 |
+| 4차 | 1분 | 7분 |
+| 5차 | 1분 | 8분 |
+
+완료되지 않았으면 이후 1분 간격으로 계속 확인합니다.

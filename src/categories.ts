@@ -15,7 +15,7 @@ export const categories: Record<string, Category> = {
   'business-logic': {
     id: 'business-logic',
     defaultExpert: 'strategist',
-    model: 'gpt-5.4',
+    model: 'gpt-5.5',
     temperature: 0.1,
     description: '백엔드 로직, 아키텍처, 전략적 결정',
     promptAppend: '확장성, 유지보수성, 성능을 고려한 설계를 제시하세요.'
@@ -24,7 +24,7 @@ export const categories: Record<string, Category> = {
   research: {
     id: 'research',
     defaultExpert: 'strategist',
-    model: 'gpt-5.4',
+    model: 'gpt-5.5',
     temperature: 0.1,
     description: '조사, 분석, 문서 탐색',
     promptAppend: '근거를 명확히 제시하고 출처를 밝히세요.'
@@ -51,7 +51,7 @@ export const categories: Record<string, Category> = {
   documentation: {
     id: 'documentation',
     defaultExpert: 'strategist',
-    model: 'gpt-5.4',
+    model: 'gpt-5.5',
     temperature: 0.2,
     description: '문서 작성, README, API 문서화',
     promptAppend: '명확하고 구조화된 문서를 작성하세요.'

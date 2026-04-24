@@ -119,9 +119,9 @@ node dist/index.js
 | review | codereview | 코드 리뷰, 버그 탐지 |
 | documentation | strategist | 문서 작성, API 문서화 |
 
-### Skills (15, all with llm- prefix)
+### Skills (17, all with llm- prefix)
 
-llm-plan, llm-planAll, llm-codereview, llm-validate, llm-security, llm-research, llm-design, llm-tdd, llm-background, llm-debate, llm-consult, llm-verify, llm-analyze, llm-health, llm-guide
+llm-plan, llm-planAll, llm-codereview, llm-validate, llm-security, llm-research, llm-design, llm-tdd, llm-background, llm-debate, llm-consult, llm-verify, llm-analyze, llm-health, llm-guide, llm-planreview, llm-persona
 
 ### Key Services
 
