@@ -123,6 +123,25 @@ node dist/index.js
 
 llm-plan, llm-planAll, llm-codereview, llm-validate, llm-security, llm-research, llm-design, llm-tdd, llm-background, llm-debate, llm-consult, llm-verify, llm-analyze, llm-health, llm-guide, llm-planreview, llm-persona
 
+### Plugin Cache Sync (중요)
+
+플러그인이 `~/.claude/plugins/cache/llm-router/llm-router/<version>/` 에 캐시되어 사용됩니다.
+실제 캐시 경로는 `~/.claude/plugins/installed_plugins.json`의 `installPath`에서 확인 가능합니다.
+**스킬을 추가/수정하면 캐시에도 동기화해야** VSCode Claude Code에서 반영됩니다.
+
+```bash
+# 캐시 경로 확인
+CACHE_DIR=$(cat ~/.claude/plugins/installed_plugins.json | grep -A1 llm-router | grep installPath | sed 's/.*": "//;s/".*//')
+
+# 새 스킬 추가 시
+cp -r plugin/skills/<new-skill> "$CACHE_DIR/skills/"
+
+# 기존 스킬 수정 시
+cp plugin/skills/<skill>/SKILL.md "$CACHE_DIR/skills/<skill>/SKILL.md"
+```
+
+동기화 후 VSCode 재시작 필요.
+
 ### Key Services
 
 - `src/services/cliproxy-client.ts` - CLI tool orchestrator (child_process.spawn) with rate limit detection, model-specific timeouts
