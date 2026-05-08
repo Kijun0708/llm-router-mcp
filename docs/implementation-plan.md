@@ -1,6 +1,8 @@
-# custommcp 개선 구현 계획
+# LLM Router MCP 개선 구현 계획
 
 oh-my-opencode 벤치마킹 기반 부족한 기능 구현 계획
+
+> 현재 저장소/패키지 이름은 `llm-router-mcp`입니다. `custommcp`는 설치/관리 CLI 명령어 이름으로 유지합니다.
 
 ---
 

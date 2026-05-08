@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "llm-router": {
+    "llm-router-mcp": {
       "command": "node",
-      "args": ["c:/Users/GJ.PARK/Desktop/auto/custommcp/dist/index.js"]
+      "args": ["REPLACE_WITH_ABSOLUTE_PATH_TO_DIST_INDEX_JS"]
     }
   }
 }

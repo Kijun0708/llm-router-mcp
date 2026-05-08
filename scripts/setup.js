@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // scripts/setup.js
-// npm install 후 자동 실행되는 설정 스크립트
+// Optional legacy CLIProxy setup script. Global npm installs do not run this automatically.
 
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -57,7 +57,7 @@ async function findAvailablePort(startPort = 8787, maxAttempts = 20) {
  * config.yaml 생성/업데이트
  */
 async function setupConfig() {
-  console.log(colors.blue('\n📦 LLM Router MCP - 자동 설정\n'));
+  console.log(colors.blue('\n📦 LLM Router MCP - optional CLIProxy setup\n'));
 
   // 1. config.yaml 확인 및 생성
   if (!existsSync(configPath)) {
@@ -66,7 +66,8 @@ async function setupConfig() {
       copyFileSync(configExamplePath, configPath);
       console.log(colors.green('✅ config.yaml 생성 완료'));
     } else {
-      console.log(colors.red('❌ config.example.yaml을 찾을 수 없습니다.'));
+      console.log(colors.yellow('⚠️  vendor/cliproxy/config.example.yaml이 없어 CLIProxy 설정을 건너뜁니다.'));
+      console.log(colors.yellow('   일반 설치는 npm install -g llm-router-mcp 후 custommcp install을 사용하세요.'));
       return;
     }
   } else {

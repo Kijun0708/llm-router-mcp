@@ -35,19 +35,19 @@ LLM Router MCP는 Claude Code가 팀 리더 역할을 하며, GPT/Gemini 전문�
 
 ### AI로 다른 프로젝트에 적용시키기
 
-다른 프로젝트에서 AI에게 아래처럼 요청하면 이 저장소의 문서를 읽고 플러그인 적용 작업을 진행하도록 유도할 수 있습니다.
+다른 프로젝트에서 AI에게 아래처럼 요청하면 글로벌 CLI 설치와 Claude Code MCP 등록까지 진행하도록 유도할 수 있습니다.
 
 예시 프롬프트:
 
 ```text
-이 저장소의 README.md를 읽고 우리 프로젝트에 llm-router 플러그인을 적용해줘.
+LLM Router MCP를 npm 글로벌 설치 방식으로 설치하고 Claude Code에 등록해줘.
 프로젝트 CLAUDE.md는 300줄 이내로 유지해야 하니, 공용 사용법 문서는 별도 참조 문서로 연결해줘.
 ```
 
 AI가 수행해야 하는 적용 작업:
-1. 이 저장소의 `README.md`와 `plugin/README.md`를 읽고 설치 방식 확인
-2. `llm-router-mcp` 저장소를 clone, `npm install`, `npm run build` 수행
-3. 대상 환경의 Claude Code 설정 또는 플러그인 경로에 `plugin/.mcp.json` 기준으로 MCP 연결
+1. `npm install -g llm-router-mcp` 실행
+2. `custommcp install`로 Claude Code MCP 설정 자동 등록
+3. `custommcp doctor`로 Node.js, MCP 등록, `codex`, `gemini` CLI 상태 확인
 4. 대상 프로젝트의 `CLAUDE.md`에 공용 템플릿 구조 반영
 5. 프로젝트 `CLAUDE.md`에는 플러그인 사용 시 `plugin/docs/USAGE.md`를 읽으라고 적고, 프로젝트 고유 규칙만 유지
 6. 설치 후 `llm_router_health` 등으로 연결 확인
@@ -55,11 +55,13 @@ AI가 수행해야 하는 적용 작업:
 ### 1. 설치
 
 ```bash
-git clone https://github.com/Kijun0708/llm-router-mcp.git
-cd llm-router-mcp
-npm install
-npm run build
+npm install -g llm-router-mcp
+custommcp install
+custommcp doctor
 ```
+
+`custommcp install`은 `~/.claude/settings.json`을 백업한 뒤 `llm-router-mcp` MCP 서버를 자동 등록합니다. 기존 `llm-router-mcp` 등록이 있으면 현재 설치 경로로 교체합니다.
+전역 설치 단계에서는 레거시 CLIProxy 설정 스크립트를 자동 실행하지 않습니다. Claude Code 등록과 검증은 `custommcp install`과 `custommcp doctor`가 담당합니다.
 
 ### 2. CLI 도구 준비
 
@@ -73,31 +75,19 @@ npm run build
 ### 3. 환경변수 설정 (선택)
 
 ```bash
-cp .env.example .env
-```
-
-`.env` 파일 편집:
-```bash
 EXA_API_KEY=your_exa_api_key        # 선택: 웹 검색
 CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
+CLI_GEMINI_PATH=gemini              # 선택: PATH에 없을 때만 지정
+CLI_CODEX_PATH=codex                # 선택: PATH에 없을 때만 지정
 ```
 
 ### 4. Claude Code 연동
 
-`~/.claude/settings.local.json`:
+`custommcp install`이 Claude Code 설정을 자동으로 등록합니다. 프로젝트별 사용 규칙을 빠르게 붙이고 싶으면 공용 템플릿 [plugin/templates/CLAUDE.md](plugin/templates/CLAUDE.md)를 프로젝트 루트 `CLAUDE.md`의 시작점으로 사용하고, 플러그인 상세 운영 규칙은 [plugin/docs/USAGE.md](plugin/docs/USAGE.md)를 참조하면 됩니다.
 
-```json
-{
-  "mcpServers": {
-    "llm-router": {
-      "command": "node",
-      "args": ["/path/to/llm-router-mcp/dist/index.js"]
-    }
-  }
-}
-```
+### 5. 로컬 개발 폴더명
 
-프로젝트별 사용 규칙을 빠르게 붙이고 싶으면 공용 템플릿 [plugin/templates/CLAUDE.md](c:/Users/GJ.PARK/Desktop/auto/custommcp/plugin/templates/CLAUDE.md)를 프로젝트 루트 `CLAUDE.md`의 시작점으로 사용하고, 플러그인 상세 운영 규칙은 [plugin/docs/USAGE.md](c:/Users/GJ.PARK/Desktop/auto/custommcp/plugin/docs/USAGE.md)를 참조하면 됩니다.
+저장소와 npm 패키지 이름은 `llm-router-mcp`입니다. 로컬 개발 폴더도 `llm-router-mcp/`를 권장합니다. CLI 명령어 `custommcp`는 기존 사용자 호환성을 위해 유지합니다.
 
 ---
 

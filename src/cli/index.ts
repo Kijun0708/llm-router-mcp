@@ -131,6 +131,14 @@ async function handleInstall(options: InstallOptions): Promise<void> {
       console.log(`Settings backup: ${result.backupPath}`);
     }
 
+    if (result.mcpServerPath) {
+      console.log(`MCP server path: ${result.mcpServerPath}`);
+    }
+
+    if (result.replacedMcpRegistration) {
+      console.log('Existing llm-router-mcp registration was replaced.');
+    }
+
     if (result.installedAgents.length > 0) {
       console.log(`\nInstalled agents (${result.installedAgents.length}):`);
       for (const agent of result.installedAgents) {

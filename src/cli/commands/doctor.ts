@@ -6,6 +6,7 @@
 
 import { existsSync, statSync } from 'fs';
 import { join } from 'path';
+import { spawnSync } from 'child_process';
 import { DoctorCheckResult, DoctorReport } from '../types.js';
 import { ConfigManager, PATHS, MCP_SERVER_NAME } from '../config-manager.js';
 
@@ -30,13 +31,17 @@ export async function runDoctor(): Promise<DoctorReport> {
   // Check 5: Node.js version
   checks.push(checkNodeVersion());
 
-  // Check 6: Agents directory exists
+  // Check 6-7: Required local LLM CLIs
+  checks.push(checkCliAvailability('Codex CLI', process.env.CLI_CODEX_PATH || 'codex'));
+  checks.push(checkCliAvailability('Gemini CLI', process.env.CLI_GEMINI_PATH || 'gemini'));
+
+  // Check 8: Agents directory exists
   checks.push(checkAgentsDirectory());
 
-  // Check 7: Commands directory exists
+  // Check 9: Commands directory exists
   checks.push(checkCommandsDirectory());
 
-  // Check 8: MCP server path is valid
+  // Check 10: MCP server path is valid
   checks.push(checkMcpServerPath());
 
   // Calculate summary
@@ -164,6 +169,57 @@ function checkNodeVersion(): DoctorCheckResult {
       fix: 'Upgrade Node.js to version 18 or later'
     };
   }
+}
+
+/**
+ * Check: required local CLI command is available.
+ */
+function checkCliAvailability(name: string, command: string): DoctorCheckResult {
+  const commandLine = `${quoteShellCommand(command)} --version`;
+  const result = spawnSync(commandLine, {
+    encoding: 'utf-8',
+    timeout: 10000,
+    shell: true,
+    windowsHide: true
+  });
+
+  if (result.error) {
+    const timedOut = result.error.message.toLowerCase().includes('timed out');
+    return {
+      name,
+      status: 'fail',
+      message: timedOut
+        ? `${command} --version timed out`
+        : `${command} is not available: ${result.error.message}`,
+      fix: `Install/authenticate ${command}, add it to PATH, or set ${name.startsWith('Codex') ? 'CLI_CODEX_PATH' : 'CLI_GEMINI_PATH'}`
+    };
+  }
+
+  if (result.status !== 0) {
+    const stderr = (result.stderr || '').trim();
+    const stdout = (result.stdout || '').trim();
+    return {
+      name,
+      status: 'fail',
+      message: `${command} --version exited with ${result.status}: ${stderr || stdout || 'no output'}`,
+      fix: `Install/authenticate ${command}, add it to PATH, or set ${name.startsWith('Codex') ? 'CLI_CODEX_PATH' : 'CLI_GEMINI_PATH'}`
+    };
+  }
+
+  const version = ((result.stdout || result.stderr || '').trim().split(/\r?\n/)[0]) || 'version command succeeded';
+  return {
+    name,
+    status: 'pass',
+    message: `${command} available (${version})`
+  };
+}
+
+function quoteShellCommand(command: string): string {
+  if ((command.startsWith('"') && command.endsWith('"')) || (command.startsWith("'") && command.endsWith("'"))) {
+    return command;
+  }
+
+  return /\s/.test(command) ? `"${command.replace(/"/g, '\\"')}"` : command;
 }
 
 /**

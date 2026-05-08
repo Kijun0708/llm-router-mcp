@@ -85,7 +85,6 @@ async function buildRelease() {
   delete releasePackageJson.devDependencies;
   releasePackageJson.scripts = {
     start: packageJson.scripts.start,
-    postinstall: packageJson.scripts.postinstall,
     setup: packageJson.scripts.setup,
   };
   writeFileSync(

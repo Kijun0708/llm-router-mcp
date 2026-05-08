@@ -4,16 +4,30 @@
   "description": "MCP server for multi-LLM collaboration via terminal CLI tools",
   "main": "dist/index.js",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kijun0708/llm-router-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Kijun0708/llm-router-mcp/issues"
+  },
+  "homepage": "https://github.com/Kijun0708/llm-router-mcp#readme",
+  "files": [
+    "dist/",
+    "plugin/",
+    "scripts/setup.js",
+    ".env.example"
+  ],
   "bin": {
-    "custommcp": "./dist/cli/index.js",
-    "llm-router-mcp": "./dist/cli/index.js",
-    "custommcp-hud": "./dist/cli/hud.js"
+    "custommcp": "dist/cli/index.js",
+    "llm-router-mcp": "dist/cli/index.js",
+    "custommcp-hud": "dist/cli/hud.js"
   },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
-    "postinstall": "node scripts/setup.js",
     "setup": "node scripts/setup.js",
     "release": "node scripts/build-release.js"
   },

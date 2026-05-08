@@ -69,7 +69,7 @@ interface AutoUpdateCheckerStats {
 let config: AutoUpdateCheckerConfig = {
   enabled: true,
   currentVersion: '1.0.0', // Will be updated from package.json
-  repository: 'yourusername/llm-router-mcp',
+  repository: 'Kijun0708/llm-router-mcp',
   checkIntervalMs: 24 * 60 * 60 * 1000, // 24 hours
   showNotification: true,
   includeChangelog: true,

@@ -6,52 +6,45 @@ GPT와 Gemini 전문가 팀을 통한 코드 리뷰, 보안 감사, 아키텍처
 
 ### AI에게 적용 작업 맡기기
 
-다른 프로젝트에서 AI에게 아래처럼 요청하면 이 문서를 읽고 플러그인 적용 작업을 수행하도록 유도할 수 있습니다.
+다른 프로젝트에서 AI에게 아래처럼 요청하면 글로벌 CLI 설치와 Claude Code MCP 등록을 수행하도록 유도할 수 있습니다.
 
 예시 프롬프트:
 
 ```text
-README.md를 읽고 우리 프로젝트에 llm-router 플러그인을 적용해줘.
+LLM Router MCP를 npm 글로벌 설치 방식으로 설치하고 Claude Code에 등록해줘.
 CLAUDE.md는 짧게 유지하고, 플러그인 사용법은 별도 문서를 참조하도록 구성해줘.
 ```
 
 AI가 해야 할 일:
 1. 이 문서와 루트 `README.md`를 읽고 설치 구조 파악
-2. `npm install`, `npm run build`로 플러그인 빌드
-3. `plugin/.mcp.json` 또는 Claude Code 설정으로 MCP 서버 연결
-4. 프로젝트 루트 `CLAUDE.md`를 [plugin/templates/CLAUDE.md](c:/Users/GJ.PARK/Desktop/auto/custommcp/plugin/templates/CLAUDE.md) 구조로 반영
-5. 플러그인 상세 운영 규칙은 [plugin/docs/USAGE.md](c:/Users/GJ.PARK/Desktop/auto/custommcp/plugin/docs/USAGE.md)를 참조하도록 연결
-6. `LLM Router 서버 상태 확인해줘` 같은 요청으로 연결 확인
+2. `npm install -g llm-router-mcp` 실행
+3. `custommcp install`로 Claude Code MCP 설정 자동 등록
+4. `custommcp doctor`로 MCP 등록과 `codex`/`gemini` CLI 상태 확인
+5. 프로젝트 루트 `CLAUDE.md`를 [plugin/templates/CLAUDE.md](templates/CLAUDE.md) 구조로 반영
+6. 플러그인 상세 운영 규칙은 [plugin/docs/USAGE.md](docs/USAGE.md)를 참조하도록 연결
+7. `LLM Router 서버 상태 확인해줘` 같은 요청으로 연결 확인
 
 ### 사전 요구사항
 
 - **Node.js** 18+
-- **Claude Code** (CLI 또는 VSCode 익스텐션)
+- **Claude Code**
 - **CLI 도구** — gemini, codex 가 터미널에 인증된 상태
 
-### Step 1: 저장소 클론 및 빌드
+### Step 1: 글로벌 설치
 
 ```bash
-git clone https://github.com/Kijun0708/llm-router-mcp.git
-cd llm-router-mcp
-npm install
-npm run build
+npm install -g llm-router-mcp
 ```
 
-### Step 2: MCP 서버 경로 설정
+### Step 2: Claude Code 자동 등록
 
-`plugin/.mcp.json` 파일에서 `REPLACE_WITH_ABSOLUTE_PATH`를 **자신의 절대 경로**로 변경합니다:
-
-```json
-{
-  "mcpServers": {
-    "llm-router": {
-      "command": "node",
-      "args": ["c:/your/actual/path/to/llm-router-mcp/dist/index.js"]
-    }
-  }
-}
+```bash
+custommcp install
+custommcp doctor
 ```
+
+`custommcp install`은 `~/.claude/settings.json`을 백업한 뒤 `llm-router-mcp` MCP 서버를 자동 등록합니다. 기존 등록이 있으면 현재 설치 경로로 교체합니다.
+전역 설치 단계에서는 레거시 CLIProxy 설정 스크립트를 자동 실행하지 않습니다. Claude Code 등록과 검증은 `custommcp install`과 `custommcp doctor`가 담당합니다.
 
 ### Step 3: CLI 도구 인증 확인
 
@@ -62,21 +55,22 @@ gemini --version    # Google Gemini CLI
 codex --version     # OpenAI Codex CLI
 ```
 
-### Step 4: 플러그인 로드
+### Step 4: 선택 사항 - 플러그인/수동 경로
 
-**터미널 CLI:**
+일반 사용자는 `custommcp install`을 사용하면 됩니다. `plugin/.mcp.json`은 수동 연결이 꼭 필요한 경우에만 참고하는 템플릿입니다.
 
 ```bash
-# 내 프로젝트 디렉토리에서 실행 (플러그인 경로는 절대 경로)
 claude --plugin-dir /absolute/path/to/llm-router-mcp/plugin
 ```
 
-**VSCode 익스텐션:**
+기존 Claude 플러그인 마켓플레이스 방식은 레거시/고급 설치 경로로만 유지합니다:
 
 ```
 /plugin marketplace add Kijun0708/llm-router-mcp
 /plugin install llm-router
 ```
+
+로컬에서 이 저장소를 clone해 개발할 때는 GitHub 저장소 이름과 같은 `llm-router-mcp/` 폴더명을 권장합니다. CLI 명령어 `custommcp`는 기존 사용자 호환성을 위해 유지합니다.
 
 ### Step 5: 동작 확인
 
@@ -108,8 +102,8 @@ plugin/docs/USAGE.md
 
 | 증상 | 원인 | 해결 |
 |------|------|------|
-| MCP 서버 시작 실패 | `npm run build` 미실행 | `npm run build` 실행 |
-| `REPLACE_WITH_ABSOLUTE_PATH` 에러 | `.mcp.json` 경로 미수정 | 실제 절대 경로로 변경 |
+| MCP 서버 시작 실패 | MCP 설정 경로가 현재 설치와 다름 | `custommcp install` 재실행 |
+| `REPLACE_WITH_ABSOLUTE_PATH_TO_DIST_INDEX_JS` 에러 | 수동 `.mcp.json` 템플릿 경로 미수정 | 일반 설치는 `custommcp install` 사용, 수동 연결 시 실제 `dist/index.js` 절대 경로로 변경 |
 | 전문가 호출 실패 | CLI 도구 미인증 | 각 CLI 도구에서 인증 실행 |
 | 스킬이 안 보임 | 이전 세션에서 설정 | 새 대화 시작 (MCP는 세션 시작 시 로드) |
 

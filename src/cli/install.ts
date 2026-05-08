@@ -295,6 +295,8 @@ export interface InstallResult {
   success: boolean;
   message: string;
   backupPath?: string;
+  mcpServerPath?: string;
+  replacedMcpRegistration: boolean;
   installedAgents: string[];
   installedCommands: string[];
   errors: string[];
@@ -307,12 +309,15 @@ export async function install(options: InstallOptions = {}): Promise<InstallResu
   const result: InstallResult = {
     success: false,
     message: '',
+    replacedMcpRegistration: false,
     installedAgents: [],
     installedCommands: [],
     errors: []
   };
 
   try {
+    const hadMcpRegistration = ConfigManager.isMcpServerRegistered();
+
     // Backup existing settings
     const backupPath = ConfigManager.backupSettings();
     if (backupPath) {
@@ -325,6 +330,8 @@ export async function install(options: InstallOptions = {}): Promise<InstallResu
     // Register MCP server
     const mcpConfig = ConfigManager.getDefaultMcpConfig();
     ConfigManager.registerMcpServer(mcpConfig);
+    result.mcpServerPath = mcpConfig.args?.[0];
+    result.replacedMcpRegistration = hadMcpRegistration;
 
     // Install default agents (unless skipped)
     if (!options.skipAgents) {
@@ -368,7 +375,9 @@ export async function install(options: InstallOptions = {}): Promise<InstallResu
     ConfigManager.saveCliConfig(subscriptions);
 
     result.success = true;
-    result.message = 'Installation completed successfully';
+    result.message = hadMcpRegistration
+      ? 'Installation completed successfully; existing MCP registration was replaced'
+      : 'Installation completed successfully';
 
   } catch (err) {
     result.success = false;

@@ -9,12 +9,16 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
+import { fileURLToPath } from 'url';
 import {
   ClaudeCodeSettings,
   McpServerConfig,
   CliConfig,
   SubscriptionType
 } from './types.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Path constants
@@ -39,6 +43,16 @@ export const PATHS = {
  * MCP server name
  */
 export const MCP_SERVER_NAME = 'llm-router-mcp';
+
+/**
+ * Resolves the MCP server entrypoint from the installed package location.
+ *
+ * In the published package this file runs from dist/cli/config-manager.js,
+ * so ../index.js is the compiled MCP server entrypoint at dist/index.js.
+ */
+export function resolveDefaultMcpServerPath(): string {
+  return process.env.CUSTOMMCP_PATH || join(__dirname, '..', 'index.js');
+}
 
 /**
  * Ensures a directory exists
@@ -154,10 +168,7 @@ export class ConfigManager {
    * Gets default MCP server configuration
    */
   static getDefaultMcpConfig(): McpServerConfig {
-    // Determine the path to the MCP server
-    // In production, this would use the globally installed path
-    // For development, use the local dist path
-    const serverPath = process.env.CUSTOMMCP_PATH || join(process.cwd(), 'dist', 'index.js');
+    const serverPath = resolveDefaultMcpServerPath();
 
     return {
       command: 'node',
