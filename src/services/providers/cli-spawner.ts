@@ -8,6 +8,10 @@ export interface SpawnOptions {
   stdin?: string;
   env?: Record<string, string>;
   maxBuffer?: number;
+  // false면 .exe를 직접 실행 (cmd.exe 경유 없음).
+  // Antigravity는 prompt에 백슬래시 경로/줄바꿈이 있어 cmd quoting이 깨지므로 false 필요.
+  // 기본값 true는 기존 Gemini/Codex 동작 유지.
+  shell?: boolean;
 }
 
 export interface SpawnResult {
@@ -25,7 +29,7 @@ export async function spawnCli(
   args: string[],
   options: SpawnOptions
 ): Promise<SpawnResult> {
-  const { timeoutMs, stdin, env, maxBuffer = DEFAULT_MAX_BUFFER } = options;
+  const { timeoutMs, stdin, env, maxBuffer = DEFAULT_MAX_BUFFER, shell = true } = options;
 
   return new Promise((resolve, reject) => {
     // Claude Code 중첩 세션 방지 환경 변수 제거
@@ -42,7 +46,7 @@ export async function spawnCli(
     const proc = spawn(command, args, {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...cleanEnv, ...env, NODE_OPTIONS: nodeOptions },
-      shell: true,
+      shell,
       windowsHide: true,
     });
 

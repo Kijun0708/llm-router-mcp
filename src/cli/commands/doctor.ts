@@ -33,7 +33,12 @@ export async function runDoctor(): Promise<DoctorReport> {
 
   // Check 6-7: Required local LLM CLIs
   checks.push(checkCliAvailability('Codex CLI', process.env.CLI_CODEX_PATH || 'codex'));
-  checks.push(checkCliAvailability('Gemini CLI', process.env.CLI_GEMINI_PATH || 'gemini'));
+  // USE_ANTIGRAVITY=true 시 agy, 아니면 gemini CLI 체크 (active provider만 검증)
+  if (process.env.USE_ANTIGRAVITY === 'true') {
+    checks.push(checkCliAvailability('Antigravity CLI', process.env.CLI_ANTIGRAVITY_PATH || 'agy'));
+  } else {
+    checks.push(checkCliAvailability('Gemini CLI', process.env.CLI_GEMINI_PATH || 'gemini'));
+  }
 
   // Check 8: Agents directory exists
   checks.push(checkAgentsDirectory());
@@ -191,7 +196,7 @@ function checkCliAvailability(name: string, command: string): DoctorCheckResult 
       message: timedOut
         ? `${command} --version timed out`
         : `${command} is not available: ${result.error.message}`,
-      fix: `Install/authenticate ${command}, add it to PATH, or set ${name.startsWith('Codex') ? 'CLI_CODEX_PATH' : 'CLI_GEMINI_PATH'}`
+      fix: `Install/authenticate ${command}, add it to PATH, or set ${envHintFor(name)}`
     };
   }
 
@@ -202,7 +207,7 @@ function checkCliAvailability(name: string, command: string): DoctorCheckResult 
       name,
       status: 'fail',
       message: `${command} --version exited with ${result.status}: ${stderr || stdout || 'no output'}`,
-      fix: `Install/authenticate ${command}, add it to PATH, or set ${name.startsWith('Codex') ? 'CLI_CODEX_PATH' : 'CLI_GEMINI_PATH'}`
+      fix: `Install/authenticate ${command}, add it to PATH, or set ${envHintFor(name)}`
     };
   }
 
@@ -212,6 +217,12 @@ function checkCliAvailability(name: string, command: string): DoctorCheckResult 
     status: 'pass',
     message: `${command} available (${version})`
   };
+}
+
+function envHintFor(name: string): string {
+  if (name.startsWith('Codex')) return 'CLI_CODEX_PATH';
+  if (name.startsWith('Antigravity')) return 'CLI_ANTIGRAVITY_PATH';
+  return 'CLI_GEMINI_PATH';
 }
 
 function quoteShellCommand(command: string): string {

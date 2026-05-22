@@ -89,8 +89,10 @@ export async function handleHealthCheck(params: z.infer<typeof healthCheckSchema
   }
 
   output += `### CLI 도구\n`;
-  output += `- Gemini: \`${config.cli.geminiPath}\`\n`;
-  output += `- Claude: \`${config.cli.claudePath}\`\n`;
+  const useAntigravity = process.env.USE_ANTIGRAVITY === 'true';
+  output += `- Active Google provider: ${useAntigravity ? 'Antigravity (agy)' : 'Gemini CLI'}\n`;
+  output += `- Gemini: \`${config.cli.geminiPath}\`${useAntigravity ? ' (dormant)' : ''}\n`;
+  output += `- Antigravity: \`${config.cli.antigravityPath}\`${useAntigravity ? '' : ' (dormant)'}\n`;
   output += `- Codex: \`${config.cli.codexPath}\`\n\n`;
 
   output += `### 전문가 (${Object.keys(experts).length}명)\n`;

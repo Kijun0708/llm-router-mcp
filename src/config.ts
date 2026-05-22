@@ -17,7 +17,12 @@ dotenvConfig({ path: join(projectRoot, '.env') });
 export function loadConfig(): Config {
   return {
     cli: {
+      // Gemini CLI — 현재 active provider
       geminiPath: process.env.CLI_GEMINI_PATH || 'gemini',
+      // Antigravity CLI(agy) — Gemini CLI 후속작. USE_ANTIGRAVITY=true 일 때만 활성.
+      // Windows 기본 설치 경로: %LOCALAPPDATA%\agy\bin\agy.exe
+      // agy 1.0.0의 print mode가 spawn 환경에서 응답 미반환 이슈가 있어 기본 비활성.
+      antigravityPath: process.env.CLI_ANTIGRAVITY_PATH || 'agy',
       claudePath: '',  // unused - Claude Code handles Claude natively
       codexPath: process.env.CLI_CODEX_PATH || 'codex',
     },
