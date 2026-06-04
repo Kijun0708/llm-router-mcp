@@ -3,8 +3,9 @@
 // Antigravity CLI (agy) — Gemini CLI 후속작.
 //
 // 핵심 차이점:
-//  - --model argv 미지원 → settings.json `model` 필드로 결정. [model-manager.ts]가
-//    우선순위 리스트(ANTIGRAVITY_MODEL_PRIORITY)를 따라 활성 모델을 자동 스위칭.
+//  - 1.0.5부터 --model argv 공식 지원 (이전엔 settings.json mutate가 필요했음).
+//    [model-manager.ts]가 우선순위 리스트(ANTIGRAVITY_MODEL_PRIORITY)에서 활성 모델을
+//    결정해 argv로 전달 → settings.json 안 건드림 → race 없음 → 진정한 병렬 호출.
 //  - --output-format json 미지원 → plain text 응답
 //  - --yolo → --dangerously-skip-permissions 로 개명
 //
@@ -52,6 +53,7 @@ export class AntigravityCliProvider implements CliProvider {
 
       const args: string[] = [
         '-p', prompt,
+        '--model', activeModel,
         '--dangerously-skip-permissions',
         '--print-timeout', toGoDuration(params.timeoutMs),
         '--log-file', logPath,
