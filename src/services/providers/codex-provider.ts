@@ -93,7 +93,16 @@ export class CodexCliProvider implements CliProvider {
     const prompt = buildPrompt(params);
 
     // stdin으로 프롬프트 전달 (특수문자/긴 프롬프트 안전 처리)
-    const args: string[] = ['exec', '-', '--json', '--full-auto', '-c', 'model_reasoning_effort=medium'];
+    //  - --sandbox workspace-write: 권장 sandbox 모드 (--full-auto가 deprecated됨)
+    //  - model_reasoning_effort=high: 코드 분석/리뷰가 본 역할이라 깊은 reasoning 우선
+    //  - service_tier=fast: ChatGPT 플랜 인증 시 우선순위 큐로 1.5× 빠른 응답 (credit 추가 소모)
+    const args: string[] = [
+      'exec', '-',
+      '--json',
+      '--sandbox', 'workspace-write',
+      '-c', 'model_reasoning_effort=high',
+      '-c', 'service_tier=fast',
+    ];
 
     logger.debug({
       provider: 'codex',
