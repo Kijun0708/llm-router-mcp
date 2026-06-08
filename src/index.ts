@@ -503,6 +503,18 @@ async function main() {
   process.on('exit', gracefulShutdown);
   process.on('SIGINT', () => { gracefulShutdown(); process.exit(0); });
   process.on('SIGTERM', () => { gracefulShutdown(); process.exit(0); });
+
+  // unhandled error 핸들러 — 이전엔 missing이라 우연한 throw가 silent crash로 이어져
+  // MCP 서버가 죽고 9100 dashboard도 같이 사라지는 현상이 있었음.
+  // 로그만 남기고 프로세스는 계속 살려둬서 dashboard 가용성 유지.
+  process.on('uncaughtException', (err, origin) => {
+    logger.error({ err: err.message, stack: err.stack, origin }, 'Uncaught exception (process kept alive)');
+  });
+  process.on('unhandledRejection', (reason) => {
+    const msg = reason instanceof Error ? reason.message : String(reason);
+    const stack = reason instanceof Error ? reason.stack : undefined;
+    logger.error({ reason: msg, stack }, 'Unhandled promise rejection (process kept alive)');
+  });
 }
 
 // 실행
