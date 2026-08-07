@@ -342,6 +342,7 @@ export async function callExpert(
     cached: false,
     latencyMs,
     actualModel: chainResult.model,
+    reportedModel: chainResult.reportedModel,
     usage: chainResult.usage,
     // CLI 모드에서는 tool_calls 미지원 → 항상 undefined
     toolCalls: undefined,

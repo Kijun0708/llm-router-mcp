@@ -91,8 +91,10 @@ export interface ExpertResponse {
   toolCalls?: ToolCall[];           // 전문가가 요청한 도구 호출
   finishReason?: "stop" | "tool_calls";  // 응답 종료 이유
   toolsUsed?: string[];             // 실제 사용된 도구 목록
-  /** 실제로 응답한 모델 (체인 폴백 시 expert.model과 다를 수 있다). */
+  /** 실제로 사용된 레지스트리 슬러그 (체인 폴백 시 expert.model과 다를 수 있다). */
   actualModel?: string;
+  /** CLI가 보고한 모델명. 표시용 (예: 'opus' → 'claude-opus-4-7'). */
+  reportedModel?: string;
   /** CLI가 보고한 실측 토큰 사용량. 추정이 아니다. */
   usage?: TokenUsage;
 }

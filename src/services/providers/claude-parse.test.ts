@@ -141,13 +141,58 @@ describe('classifyClaude', () => {
 });
 
 describe('primaryModelOf', () => {
-  test('output 토큰이 가장 많은 모델을 고른다 (내부 haiku가 아니라 실제 응답 모델)', () => {
+  test('비용이 가장 큰 모델을 고른다 (내부 haiku가 아니라 실제 응답 모델)', () => {
     const { envelope } = parseClaudeStdout(SUCCESS);
     assert.equal(primaryModelOf(envelope), 'claude-opus-4-7');
   });
 
-  test('modelUsage가 없으면 undefined', () => {
+  test('실측: 한 단어 답변에서는 내부 haiku가 output 토큰이 더 많다', () => {
+    // 2026-08-07 실측. output 기준으로 고르면 haiku(9)가 sonnet(4)을 이겨 틀린다.
+    // 비용 기준이면 sonnet($0.0615) > haiku($0.0004)로 올바르게 갈린다.
+    const envelope = {
+      type: 'result',
+      modelUsage: {
+        'claude-haiku-4-5-20251001': { inputTokens: 362, outputTokens: 9, costUSD: 0.000407 },
+        'claude-sonnet-4-6': { inputTokens: 3, outputTokens: 4, costUSD: 0.06152025 },
+      },
+    };
+    assert.equal(primaryModelOf(envelope), 'claude-sonnet-4-6');
+  });
+
+  test('비용 정보가 없으면 output 토큰으로 갈린다', () => {
+    const envelope = {
+      type: 'result',
+      modelUsage: {
+        'claude-haiku-4-5': { outputTokens: 9 },
+        'claude-opus-4-7': { outputTokens: 500 },
+      },
+    };
+    assert.equal(primaryModelOf(envelope), 'claude-opus-4-7');
+  });
+
+  test('항목이 하나뿐이면 필드명과 무관하게 그것을 쓴다', () => {
+    assert.equal(
+      primaryModelOf({ type: 'result', modelUsage: { 'claude-opus-4-7': {} } }),
+      'claude-opus-4-7'
+    );
+  });
+
+  test('snake_case 필드명도 인식', () => {
+    assert.equal(
+      primaryModelOf({
+        type: 'result',
+        modelUsage: {
+          'claude-haiku-4-5': { output_tokens: 10 },
+          'claude-opus-4-7': { output_tokens: 500 },
+        },
+      }),
+      'claude-opus-4-7'
+    );
+  });
+
+  test('modelUsage가 없거나 비면 undefined', () => {
     assert.equal(primaryModelOf({ type: 'result' }), undefined);
+    assert.equal(primaryModelOf({ type: 'result', modelUsage: {} }), undefined);
     assert.equal(primaryModelOf(null), undefined);
   });
 });

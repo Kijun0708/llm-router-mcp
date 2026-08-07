@@ -192,8 +192,18 @@ describe('buildClaudeArgs', () => {
     assert.equal(buildClaudeArgs(claudeParams(), 1).includes('--bare'), false);
   });
 
-  test('진짜 --system-prompt 채널을 쓴다 (codex/agy와의 결정적 차이)', () => {
-    assert.equal(valueOf(buildClaudeArgs(claudeParams(), 1), '--system-prompt'), '너는 전문가다');
+  test('시스템 프롬프트는 파일로 넘긴다 (argv는 여러 줄 프롬프트에서 깨진다)', () => {
+    // 실측: momus 시스템 프롬프트(3787자, 줄바꿈+따옴표 포함)를 argv로 넘기면
+    // `option '--system-prompt <prompt>' argument missing` 으로 실패한다.
+    const args = buildClaudeArgs(claudeParams(), 1, '/tmp/sp.md');
+    assert.equal(valueOf(args, '--system-prompt-file'), '/tmp/sp.md');
+    assert.equal(args.includes('--system-prompt'), false, 'argv 인라인 방식이 남아 있다');
+  });
+
+  test('시스템 프롬프트가 없으면 관련 플래그도 없다', () => {
+    const args = buildClaudeArgs(claudeParams({ systemPrompt: undefined }), 1);
+    assert.equal(args.includes('--system-prompt-file'), false);
+    assert.equal(args.includes('--system-prompt'), false);
   });
 
   test('read-only는 툴을 읽기 전용으로 게이팅한다', () => {

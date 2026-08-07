@@ -63,8 +63,14 @@ export interface CliCallResult {
   content: string;
   rawOutput: string;
   provider: ProviderId;
-  /** 실제로 응답한 모델. */
+  /**
+   * 요청한 레지스트리 슬러그 그대로. 체인 폴백 판정의 기준이므로 안정적이어야 한다.
+   * (CLI가 보고한 이름을 여기 넣으면 안 된다 — claude -p는 'opus'를
+   *  'claude-opus-4-7'로 되돌려주므로 성공을 강등으로 오인하게 된다.)
+   */
   model: string;
+  /** CLI가 실제로 보고한 모델명. 표시/과금 참고용. */
+  reportedModel?: string;
   usage?: TokenUsage;
   durationMs: number;
 }

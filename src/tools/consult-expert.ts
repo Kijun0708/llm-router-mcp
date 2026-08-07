@@ -412,14 +412,17 @@ export async function handleConsultExpert(params: z.infer<typeof consultExpertSc
       response += `\n\n⚠️ **알림**: 원래 요청한 \`${expert.name}\`이(가) 한도 초과로 \`${actualExpert.name}\`으로 대체되었습니다.`;
     }
 
-    // 명시 모델을 요청했는데 다른 모델이 답한 경우 = 한도 소진으로 강등됨
+    // 명시 모델을 요청했는데 체인이 다른 슬러그로 넘어간 경우 = 강등됨.
+    // 비교는 레지스트리 슬러그끼리 한다 — CLI가 보고한 이름(claude-opus-4-7)과
+    // 비교하면 성공한 호출까지 강등으로 오인한다.
     if (params.model && result.actualModel && result.actualModel !== params.model) {
-      response += `\n\n⚠️ **모델 강등**: 요청한 \`${params.model}\`이(가) 한도 소진으로 \`${result.actualModel}\`으로 대체되었습니다.`;
+      response += `\n\n⚠️ **모델 강등**: 요청한 \`${params.model}\`을(를) 사용할 수 없어 \`${result.actualModel}\`으로 대체되었습니다 (한도 소진 또는 오류).`;
     }
 
     // 사용자 본인 Claude 한도를 쓴 경우 비용을 눈에 보이게 남긴다
     if (result.usage?.costUsd !== undefined) {
-      response += `\n\n_💳 Claude 구독 한도 사용: $${result.usage.costUsd.toFixed(4)} (${result.actualModel})_`;
+      const shown = result.reportedModel ?? result.actualModel;
+      response += `\n\n_💳 Claude 구독 한도 사용: $${result.usage.costUsd.toFixed(4)} (${shown})_`;
     }
 
     // 캐시 히트 알림

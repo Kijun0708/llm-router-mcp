@@ -167,15 +167,41 @@ export function classifyClaude(
   };
 }
 
-/** modelUsage 키 중 실제 응답 모델(가장 output이 많은 것)을 고른다. 로깅/과금 표시용. */
+/**
+ * modelUsage 키 중 실제 응답 모델을 고른다. 로깅/과금 표시용.
+ *
+ * claude -p는 툴 라우팅 등 내부 작업에 haiku를 함께 쓰므로 modelUsage에 여러 항목이 온다.
+ *
+ * 판별 기준은 **비용**이다. output 토큰으로 고르면 틀린다 — 실측에서 한 단어 답변은
+ * sonnet이 4토큰인데 내부 haiku가 9토큰을 써서 haiku가 이겼다. 반면 비용은 주 모델이
+ * 전체 컨텍스트를 지고 있어 압도적이다(sonnet $0.0615 vs haiku $0.0004).
+ */
 export function primaryModelOf(envelope: ClaudeEnvelope | null): string | undefined {
   const usage = envelope?.modelUsage;
   if (!usage) return undefined;
-  let best: string | undefined;
+
+  const keys = Object.keys(usage);
+  if (keys.length === 0) return undefined;
+  if (keys.length === 1) return keys[0];
+
+  const num = (r: Record<string, unknown> | undefined, ...names: string[]): number => {
+    for (const n of names) {
+      const v = Number(r?.[n]);
+      if (Number.isFinite(v) && v > 0) return v;
+    }
+    return 0;
+  };
+
+  let best = keys[0];
+  let bestCost = -1;
   let bestOut = -1;
+
   for (const [model, raw] of Object.entries(usage)) {
-    const out = Number((raw as Record<string, unknown>)?.outputTokens ?? 0);
-    if (out > bestOut) {
+    const r = raw as Record<string, unknown> | undefined;
+    const cost = num(r, 'costUSD', 'cost_usd', 'costUsd');
+    const out = num(r, 'outputTokens', 'output_tokens');
+    if (cost > bestCost || (cost === bestCost && out > bestOut)) {
+      bestCost = cost;
       bestOut = out;
       best = model;
     }
