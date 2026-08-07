@@ -4,85 +4,130 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-LLM Router MCP is a Model Context Protocol (MCP) server that enables multi-LLM collaboration via terminal CLI tools (gemini, codex). It allows Claude Code to orchestrate GPT and Gemini instances as team members, with automatic rate limit handling and fallback routing.
+LLM Router MCP is a Model Context Protocol (MCP) server that enables multi-LLM collaboration via terminal CLI tools. It allows Claude Code to orchestrate GPT and Gemini instances as team members, with automatic quota handling and fallback routing.
 
-**Core Concept**: Claude Code acts as the team leader (handling all Claude-related tasks natively), delegating specialized tasks to GPT/Gemini "experts" for diverse perspectives.
+**Core Concept**: Claude Code acts as the team leader, delegating specialized tasks to GPT/Gemini "experts" for diverse perspectives — offloading work onto *other vendors'* quotas.
 
-**Note**: Claude models are NOT called via MCP - Claude Code handles Claude tasks directly to avoid nested session issues.
+### CLI 프로바이더 (3종)
+
+| Provider | Binary | 서빙 모델 | 역할 |
+|---|---|---|---|
+| `codex` | `codex` (OpenAI Codex CLI) | `gpt-5.5` | GPT 전문가 11명 |
+| `agy` | `agy` (Antigravity CLI) | Gemini 3.1/3.5/3.6, Claude 4.6, GPT-OSS | Gemini 전문가 7명 |
+| `claude` | `claude -p` (Claude Code CLI) | `opus`, `sonnet` | **opt-in 전용** |
+
+**Gemini CLI(`@google/gemini-cli`)는 2026-06-18 공식 종료되어 제거됐다.** Google 계열은 agy만 쓴다.
+
+**Claude는 어떤 전문가의 기본 모델도 아니다.** `consult_expert`에 `model: "opus"`를 명시할
+때만 도달하며, 사용자 본인의 Claude 구독 한도를 소모한다. 한도 소진 시 전문가 기본
+모델로 자동 강등된다. 3중 가드: `model-registry`의 `scarce` 플래그(폴백 꼬리로 도달 불가)
++ 기본 OFF + `--max-budget-usd`.
+
+**모델명으로 프로바이더를 추론하지 말 것.** agy 하나가 Gemini·Claude·GPT-OSS를 모두
+서빙하므로 `"claude-opus-4-6-thinking"`이 agy로 갈지 claude CLI로 갈지 이름만으로는
+결정할 수 없다. 라우팅은 `Expert.provider`(명시), 과금 라벨은 `billingProviderOf()`.
 
 ## Tech Stack
 
-- **Language**: TypeScript
-- **Runtime**: Node.js
+- **Language**: TypeScript (ESM, strict)
+- **Runtime**: Node.js >= 18
 - **Transport**: stdio (for Claude Code local integration)
 - **Validation**: Zod (runtime type validation)
 - **Logging**: pino
 - **Caching**: lru-cache
+- **Testing**: `node:test` (의존성 없음)
 
 ## Build and Run Commands
 
 ```bash
-# Install dependencies
 npm install
-
-# Build
-npm run build
-
-# Run the MCP server
-node dist/index.js
+npm run build          # tsc
+npm run typecheck      # tsc --noEmit
+npm test               # dist-test/로 빌드 후 node --test
+npm run probe          # 실 CLI 스모크 (codex/agy/claude 전부)
+node dist/index.js     # MCP 서버 실행
 ```
+
+`npm run probe`는 실제 CLI를 호출해 argv·인증·응답 파싱을 검증한다.
+개별 실행: `node scripts/probe-cli.js --agy --deny-probe`
+(`--deny-probe`는 `--dangerously-skip-permissions`를 일부러 빼고 `permission_denied`로
+분류되는지 확인하는 회귀 테스트다.)
 
 ## Architecture
 
 ### Expert System
 
-13 primary AI experts with specialized roles and automatic fallback chains (GPT/Gemini only), plus 4 blank debate slots and 1 debate moderator (18 total):
+전문가 18명. 각 전문가는 `provider` / `model` / `sandbox`를 명시한다
+(`src/model-defaults.ts`의 `EXPERT_RUNTIME_DEFAULTS`가 단일 소스).
+
+**`implementer`만 `workspace-write`이고 나머지 17명은 `read-only`다.**
+codex는 `--sandbox read-only`, agy는 `--sandbox`, claude는 `--tools "Read,Grep,Glob"`으로
+강제된다. 쓰기가 필요하면 `delegate_task`(→ implementer)를 쓸 것.
 
 #### 기본 전문가 (5명)
 
-| Expert | Model | Role | Fallbacks |
-|--------|-------|------|-----------|
-| `strategist` | GPT | 아키텍처 설계, 디버깅 전략 | codereview → momus |
-| `codereview` | Gemini Pro + GPT | 통합 코드 리뷰 (perspectives로 GPT+Gemini 병렬 리뷰) | strategist → momus |
-| `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | strategist → momus |
-| `metis` | GPT | 전략적 계획, 문제 분해 | strategist → codereview |
-| `momus` | Gemini Pro | 비판적 분석, 품질 평가 | codereview → strategist |
+| Expert | Provider / Model | Role | Fallbacks |
+|--------|------------------|------|-----------|
+| `strategist` | codex / gpt-5.5 | 아키텍처 설계, 디버깅 전략 | codereview → momus |
+| `codereview` | agy / gemini-3.1-pro-high | 통합 코드 리뷰 (perspectives로 GPT+Gemini 병렬) | strategist → momus |
+| `frontend` | agy / gemini-3.1-pro-high | UI/UX, 컴포넌트 설계 | strategist → momus |
+| `metis` | codex / gpt-5.5 | 전략적 계획, 문제 분해 | strategist → codereview |
+| `momus` | agy / gemini-3.1-pro-high | 비판적 분석, 품질 평가 | codereview → strategist |
 
 #### 특화 전문가 (8명)
 
-| Expert | Model | Role | Fallbacks |
-|--------|-------|------|-----------|
-| `security` | GPT | OWASP/CWE 보안 분석 | codereview → strategist |
-| `tester` | GPT | TDD/테스트 전략 | codereview → strategist |
-| `data` | GPT | DB 설계, 쿼리 최적화 | strategist → codereview |
-| `devops` | GPT | CI/CD, Docker, K8s | strategist → codereview |
-| `reality_checker` | Gemini Pro | 현실 검증, dead code | momus → codereview |
-| `lsp_index_engineer` | GPT | 심볼/참조 분석 | codereview → strategist |
-| `codereview_gpt` | GPT | GPT 코드리뷰 - SOLID/설계/실무 관점 (READ-ONLY) | codereview → momus |
-| `implementer` | GPT | 코드 구현 에이전트 (READ-WRITE, delegate_task 전용) | strategist → codereview_gpt |
+| Expert | Provider / Model | Role | Fallbacks |
+|--------|------------------|------|-----------|
+| `security` | codex / gpt-5.5 | OWASP/CWE 보안 분석 | codereview → strategist |
+| `tester` | codex / gpt-5.5 | TDD/테스트 전략 | codereview → strategist |
+| `data` | codex / gpt-5.5 | DB 설계, 쿼리 최적화 | strategist → codereview |
+| `devops` | codex / gpt-5.5 | CI/CD, Docker, K8s | strategist → codereview |
+| `reality_checker` | agy / gemini-3.1-pro-high | 현실 검증, dead code | momus → codereview |
+| `lsp_index_engineer` | codex / gpt-5.5 | 심볼/참조 분석 | codereview → strategist |
+| `codereview_gpt` | codex / gpt-5.5 | GPT 코드리뷰 - SOLID/설계/실무 관점 | codereview → momus |
+| `implementer` | codex / gpt-5.5 | 코드 구현 (**유일한 READ-WRITE**, delegate_task 전용) | strategist → codereview_gpt |
 
 #### 동적 페르소나 전문가 (4명) - 토론용
 
-| Expert | Model | Description |
-|--------|-------|-------------|
-| `gpt_blank_1` | GPT | OpenAI 범용 모델 |
-| `gpt_blank_2` | GPT | OpenAI 코드 특화 |
-| `gemini_blank_1` | Gemini Pro | Google 고성능 |
-| `gemini_blank_2` | Gemini Flash | Google 빠른 응답 |
+| Expert | Provider / Model | Description |
+|--------|------------------|-------------|
+| `gpt_blank_1` | codex / gpt-5.5 | OpenAI 범용 |
+| `gpt_blank_2` | codex / gpt-5.5 | OpenAI 코드 특화 |
+| `gemini_blank_1` | agy / gemini-3.1-pro-high | Google 고성능 |
+| `gemini_blank_2` | agy / gemini-3.6-flash-high | Google 빠른 응답 |
 
 #### 토론 중재자 (1명)
 
-| Expert | Model | Role |
-|--------|-------|------|
-| `debate_moderator` | Gemini Pro | 패널 토론 중재 및 최종 요약 |
+| Expert | Provider / Model | Role |
+|--------|------------------|------|
+| `debate_moderator` | agy / gemini-3.1-pro-high | 패널 토론 중재 및 최종 요약 |
 
-### Role Division (GPT vs Gemini)
+### 모델 오버라이드 (Claude opt-in 포함)
 
-| | GPT (codex) | Gemini |
-|---|---|---|
-| 코드 변경 | delegate_task | 금지 |
-| 코드 리뷰 | 설계 관점 | 버그/보안/비판 |
-| 파일 읽기 | 가능 | 가능 |
+`consult_expert`에 `model` 파라미터를 넘기면 그 모델이 체인 0번이 되고, 전문가 기본
+모델이 뒤에 붙어 한도 소진 시 자동 강등된다.
+
+```
+consult_expert(expert: "momus", question: "...", model: "opus")
+  → 체인 [claude:opus, agy:gemini-3.1-pro-high]
+  → Claude Opus가 먼저. 한도 소진 시 90분 차단 후 Gemini로 강등 + 사용자에게 알림
+```
+
+명시 모델은 **1차 전문가에만** 적용된다. 폴백 전문가는 자기 기본 모델을 쓴다 —
+scarce 모델이 폴백 체인 전체로 번지면 opt-in 가드가 무의미해지기 때문이다.
+
+`MODEL_<전문가ID 대문자>` 환경변수로도 오버라이드 가능하며, 미등록 슬러그는
+**부팅 시점에** 유효 목록과 함께 실패한다.
+
+### Role Division
+
+| | GPT (codex) | Gemini (agy) | Claude (opt-in) |
+|---|---|---|---|
+| 코드 변경 | delegate_task (implementer만) | 금지 | 금지 |
+| 코드 리뷰 | 설계/SOLID 관점 | 버그/보안/비판 | 3자 검증 |
+| 파일 읽기 | 가능 | 가능 | 가능 |
+| 이미지 입력 | `-i` 지원 | 미지원 | 미지원 |
+| 시스템 프롬프트 | 프롬프트에 합침 | 프롬프트에 합침 | `--system-prompt` 네이티브 |
 
 ### MCP Tools
 
@@ -144,16 +189,30 @@ cp plugin/skills/<skill>/SKILL.md "$CACHE_DIR/skills/<skill>/SKILL.md"
 
 ### Key Services
 
-- `src/services/cliproxy-client.ts` - CLI tool orchestrator (child_process.spawn) with rate limit detection, model-specific timeouts
-- `src/services/providers/` - CLI provider adapters (Gemini, Codex only - no Claude)
-- `src/services/expert-router.ts` - Expert selection and fallback routing with error classification
-- `src/services/background-manager.ts` - Async task queue with concurrency control and JSON persistence
+**프로바이더 계층** — `src/services/providers/`
+
+| 파일 | 책임 |
+|---|---|
+| `model-registry.ts` | 모델 → (프로바이더, 타임아웃, 동시성, scarce) 단일 표. **모델을 추가하려면 여기부터** |
+| `types.ts` | `CliCallParams` / `CliCallResult` / `CliProviderError` |
+| `registry.ts` | 프로바이더 싱글톤 3개 |
+| `model-chain.ts` | 체인 순회 + scarce 가드 + quota 강등 + 스텝 단위 세마포어 |
+| `quota-registry.ts` | 한도 소진 모델 차단 (프로바이더 무관) |
+| `cli-spawner.ts` | 유일한 `child_process.spawn`. Windows 프로세스 트리 kill, stdin EPIPE, 출력 잘림 감지 |
+| `{agy,codex,claude}-provider.ts` | argv 조립 + 1회 실행. **체인 순회는 하지 않는다** |
+| `{agy,codex,claude}-parse.ts` | 순수 파서. 실측 페이로드가 테스트 픽스처로 고정돼 있다 |
+
+- `src/services/cliproxy-client.ts` — 캐시/재시도/체인 실행 오케스트레이션
+- `src/services/expert-router.ts` — 전문가 폴백 라우팅
+- `src/services/background-manager.ts` — 비동기 작업 큐 + JSON 영속화
 
 ### Utilities
 
-- `src/utils/rate-limit.ts` - Rate limit detection and tracking per model/provider
-- `src/utils/retry.ts` - Exponential backoff with jitter
-- `src/utils/cache.ts` - LRU cache with TTL for response caching
+- `src/utils/errors.ts` — **에러 분류 단일 소스**. `ErrorKind` + `ERROR_POLICY`.
+  판정 순서가 곧 사양이므로 `ORDERED_RULES` 순서를 바꾸면 동작이 바뀐다
+- `src/utils/rate-limit.ts` — 모델별 한도 추적 (분류는 `errors.ts`에 위임)
+- `src/utils/retry.ts` — 지수 백오프 + 지터
+- `src/utils/cache.ts` — TTL LRU 응답 캐시
 
 ### Security Features
 
@@ -188,25 +247,37 @@ cp plugin/skills/<skill>/SKILL.md "$CACHE_DIR/skills/<skill>/SKILL.md"
 
 ### Model-Specific Timeouts
 
-| Model | Timeout | Reason |
-|-------|---------|--------|
-| GPT 5.x / Codex | 20분 | --full-auto 자율 실행 |
-| Gemini Pro | 10분 | --yolo 자율 실행 |
-| Gemini Flash | 5분 | --yolo 자율 실행 |
-| 기타 | 1분 | 기본값 |
+`src/services/providers/model-registry.ts`가 단일 소스다 (substring 추론 아님).
 
-### Error Classification for Fallback
+| Model | Timeout |
+|-------|---------|
+| `gpt-5.5` | 20분 |
+| `gemini-3.1-pro-high` | 15분 |
+| `gemini-3.1-pro-low`, `gpt-oss-120b-medium`, `claude-sonnet-4-6` | 10분 |
+| `claude-opus-4-6-thinking` | 15분 |
+| `gemini-3.5/3.6-flash-*` | 5분 |
+| `opus`, `sonnet` (claude -p) | 5분 |
 
-폴백 시도 여부 결정 기준 - `src/services/expert-router.ts`
+agy는 단순 파일 읽기 1건에도 실측 147초가 걸린다. 짧게 잡지 말 것.
 
-| 에러 유형 | 폴백 시도 | 이유 |
-|----------|----------|------|
-| Rate Limit (429) | O | 다른 모델로 대체 가능 |
-| Timeout | O | 다른 모델이 더 빠를 수 있음 |
-| Server Error (5xx) | O | 일시적 문제 가능성 |
-| Overloaded | O | 다른 모델로 분산 |
-| Auth Error (401/403) | X | 폴백해도 동일 문제 |
-| Bad Request (400) | X | 요청 자체 문제 |
+### Error Classification
+
+`src/utils/errors.ts` 단일 표. 각 모듈은 `ErrorKind → 자기 타입` 매핑만 갖는다.
+
+| ErrorKind | 같은 모델 재시도 | 다음 모델 | 폴백 전문가 | 비고 |
+|---|---|---|---|---|
+| `quota` | X | O | O | 90분 차단 |
+| `timeout` | X | X | O | 재시도하면 대기시간이 배가 된다 |
+| `auth` | X | X | X | 어디로 가도 같다 |
+| `bad_request` | X | X | X | 요청 자체 문제 |
+| `bad_model` | X | O | X | 슬러그 오타가 요청을 죽이면 안 된다 |
+| `permission_denied` | X | X | X | 우리 argv 버그 신호 — 조용히 우회 금지 |
+| `network` / `server` | O | O | O | 일시적 |
+| `context_overflow` | X | X | O | 프롬프트를 줄여야 한다 |
+
+**판정 순서가 사양이다.** `quota`가 `auth`보다, `bad_model`이 `bad_request`보다 먼저다.
+숫자 상태코드는 단어 경계로만 매칭한다(예전엔 `"14002ms"`가 400으로 잡혔다).
+`permission_denied`는 정규식으로 유도하지 않고 파서가 구조적으로만 설정한다.
 
 ### Ensemble Strategy Validation
 
@@ -220,12 +291,44 @@ cp plugin/skills/<skill>/SKILL.md "$CACHE_DIR/skills/<skill>/SKILL.md"
 | chain | experts 2개 이상 | error |
 | parallel/synthesize | experts 2개 이상 권장 | warning |
 
+## CLI 제약 (실측 기준, 2026-08-07)
+
+코드를 고치기 전에 반드시 알아야 하는 것들. 전부 실제 CLI 출력으로 확인했다.
+
+### agy 1.1.11
+- `--output-format json`이 stdout으로 정상 출력한다. (1.0.x의 임시파일 우회는 폐기됐다)
+- **에러도 exit 1과 함께 정상 JSON 봉투로 나온다** → exit code를 1차 신호로 쓰지 말 것
+- **툴 권한 자동 거부 시 `status:"SUCCESS"` + `response:""`** 를 반환하고
+  JSON 앞에 평문 경고가 먼저 찍힌다 → 마지막 JSON 라인을 파싱하고 빈 응답을 실패로 잡아야 한다
+- **`--effort`는 슬러그에 effort가 박힌 모델에서 거부된다** → 절대 넘기지 말 것.
+  effort는 모델 슬러그 선택으로 표현한다(`-high`/`-low`/`-thinking`)
+- `--dangerously-skip-permissions` 없으면 모든 툴 사용이 자동 거부된다.
+  역할 게이트는 `--sandbox`가 담당한다
+- stdin 프롬프트 모드가 없어 프롬프트가 argv를 탄다 → Windows 32767자 상한.
+  24000자 초과분만 임시파일로 우회한다
+
+### codex 0.146.1
+- `-o/--output-last-message <FILE>`이 최종 답변만 정확히 기록한다
+- `--json`은 토큰 사용량(`turn.completed.usage`)과 error item 수집용으로 병행
+- **`item.type === 'error'`는 실패 신호가 아니다.** 사용자 `~/.codex/config.toml`의
+  deprecated `features.codex_hooks`가 매 실행 error item을 하나씩 만든다
+- `--strict-config` 금지(그 deprecated 키가 치명적이 된다), `--ignore-user-config` 금지(인증이 날아간다)
+- reasoning effort는 CLI 플래그가 없고 `-c model_reasoning_effort=high`로만 지정한다
+
+### claude -p (Claude Code 2.1.132)
+- 중첩 세션에서도 동작한다 (예전 제약은 해소됨)
+- **`--strict-mcp-config` 필수** — 없으면 llm-router MCP가 재귀 로딩된다
+- **`--bare` 금지** — 인증이 `ANTHROPIC_API_KEY` 전용이 되어 구독 OAuth가 깨진다
+- 유일하게 진짜 `--system-prompt` 채널이 있다
+
 ## Key Principles
 
 - 2명 이상 전문가 호출 시 반드시 병렬 (consult_experts_parallel 사용)
-- delegate_task는 implementer 전문가 사용 (GPT, READ-WRITE)
+- 코드 변경은 delegate_task(→ implementer)만. 나머지 17명은 read-only로 강제된다
 - 파일 경로만 넘기면 CLI가 직접 읽음 (토큰 절약)
-- codex는 AGENTS.md, gemini는 GEMINI.md 프로젝트 루트에서 자동 읽음
+- codex는 AGENTS.md를 프로젝트 루트에서 자동으로 읽는다
+- Claude(`model: "opus"`)는 사용자 본인 한도를 쓴다. 습관적으로 쓰면 이 MCP의
+  존재 이유(타 벤더 오프로드)가 무너진다
 
 ## Configuration
 
@@ -233,28 +336,53 @@ Environment variables (see `.env.example`):
 
 ```bash
 # CLI 도구 경로 (PATH에 있으면 생략 가능)
-CLI_GEMINI_PATH=gemini
+CLI_AGY_PATH=agy                       # 구버전 별칭: CLI_ANTIGRAVITY_PATH
 CLI_CODEX_PATH=codex
+CLI_CLAUDE_PATH=claude
+
+# 전문가별 모델 (미등록 슬러그면 부팅 실패)
+MODEL_STRATEGIST=gpt-5.5
+MODEL_MOMUS=gemini-3.1-pro-high
+
+# Claude opt-in 비용 상한 (USD/호출, 0이면 무제한)
+CLAUDE_MAX_BUDGET_USD=1.0
 
 # 선택적 API 키
 EXA_API_KEY=your_key                   # Exa 웹 검색
 CONTEXT7_API_KEY=your_key              # 라이브러리 문서
 
-# 캐시/재시도 설정
-CACHE_ENABLED=true                     # Response caching
-CACHE_TTL_MS=1800000                   # 30 minute cache TTL
-RETRY_MAX=3                            # Max retry attempts
-CONCURRENCY_OPENAI=5                   # Concurrent requests per provider
-CONCURRENCY_GOOGLE=10
+# 캐시/재시도/동시성
+CACHE_ENABLED=true
+CACHE_TTL_MS=1800000
+RETRY_MAX=3
+CONCURRENCY_CODEX=5                    # 구버전 별칭: CONCURRENCY_OPENAI
+CONCURRENCY_AGY=10                     # 구버전 별칭: CONCURRENCY_GOOGLE
+CONCURRENCY_CLAUDE=2
 ```
 
-## Rate Limit Handling
+## Quota Handling
 
-The system automatically:
-1. Detects rate limits from CLI stderr patterns and error messages
-2. Marks models as limited with retry-after tracking
-3. Routes to fallback experts when primary is rate limited
-4. Uses exponential backoff with jitter for retries
+2단 강등이다.
+
+1. **모델 체인** (`model-chain.ts`) — 한도 소진 시 그 모델을 90분 차단하고
+   같은 전문가의 다음 모델로 넘어간다. `scarce` 모델은 0번 스텝일 때만 선택되므로
+   폴백 꼬리로는 절대 도달하지 않는다.
+2. **전문가 폴백** (`expert-router.ts`) — 체인이 전부 소진되면 `FALLBACK_CHAIN`의
+   다른 전문가로 넘어간다.
+
+차단 현황은 `llm_router_health`에 노출된다.
+
+## 코드 수정 시 주의
+
+- **모델을 추가/변경하려면** `model-registry.ts`의 `MODELS`부터. 그다음
+  `model-defaults.ts`. 부팅 시 `validateExpertRegistry()`가 6개 목록의 정합성을
+  검증하므로 어긋나면 서버가 뜨지 않는다.
+- **에러 문자열 처리는 `utils/errors.ts` 한 곳에서만.** 예전에 같은 일을 하는 표가
+  5벌 있었고 서로 결론이 달라 실제 오분류가 있었다.
+- **프로바이더는 CLI 1회 실행만 한다.** 체인 순회/재시도/세마포어를 프로바이더 안에
+  넣지 말 것.
+- 파서를 고쳤으면 `*-parse.test.ts`의 실측 픽스처로 검증하고, argv를 고쳤으면
+  `npm run probe`로 실제 CLI에 물어볼 것.
 
 ## Language
 

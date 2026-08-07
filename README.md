@@ -16,13 +16,13 @@ LLM Router MCP는 Claude Code가 팀 리더 역할을 하며, GPT/Gemini 전문�
 |------|------|
 | MCP 도구 | 109개 |
 | 내장 훅 | 38개 |
-| AI 전문가 | 17개 |
+| AI 전문가 | 18개 |
 | 내장 스킬 | 15개 |
 
 ### 주요 특징
 
 - **멀티 LLM 협업**: Claude Code(리더) + GPT/Gemini 전문가 협업
-- **역할 분담**: GPT(`codex --full-auto`)는 코드 변경 가능, Gemini(`--yolo`)는 리뷰/분석 전용
+- **역할 분담**: `implementer`(codex)만 코드 변경 가능, 나머지 17명은 read-only로 강제
 - **자동 폴백**: Rate limit 발생 시 자동으로 다른 전문가로 전환
 - **병렬 위임**: `delegate_task`로 GPT 에이전트 1~3명에게 구현 작업 병렬 위임
 - **중재형 토론**: 중재자가 2라운드 패널 토론을 진행하고 최종 요약 반환
@@ -67,18 +67,31 @@ custommcp doctor
 
 터미널에서 사용할 LLM CLI 도구가 인증된 상태여야 합니다:
 
-- `gemini` — Google Gemini CLI (`--yolo` 모드로 자율 실행, 코드 변경 불가)
-- `codex` — OpenAI Codex CLI (`--full-auto` 모드로 자율 실행, 코드 변경 가능)
+- `codex` — OpenAI Codex CLI (GPT 전문가 11명). `codex login`으로 인증
+- `agy` — Antigravity CLI (Gemini 전문가 7명). 최초 실행 시 브라우저 인증
 
-> **Note**: `claude` CLI는 필요하지 않습니다. Claude Code가 직접 Claude 역할을 수행합니다.
+> **Gemini CLI(`@google/gemini-cli`)는 2026-06-18 공식 종료**되어 더 이상 쓰지 않습니다.
+> Google 계열은 후속작인 Antigravity CLI(`agy`)로 전환됐습니다.
+
+`claude` CLI는 **선택**입니다. `consult_expert`에 `model: "opus"`를 명시할 때만
+쓰이며, 사용자 본인의 Claude 구독 한도를 소모합니다. 설치돼 있지 않아도
+나머지 기능은 정상 동작합니다.
+
+설치 확인:
+
+```bash
+npm run probe        # 세 CLI 전부에 실제로 물어봐서 검증
+```
 
 ### 3. 환경변수 설정 (선택)
 
 ```bash
 EXA_API_KEY=your_exa_api_key        # 선택: 웹 검색
 CONTEXT7_API_KEY=your_key           # 선택: 라이브러리 문서
-CLI_GEMINI_PATH=gemini              # 선택: PATH에 없을 때만 지정
 CLI_CODEX_PATH=codex                # 선택: PATH에 없을 때만 지정
+CLI_AGY_PATH=agy                    # 선택: PATH에 없을 때만 지정
+CLI_CLAUDE_PATH=claude              # 선택: opt-in 전용
+CLAUDE_MAX_BUDGET_USD=1.0           # 선택: claude -p 호출당 비용 상한
 ```
 
 ### 4. Claude Code 연동
@@ -93,12 +106,17 @@ CLI_CODEX_PATH=codex                # 선택: PATH에 없을 때만 지정
 
 ## 역할 분담
 
-| CLI 도구 | 모드 | 코드 변경 | 용도 | 자동 로드 |
-|----------|------|----------|------|----------|
-| `codex` (GPT) | `--full-auto` | 가능 | `delegate_task` 전용 구현 작업 | `AGENTS.md` |
-| `gemini` (Gemini) | `--yolo` | 불가 | 리뷰/분석 전용 | `GEMINI.md` |
+| CLI 도구 | Sandbox | 코드 변경 | 용도 | 자동 로드 |
+|----------|---------|----------|------|----------|
+| `codex` (GPT) | `read-only` / `workspace-write` | `implementer`만 가능 | 설계·리뷰·구현 | `AGENTS.md` |
+| `agy` (Gemini) | `--sandbox` | 불가 | 리뷰/분석 전용 | — |
+| `claude -p` | `--tools "Read,Grep,Glob"` | 불가 | opt-in 3자 검증 | — |
 
-- 두 CLI 도구 모두 파일 경로를 넘기면 직접 읽음 (토큰 절약)
+전문가 18명 중 **`implementer` 하나만 쓰기 권한**을 갖습니다. 나머지 17명은
+CLI 레벨에서 read-only가 강제되므로, 프롬프트로 지시해도 파일을 고칠 수 없습니다.
+쓰기가 필요하면 `delegate_task`를 쓰세요.
+
+- 모든 CLI 도구가 파일 경로를 넘기면 직접 읽음 (토큰 절약)
 - 2명 이상 전문가 호출 시 반드시 병렬 (`consult_experts_parallel`)
 
 ---
@@ -340,9 +358,9 @@ moderated_debate({
 
 | 모델 | 타임아웃 | 이유 |
 |------|---------|--------|
-| GPT 5.x / Codex | 20분 | `--full-auto` 자율 실행 |
-| Gemini Pro | 10분 | `--yolo` 자율 실행 |
-| Gemini Flash | 5분 | `--yolo` 자율 실행 |
+| `gpt-5.5` (Codex) | 20분 | `--sandbox` 자율 실행 |
+| Gemini 3.1 Pro (High) | 15분 | agy 자율 실행 |
+| Gemini 3.5/3.6 Flash | 5분 | agy 자율 실행 |
 | 기타 | 1분 | 기본값 |
 
 ---
@@ -379,8 +397,8 @@ llm-router-mcp/
 
 ### 지원 CLI 도구
 
-- `gemini` — Gemini Pro/Flash 모델 (`--yolo` 모드, 리뷰/분석 전용)
-- `codex` — GPT 계열 모델 (`--full-auto` 모드, 코드 변경 가능)
+- `agy` — Gemini 3.1 Pro / 3.6 Flash 등 (리뷰/분석 전용)
+- `codex` — GPT 계열 모델 (`implementer`만 코드 변경 가능)
 
 > **Note**: `claude` CLI는 사용하지 않습니다. Claude Code가 직접 Claude 역할을 수행합니다.
 
@@ -390,7 +408,7 @@ llm-router-mcp/
 CLI 도구 경로는 `.env`에서 설정 가능합니다 (PATH에 있으면 생략 가능):
 
 ```bash
-CLI_GEMINI_PATH=gemini
+CLI_AGY_PATH=agy
 CLI_CODEX_PATH=codex
 ```
 

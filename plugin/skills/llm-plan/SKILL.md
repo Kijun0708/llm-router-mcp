@@ -150,6 +150,6 @@ review_code({
 - **설계 완료 후 Claude가 Agent 도구로 설계 검토를 먼저 시도**
 - **Claude는 코드를 직접 수정하지 않음** (설계와 리뷰만)
 - **설계 완료 후 반드시 GPT 설계 전문가 검토를 먼저 통과**
-- **GPT만 코드 변경** (codex --full-auto)
+- **implementer만 코드 변경** (codex, 유일한 workspace-write 전문가)
 - **2명 이상 호출 시 반드시 병렬** (consult_experts_parallel 또는 delegate_task)
 - **Gemini는 리뷰만** (코드 변경 불가)

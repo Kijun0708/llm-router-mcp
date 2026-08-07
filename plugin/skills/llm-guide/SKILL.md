@@ -12,45 +12,45 @@ user-invocable: false
 
 #### 핵심 전문가 (3명)
 
-| ID | 모델 | 역할 | 폴백 |
+| ID | 프로바이더 / 모델 | 역할 | 폴백 |
 |----|------|------|------|
-| `strategist` | GPT | 아키텍처 설계, 디버깅 전략 | codereview → momus |
-| `codereview` | Gemini Pro + GPT | 통합 코드 리뷰 (perspectives로 병렬 리뷰) | strategist → momus |
-| `frontend` | Gemini Pro | UI/UX, 컴포넌트 설계 | strategist → momus |
+| `strategist` | codex / gpt-5.5 | 아키텍처 설계, 디버깅 전략 | codereview → momus |
+| `codereview` | agy / gemini-3.1-pro-high | 통합 코드 리뷰 (perspectives로 병렬 리뷰) | strategist → momus |
+| `frontend` | agy / gemini-3.1-pro-high | UI/UX, 컴포넌트 설계 | strategist → momus |
 
 #### 계획/분석 전문가 (2명)
 
-| ID | 모델 | 역할 | 폴백 |
+| ID | 프로바이더 / 모델 | 역할 | 폴백 |
 |----|------|------|------|
-| `metis` | GPT | 전략적 계획, 문제 분해 | strategist → codereview |
-| `momus` | Gemini Pro | 비판적 분석, 품질 평가 | codereview → strategist |
+| `metis` | codex / gpt-5.5 | 전략적 계획, 문제 분해 | strategist → codereview |
+| `momus` | agy / gemini-3.1-pro-high | 비판적 분석, 품질 평가 | codereview → strategist |
 
 #### 특화 전문가 (7명)
 
-| ID | 모델 | 역할 | 폴백 |
+| ID | 프로바이더 / 모델 | 역할 | 폴백 |
 |----|------|------|------|
-| `security` | GPT | OWASP/CWE 보안 분석 | codereview → strategist |
-| `tester` | GPT | TDD/테스트 전략 | codereview → strategist |
-| `data` | GPT | DB 설계, 쿼리 최적화 | strategist → codereview |
-| `devops` | GPT | CI/CD, Docker, K8s, 인프라 | strategist → codereview |
-| `reality_checker` | Gemini Pro | 현실 검증, dead code 탐지 | momus → codereview |
-| `lsp_index_engineer` | GPT | 심볼/참조 분석 | codereview → strategist |
-| `codereview_gpt` | GPT | GPT 코드리뷰 - SOLID/설계/실무 관점 | codereview → momus |
+| `security` | codex / gpt-5.5 | OWASP/CWE 보안 분석 | codereview → strategist |
+| `tester` | codex / gpt-5.5 | TDD/테스트 전략 | codereview → strategist |
+| `data` | codex / gpt-5.5 | DB 설계, 쿼리 최적화 | strategist → codereview |
+| `devops` | codex / gpt-5.5 | CI/CD, Docker, K8s, 인프라 | strategist → codereview |
+| `reality_checker` | agy / gemini-3.1-pro-high | 현실 검증, dead code 탐지 | momus → codereview |
+| `lsp_index_engineer` | codex / gpt-5.5 | 심볼/참조 분석 | codereview → strategist |
+| `codereview_gpt` | codex / gpt-5.5 | GPT 코드리뷰 - SOLID/설계/실무 관점 | codereview → momus |
 
 #### 동적 페르소나 (4명) — 토론 전용
 
-| ID | 모델 |
+| ID | 프로바이더 / 모델 |
 |----|------|
-| `gpt_blank_1` | GPT |
-| `gpt_blank_2` | GPT |
-| `gemini_blank_1` | Gemini Pro |
-| `gemini_blank_2` | Gemini Flash |
+| `gpt_blank_1` | codex / gpt-5.5 |
+| `gpt_blank_2` | codex / gpt-5.5 |
+| `gemini_blank_1` | agy / gemini-3.1-pro-high |
+| `gemini_blank_2` | agy / gemini-3.6-flash-high |
 
 #### 토론 조정자 (1명)
 
-| ID | 모델 | 역할 |
+| ID | 프로바이더 / 모델 | 역할 |
 |----|------|------|
-| `debate_moderator` | Gemini Pro | 자동 페르소나 할당, 중간 종합, 최종 정리 |
+| `debate_moderator` | agy / gemini-3.1-pro-high | 자동 페르소나 할당, 중간 종합, 최종 정리 |
 
 ### MCP 도구 목록
 
@@ -73,8 +73,34 @@ user-invocable: false
 - `background_expert_cancel` — 작업 취소
 - `background_expert_list` — 작업 목록
 
+#### 코드 인텔리전스 도구
+- `lsp_get_definition` / `lsp_get_references` / `lsp_get_hover` / `lsp_workspace_symbols` /
+  `lsp_prepare_rename` / `lsp_rename` / `lsp_check_server` — LSP 기반 심볼 분석.
+  Claude Code 네이티브에 없는 기능이라 텍스트 검색으로 대체 불가
+- `ast_grep_search` / `ast_grep_replace` / `ast_grep_languages` — 구조적 검색/치환
+
 #### 관리 도구
-- `llm_router_health` — 서버 상태, 캐시 관리, 작업 정리
+- `llm_router_health` — 서버 상태, 프로바이더 가용성, 한도 차단 현황, 동시 실행 현황
+
+### 모델 오버라이드 (Claude opt-in)
+
+`consult_expert`의 `model` 파라미터로 이번 호출에만 쓸 모델을 지정할 수 있다.
+지정한 모델이 체인 0번이 되고 전문가 기본 모델이 뒤에 붙어 한도 소진 시 자동 강등된다.
+
+```
+consult_expert(expert: "momus", question: "...", model: "opus")
+```
+
+| 값 | 실제 모델 | 주의 |
+|---|---|---|
+| `opus` / `sonnet` | Claude Opus/Sonnet (claude -p) | **사용자 본인 Claude 구독 한도 소모** |
+| `claude-opus-4-6-thinking` | Claude Opus 4.6 (agy 경유) | agy Claude 쿼터가 작다 |
+| `gemini-3.6-flash-high` | 빠른 Gemini | 간단한 작업에 |
+| `gpt-oss-120b-medium` | GPT-OSS 120B (agy 경유) | |
+
+기본 전문가 모델은 codex(GPT)와 agy(Gemini)뿐이다. Claude는 위처럼 명시할 때만 쓰인다.
+습관적으로 쓰면 이 MCP의 존재 이유(타 벤더 오프로드)가 무너지므로, 3자 검증이
+꼭 필요한 비평 작업에만 쓸 것.
 
 ### 사용자 의도 → 스킬 자동 매핑
 

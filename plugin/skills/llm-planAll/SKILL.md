@@ -156,6 +156,6 @@ review_code({
 - **설계 완료 후 반드시 GPT 설계 전문가 검토를 먼저 통과**
 - **GPT 위임을 먼저 시작**하고 Claude 작업을 동시 진행 (시간 절약)
 - **파일 충돌 방지**: Claude와 GPT가 같은 파일을 수정하면 안 됨
-- **GPT만 코드 변경** (codex --full-auto), **Gemini는 리뷰만**
+- **implementer만 코드 변경** (codex, 유일한 workspace-write 전문가), **Gemini(agy)는 리뷰만**
 - **2명 이상 호출 시 반드시 병렬** (consult_experts_parallel 또는 delegate_task)
 - **Claude의 핵심 작업이 GPT 결과에 의존하면 안 됨** (독립성 보장)
