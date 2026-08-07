@@ -75,7 +75,19 @@ import {
   runCommandTool, runCommandSchema, handleRunCommand,
   searchCommandsTool, searchCommandsSchema, handleSearchCommands,
   moderatedDebateTool, moderatedDebateSchema, handleModeratedDebate,
-  delegateTaskTool, delegateTaskSchema, handleDelegateTask
+  delegateTaskTool, delegateTaskSchema, handleDelegateTask,
+  // LSP — Claude Code에 없는 기능. lsp_index_engineer 전문가가 쓸 도구이기도 하다.
+  lspGetDefinitionTool, lspGetDefinitionSchema, handleLspGetDefinition,
+  lspGetReferencesTool, lspGetReferencesSchema, handleLspGetReferences,
+  lspGetHoverTool, lspGetHoverSchema, handleLspGetHover,
+  lspWorkspaceSymbolsTool, lspWorkspaceSymbolsSchema, handleLspWorkspaceSymbols,
+  lspCheckServerTool, lspCheckServerSchema, handleLspCheckServer,
+  lspPrepareRenameTool, lspPrepareRenameSchema, handleLspPrepareRename,
+  lspRenameTool, lspRenameSchema, handleLspRename,
+  // ast-grep — 구조적 검색/치환. 네이티브 Grep은 텍스트 기반이라 대체 불가.
+  astGrepSearchTool, astGrepSearchSchema, handleAstGrepSearch,
+  astGrepReplaceTool, astGrepReplaceSchema, handleAstGrepReplace,
+  astGrepLanguagesTool, astGrepLanguagesSchema, handleAstGrepLanguages
 } from "./tools/index.js";
 
 // 버전은 package.json 단일 소스. 이전에는 여기 "2.0.0"이 하드코딩돼 있어
@@ -472,7 +484,31 @@ function registerTools() {
     (args: any) => handleDelegateTask(delegateTaskSchema.parse(args))
   );
 
-  // 109-113. Interactive Bash Tools (5 tools)
+  // LSP 도구 (7개) — Claude Code에 LSP가 없다.
+  // 심볼 정의/참조/호버/워크스페이스 심볼/rename은 텍스트 검색으로 대체할 수 없다.
+  for (const [tool, schema, handler] of [
+    [lspGetDefinitionTool, lspGetDefinitionSchema, handleLspGetDefinition],
+    [lspGetReferencesTool, lspGetReferencesSchema, handleLspGetReferences],
+    [lspGetHoverTool, lspGetHoverSchema, handleLspGetHover],
+    [lspWorkspaceSymbolsTool, lspWorkspaceSymbolsSchema, handleLspWorkspaceSymbols],
+    [lspCheckServerTool, lspCheckServerSchema, handleLspCheckServer],
+    [lspPrepareRenameTool, lspPrepareRenameSchema, handleLspPrepareRename],
+    [lspRenameTool, lspRenameSchema, handleLspRename],
+  ] as const) {
+    server.tool(tool.name, schema.shape, (args: unknown) => handler(schema.parse(args) as never));
+  }
+
+  // ast-grep 도구 (3개) — 구조적 검색/치환.
+  // `sg` 미설치 시 각 핸들러가 안내 메시지를 반환한다.
+  for (const [tool, schema, handler] of [
+    [astGrepSearchTool, astGrepSearchSchema, handleAstGrepSearch],
+    [astGrepReplaceTool, astGrepReplaceSchema, handleAstGrepReplace],
+    [astGrepLanguagesTool, astGrepLanguagesSchema, handleAstGrepLanguages],
+  ] as const) {
+    server.tool(tool.name, schema.shape, (args: unknown) => handler(schema.parse(args) as never));
+  }
+
+  // Interactive Bash Tools (5 tools)
   registerInteractiveBashTools(server);
 
   // 114-122. Skill Tools (9 tools)
