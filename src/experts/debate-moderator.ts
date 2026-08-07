@@ -2,6 +2,7 @@
 
 import { Expert } from '../types.js';
 import { config } from '../config.js';
+import { EXPERT_RUNTIME_DEFAULTS } from '../model-defaults.js';
 import { DEBATE_MODERATOR_SYSTEM_PROMPT, DEBATE_MODERATOR_METADATA } from '../prompts/experts/index.js';
 
 export const debateModerator: Expert = {
@@ -9,15 +10,14 @@ export const debateModerator: Expert = {
   name: "Debate Moderator",
   model: config.models.debate_moderator,
 
+  provider: EXPERT_RUNTIME_DEFAULTS.debate_moderator.provider,
+  sandbox: EXPERT_RUNTIME_DEFAULTS.debate_moderator.sandbox,
   role: "다중 모델 패널 토론 중재 및 최종 요약",
 
   systemPrompt: DEBATE_MODERATOR_SYSTEM_PROMPT,
 
   temperature: 0.2,
   maxTokens: 3000,
-
-  fallbacks: ["strategist", "momus"],
-
   useCases: DEBATE_MODERATOR_METADATA.useWhen,
 
   toolChoice: "none"

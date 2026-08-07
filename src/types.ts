@@ -1,5 +1,10 @@
 // src/types.ts
 
+import type { ProviderId, SandboxMode, TokenUsage, ChainStep } from './services/providers/index.js';
+import type { ExpertId } from './model-defaults.js';
+
+export type { ProviderId, SandboxMode, TokenUsage, ChainStep, ExpertId };
+
 // Function Calling 관련 타입
 export interface ToolDefinition {
   type: "function";
@@ -55,13 +60,24 @@ export interface ChatMessage {
 export interface Expert {
   id: string;
   name: string;
+  /** CLI 슬러그. model-registry.MODELS의 키여야 한다 (부팅 시 검증). */
   model: string;
+  /**
+   * 어느 CLI로 부를지. 명시 필수.
+   * agy 하나가 Gemini·Claude·GPT-OSS를 전부 서빙하므로 모델명으로는 추론이 불가능하다.
+   */
+  provider: ProviderId;
+  /** 역할 권한. implementer만 'workspace-write'. */
+  sandbox: SandboxMode;
+  /** 명시 모델 체인. 미지정 시 [{provider, model}] 하나짜리. */
+  modelChain?: ChainStep[];
+  /** MODELS[model].timeoutMs 오버라이드. */
+  timeoutMs?: number;
   role: string;
   systemPrompt: string;
   temperature: number;
   maxTokens: number;
   useCases: string[];
-  fallbacks?: string[];
   tools?: ToolDefinition[];  // 전문가가 사용할 수 있는 도구
   toolChoice?: "auto" | "required" | "none";  // 도구 사용 모드
 }
@@ -75,6 +91,10 @@ export interface ExpertResponse {
   toolCalls?: ToolCall[];           // 전문가가 요청한 도구 호출
   finishReason?: "stop" | "tool_calls";  // 응답 종료 이유
   toolsUsed?: string[];             // 실제 사용된 도구 목록
+  /** 실제로 응답한 모델 (체인 폴백 시 expert.model과 다를 수 있다). */
+  actualModel?: string;
+  /** CLI가 보고한 실측 토큰 사용량. 추정이 아니다. */
+  usage?: TokenUsage;
 }
 
 export interface RateLimitInfo {
@@ -112,11 +132,15 @@ export interface Category {
 
 export interface Config {
   cli: {
-    geminiPath: string;      // Gemini CLI 경로 (default: 'gemini') - active
-    antigravityPath: string; // Antigravity CLI(agy) 경로 (default: 'agy') - dormant, USE_ANTIGRAVITY=true 시 활성
-    claudePath: string;      // Claude CLI 경로 (unused - kept for compatibility)
-    codexPath: string;       // Codex CLI 경로 (default: 'codex')
+    /** Antigravity CLI(agy) 경로. Google 계열 유일 프로바이더 (default: 'agy') */
+    agyPath: string;
+    /** Codex CLI 경로 (default: 'codex') */
+    codexPath: string;
+    /** Claude Code CLI 경로. opt-in 전용 (default: 'claude') */
+    claudePath: string;
   };
+  /** claude -p 호출당 비용 상한(USD). 0이면 상한 없음. */
+  claudeMaxBudgetUsd: number;
   exaApiKey?: string;     // Exa AI 검색 API 키
   context7ApiKey?: string; // Context7 문서 API 키
   cache: {
@@ -134,29 +158,12 @@ export interface Config {
     byProvider: Record<string, number>;
     byModel: Record<string, number>;
   };
-  models: {
-    strategist: string;
-    codereview: string;
-    frontend: string;
-    metis: string;
-    momus: string;
-    // 특화 전문가
-    security: string;
-    tester: string;
-    data: string;
-    devops: string;
-    reality_checker: string;
-    lsp_index_engineer: string;
-    codereview_gpt: string;
-    implementer: string;
-    // Blank 전문가 (동적 페르소나 토론용 - GPT/Gemini only)
-    gpt_blank_1: string;
-    gpt_blank_2: string;
-    gemini_blank_1: string;
-    gemini_blank_2: string;
-    // 페르소나 할당 전문가
-    debate_moderator: string;
-  };
+  /**
+   * 전문가별 모델 슬러그. 키는 model-defaults의 EXPERT_IDS와 정확히 일치하며
+   * 값은 MODELS에 등록된 슬러그임이 config 로드 시 검증된다.
+   * MODEL_<EXPERT_ID> 환경변수로 개별 오버라이드 가능.
+   */
+  models: Record<ExpertId, string>;
   hybrid: {
     enabled: boolean;
     inlineThresholdChars: number;

@@ -3,8 +3,12 @@
 import 'dotenv/config';  // 환경변수 로드 (fallback, config.ts에서 이미 절대경로로 로드됨)
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 
 import { logger } from "./utils/logger.js";
+import { validateExpertRegistry } from "./experts/index.js";
 
 import { setupHookSystem } from "./hooks/index.js";
 import { initializeHud, shutdownHud } from "./hud/index.js";
@@ -74,11 +78,26 @@ import {
   delegateTaskTool, delegateTaskSchema, handleDelegateTask
 } from "./tools/index.js";
 
+// 버전은 package.json 단일 소스. 이전에는 여기 "2.0.0"이 하드코딩돼 있어
+// package.json(2.4.5)과 계속 어긋났다.
+const __pkg = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../package.json'), 'utf-8')
+) as { version: string };
+const VERSION: string = __pkg.version;
+
 // 서버 초기화
 const server = new McpServer({
   name: "llm-router-mcp",
-  version: "2.0.0"
+  version: VERSION
 });
+
+// 등록된 도구 수를 직접 센다. 손으로 세던 로그가 실제(76)와 3개 어긋나 있었다.
+let registeredToolCount = 0;
+const originalTool = server.tool.bind(server);
+server.tool = ((...args: Parameters<typeof originalTool>) => {
+  registeredToolCount++;
+  return originalTool(...args);
+}) as typeof server.tool;
 
 // 도구 등록
 function registerTools() {
@@ -462,12 +481,16 @@ function registerTools() {
   // 123-131. MCP Manager Tools (9 tools)
   registerMcpManagerTools(server);
 
-  logger.info('All tools registered (79 tools)');
+  logger.info(`All tools registered (${registeredToolCount} tools)`);
 }
 
 // 메인 함수
 async function main() {
-  logger.info('Starting LLM Router MCP Server v2.0.0');
+  logger.info(`Starting LLM Router MCP Server v${VERSION}`);
+
+  // 전문가 레지스트리 정합성 검증.
+  // 잘못된 모델 슬러그나 프로바이더 불일치는 새벽 3시 CLI 실패가 아니라 여기서 터뜨린다.
+  validateExpertRegistry();
 
   // Hook 시스템 초기화
   setupHookSystem();

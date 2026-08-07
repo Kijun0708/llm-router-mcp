@@ -8,6 +8,7 @@ import { callExpertWithFallback, callExpertWithToolsAndFallback } from "../servi
 import { sessionMemory } from "../services/session-memory.js";
 import { startBackgroundTask } from "../services/background-manager.js";
 import { TimeoutError } from "../services/cliproxy-client.js";
+import { isKnownModel, MODELS } from "../services/providers/index.js";
 import { wrapMcpResponse } from "../utils/response-saver.js";
 import { logger } from "../utils/logger.js";
 
@@ -247,6 +248,19 @@ export const consultExpertSchema = z.object({
     .default(false)
     .describe("캐시 무시하고 새로 호출"),
 
+  model: z.string()
+    .optional()
+    .refine(
+      (m) => m === undefined || isKnownModel(m),
+      (m) => ({ message: `알 수 없는 모델 "${m}". 사용 가능: ${Object.keys(MODELS).join(', ')}` })
+    )
+    .describe(
+      "이 호출에만 쓸 모델 슬러그. 미지정 시 전문가 기본 모델(codex GPT 또는 agy Gemini). " +
+      "Claude 계열('opus', 'sonnet', 'claude-opus-4-6-thinking')은 여기로만 도달하며 " +
+      "한도 소진 시 전문가 기본 모델로 자동 강등됩니다. " +
+      "주의: 'opus'/'sonnet'은 사용자 본인의 Claude 구독 한도를 소모합니다."
+    ),
+
   use_tools: z.boolean()
     .default(true)
     .describe("전문가가 웹 검색, 문서 조회 등 도구를 사용할 수 있게 함 (기본: true)")
@@ -368,7 +382,10 @@ export async function handleConsultExpert(params: z.infer<typeof consultExpertSc
       fullContext || undefined,
       params.skip_cache,
       enableTools,
-      params.image_path
+      params.image_path,
+      false,        // applyPreamble
+      undefined,    // workflowOptions
+      params.model  // 명시 모델 (1차 전문가에만 적용)
     );
 
     // 전문가 응답을 세션 메모리에 저장
@@ -393,6 +410,16 @@ export async function handleConsultExpert(params: z.infer<typeof consultExpertSc
     // 폴백 알림
     if (result.fellBack) {
       response += `\n\n⚠️ **알림**: 원래 요청한 \`${expert.name}\`이(가) 한도 초과로 \`${actualExpert.name}\`으로 대체되었습니다.`;
+    }
+
+    // 명시 모델을 요청했는데 다른 모델이 답한 경우 = 한도 소진으로 강등됨
+    if (params.model && result.actualModel && result.actualModel !== params.model) {
+      response += `\n\n⚠️ **모델 강등**: 요청한 \`${params.model}\`이(가) 한도 소진으로 \`${result.actualModel}\`으로 대체되었습니다.`;
+    }
+
+    // 사용자 본인 Claude 한도를 쓴 경우 비용을 눈에 보이게 남긴다
+    if (result.usage?.costUsd !== undefined) {
+      response += `\n\n_💳 Claude 구독 한도 사용: $${result.usage.costUsd.toFixed(4)} (${result.actualModel})_`;
     }
 
     // 캐시 히트 알림

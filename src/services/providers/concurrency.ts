@@ -26,18 +26,49 @@ export class Semaphore {
       next();
     }
   }
+
+  get inFlight(): number {
+    return this.running;
+  }
+
+  get waiting(): number {
+    return this.queue.length;
+  }
+
+  get limit(): number {
+    return this.maxConcurrent;
+  }
 }
 
-// 프로바이더별 세마포어 (lazy init)
+const DEFAULT_LIMIT = 5;
+
+/**
+ * 키별 세마포어 (lazy init).
+ * 키는 프로바이더 id('agy') 또는 프로바이더:모델('agy:gemini-3.1-pro-high') 둘 다 쓴다.
+ * model-chain이 두 단계를 겹쳐 잡아 "프로바이더 총량"과 "모델별 상한"을 동시에 건다.
+ */
 const semaphores = new Map<string, Semaphore>();
 
-export function getProviderSemaphore(
-  provider: string,
-  concurrencyConfig: Record<string, number>
-): Semaphore {
-  if (!semaphores.has(provider)) {
-    const limit = concurrencyConfig[provider] || 5;
-    semaphores.set(provider, new Semaphore(limit));
+export function getSemaphore(key: string, limit?: number): Semaphore {
+  let sem = semaphores.get(key);
+  if (!sem) {
+    sem = new Semaphore(limit ?? DEFAULT_LIMIT);
+    semaphores.set(key, sem);
   }
-  return semaphores.get(provider)!;
+  return sem;
+}
+
+/** 대시보드/health용 스냅샷. */
+export function semaphoreSnapshot(): Array<{ key: string; inFlight: number; waiting: number; limit: number }> {
+  return [...semaphores].map(([key, s]) => ({
+    key,
+    inFlight: s.inFlight,
+    waiting: s.waiting,
+    limit: s.limit,
+  }));
+}
+
+/** 테스트 전용. */
+export function resetSemaphores(): void {
+  semaphores.clear();
 }

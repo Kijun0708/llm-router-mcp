@@ -15,5 +15,6 @@
     "sourceMap": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "// exclude": "테스트는 dist/에 섞이면 안 된다 (package.json files에 dist/가 있어 배포된다). tsconfig.test.json이 별도로 dist-test/에 빌드한다.",
+  "exclude": ["node_modules", "dist", "dist-test", "src/**/*.test.ts"]
 }

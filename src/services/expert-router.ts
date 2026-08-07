@@ -108,7 +108,10 @@ export async function callExpertWithFallback(
   skipCache: boolean = false,
   imagePath?: string,
   applyPreamble: boolean = false,
-  workflowOptions?: WorkflowCallOptions
+  workflowOptions?: WorkflowCallOptions,
+  // 명시 모델은 1차 전문가에만 적용한다. 폴백 전문가는 자기 기본 모델을 쓴다 —
+  // scarce 모델(Claude)이 폴백 체인 전체로 번지면 opt-in 가드가 무의미해진다.
+  requestedModel?: string
 ): Promise<ExpertResponse> {
   const expert = experts[expertId];
 
@@ -144,7 +147,7 @@ export async function callExpertWithFallback(
     : prompt;
 
   try {
-    const result = await callExpert(expert, finalPrompt, { context: finalContext, skipCache, imagePath });
+    const result = await callExpert(expert, finalPrompt, { context: finalContext, skipCache, imagePath, model: requestedModel });
     const durationMs = Date.now() - startTime;
 
     // Execute onExpertResult hooks
@@ -361,7 +364,10 @@ export async function callExpertWithToolsAndFallback(
   enableTools: boolean = true,
   imagePath?: string,
   applyPreamble: boolean = false,
-  workflowOptions?: WorkflowCallOptions
+  workflowOptions?: WorkflowCallOptions,
+  // 명시 모델은 1차 전문가에만 적용한다. 폴백 전문가는 자기 기본 모델을 쓴다 —
+  // scarce 모델(Claude)이 폴백 체인 전체로 번지면 opt-in 가드가 무의미해진다.
+  requestedModel?: string
 ): Promise<ExpertResponse> {
   const expert = experts[expertId];
 
@@ -398,6 +404,7 @@ export async function callExpertWithToolsAndFallback(
 
   try {
     const result = await callExpertWithTools(expert, finalPrompt, {
+      requestedModel,
       context: finalContext,
       skipCache,
       enableTools: enableTools && expert.toolChoice !== "none",

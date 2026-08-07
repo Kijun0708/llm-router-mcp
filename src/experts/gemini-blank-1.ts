@@ -2,6 +2,7 @@
 
 import { Expert } from '../types.js';
 import { config } from '../config.js';
+import { EXPERT_RUNTIME_DEFAULTS } from '../model-defaults.js';
 import { BLANK_SYSTEM_PROMPT, BLANK_METADATA } from '../prompts/experts/index.js';
 
 export const geminiBlank1: Expert = {
@@ -9,15 +10,14 @@ export const geminiBlank1: Expert = {
   name: "Gemini Blank #1 (Pro)",
   model: config.models.gemini_blank_1,
 
+  provider: EXPERT_RUNTIME_DEFAULTS.gemini_blank_1.provider,
+  sandbox: EXPERT_RUNTIME_DEFAULTS.gemini_blank_1.sandbox,
   role: "사용자 정의 페르소나 (Gemini 계열 고성능)",
 
   systemPrompt: BLANK_SYSTEM_PROMPT,
 
   temperature: 0.3,  // Moderate creativity for debates
   maxTokens: 4000,
-
-  fallbacks: ["gemini_blank_2", "gpt_blank_1"],
-
   useCases: BLANK_METADATA.useWhen,
 
   toolChoice: "none"

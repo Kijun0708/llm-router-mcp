@@ -2,6 +2,7 @@
 
 import { Expert } from '../types.js';
 import { config } from '../config.js';
+import { EXPERT_RUNTIME_DEFAULTS } from '../model-defaults.js';
 import { CODEREVIEW_SYSTEM_PROMPT, CODEREVIEW_METADATA } from '../prompts/experts/codereview.prompt.js';
 
 export const codereview: Expert = {
@@ -9,15 +10,14 @@ export const codereview: Expert = {
   name: "Code Reviewer",
   model: config.models.codereview,
 
+  provider: EXPERT_RUNTIME_DEFAULTS.codereview.provider,
+  sandbox: EXPERT_RUNTIME_DEFAULTS.codereview.sandbox,
   role: "통합 코드 리뷰 전문가 - 버그/보안 + SOLID/설계 (READ-ONLY)",
 
   systemPrompt: CODEREVIEW_SYSTEM_PROMPT,
 
   temperature: 0.1,
   maxTokens: 4000,
-
-  fallbacks: ["strategist", "momus"],
-
   useCases: CODEREVIEW_METADATA.useWhen,
 
   toolChoice: "auto"

@@ -13,6 +13,8 @@ export interface CallExpertWithToolsOptions {
   maxToolCalls?: number;
   enableTools?: boolean;  // 도구 사용 활성화 여부
   imagePath?: string;     // 이미지 경로 (multimodal용)
+  /** 이 호출에만 쓸 모델 슬러그. 전문가 기본 모델 앞에 붙는다. */
+  requestedModel?: string;
 }
 
 /**
@@ -28,7 +30,8 @@ export async function callExpertWithTools(
     skipCache = false,
     maxToolCalls = MAX_TOOL_CALLS,
     enableTools = true,
-    imagePath
+    imagePath,
+    requestedModel
   } = options;
 
   const startTime = Date.now();
@@ -37,7 +40,7 @@ export async function callExpertWithTools(
 
   // 도구 비활성화 또는 전문가에 도구가 없으면 일반 호출
   if (!enableTools) {
-    return callExpert(expert, prompt, { context, skipCache, imagePath });
+    return callExpert(expert, prompt, { context, skipCache, imagePath, model: requestedModel });
   }
 
   // 사용할 도구 결정 (전문가별 도구 또는 기본 도구)
@@ -75,7 +78,8 @@ export async function callExpertWithTools(
       skipCache,
       tools,
       toolChoice,
-      messages
+      messages,
+      model: requestedModel
     });
 
     // 도구 호출이 없으면 최종 응답 (toolCalls 유무로 판단)
@@ -141,6 +145,7 @@ export async function callExpertWithTools(
   const finalResponse = await callExpert(expert, prompt, {
     skipCache,
     messages,
+    model: requestedModel,
     // 도구 없이 호출하여 최종 응답 유도
   });
 

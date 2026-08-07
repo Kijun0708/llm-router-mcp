@@ -6,30 +6,17 @@ import { extname } from 'path';
 import { config } from '../config.js';
 import { logger, createExpertLogger } from '../utils/logger.js';
 import { getCached, setCache } from '../utils/cache.js';
-import { isRateLimitError, markRateLimited, isCurrentlyLimited, detectProvider } from '../utils/rate-limit.js';
+import { markRateLimited, isCurrentlyLimited } from '../utils/rate-limit.js';
+import { ERROR_POLICY, kindOf, type ErrorKind } from '../utils/errors.js';
 import { withRetry } from '../utils/retry.js';
-import { getProvider, getProviderSemaphore } from './providers/index.js';
-
-// 모델별 타임아웃 설정 (ms)
-// 참고: 타임아웃 재시도 버그 수정 완료 → 이 값이 실제 최대 대기시간
-function getModelTimeout(model: string): number {
-  if (model.includes('gpt-5') || model.includes('codex')) {
-    return 1200000; // 20분 - --full-auto 자율 코드 분석 (코드리뷰 등)
-  }
-  if (model.includes('claude') && model.includes('opus')) {
-    return 180000;  // 3분 - Opus deep thinking
-  }
-  if (model.includes('claude')) {
-    return 120000;  // 2분 - Sonnet/Haiku
-  }
-  if (model.includes('gemini') && model.includes('pro')) {
-    return 600000;  // 10분 - Gemini Pro --yolo 자율 실행
-  }
-  if (model.includes('gemini')) {
-    return 300000;  // 5분 - Gemini Flash --yolo 자율 실행
-  }
-  return 60000;     // 기본 1분
-}
+import {
+  runModelChain,
+  composeChain,
+  timeoutFor,
+  getModel,
+  type ChainStep,
+  type CliCallParams,
+} from './providers/index.js';
 
 // Helper: Get MIME type from file extension
 function getMimeType(filePath: string): string {
@@ -130,37 +117,28 @@ export class TimeoutError extends Error {
 /** 최대 응답 크기 (5MB) */
 const MAX_RESPONSE_SIZE = 5 * 1024 * 1024;
 
+/** rate limit 트래커 기본 차단 시간. */
+const RATE_LIMIT_DEFAULT_MS = 60_000;
+
 /**
- * CLI 에러를 적절한 커스텀 에러로 변환
+ * 통합 분류(utils/errors)의 ErrorKind를 기존 커스텀 에러 클래스로 매핑한다.
+ *
+ * 클래스 자체는 유지한다 — 여러 도구가 instanceof로 분기하고 있다.
+ * 바뀐 것은 "분류를 여기서 문자열로 다시 하지 않는다"는 점이다.
  */
-function classifyCliError(error: Error, expertId: string, model: string, timeoutMs: number): Error {
-  const message = error.message;
+function toLegacyError(error: unknown, expertId: string, model: string, timeoutMs: number): Error {
+  const kind: ErrorKind = kindOf(error);
+  const original = error instanceof Error ? error : new Error(String(error));
 
-  // 타임아웃 에러
-  if (message.includes('timeout') || message.includes('timed out') || message.includes('CLI timeout')) {
-    return new TimeoutError(expertId, model, timeoutMs);
+  switch (kind) {
+    case 'timeout':
+      return new TimeoutError(expertId, model, timeoutMs);
+    case 'quota':
+      markRateLimited(model, RATE_LIMIT_DEFAULT_MS);
+      return new RateLimitExceededError(expertId, model, RATE_LIMIT_DEFAULT_MS);
+    default:
+      return new ExpertCallError(expertId, original, ERROR_POLICY[kind].tryFallbackExpert);
   }
-
-  // Rate Limit 에러
-  if (isRateLimitError(null, message)) {
-    const retryAfter = 60000; // 기본 1분
-    markRateLimited(model, retryAfter);
-    return new RateLimitExceededError(expertId, model, retryAfter);
-  }
-
-  // 인증 에러 (폴백 불가)
-  if (message.includes('unauthorized') || message.includes('not authenticated') ||
-      message.includes('login') || message.includes('auth')) {
-    return new ExpertCallError(expertId, error, false);
-  }
-
-  // CLI 실행 실패 (명령어 없음 등 - 폴백 가능)
-  if (message.includes('spawn failed') || message.includes('ENOENT')) {
-    return new ExpertCallError(expertId, error, true);
-  }
-
-  // 기타 에러 (폴백 가능)
-  return new ExpertCallError(expertId, error, true);
 }
 
 /**
@@ -206,6 +184,27 @@ export interface CallExpertOptions {
   toolChoice?: "auto" | "required" | "none";
   messages?: ChatMessage[];  // 기존 대화 이력 (Tool Loop용)
   imagePath?: string;        // 이미지 파일 경로 또는 URL (multimodal용)
+  /**
+   * 이 호출에만 적용할 모델 슬러그 (MODELS의 키).
+   * 전문가 기본 모델 앞에 붙어 0번 스텝이 되므로 scarce 모델(Claude 계열)도 여기서만 도달 가능하다.
+   * 한도 소진 시 자동으로 전문가 기본 모델로 강등된다.
+   */
+  model?: string;
+  /** CLI 작업 루트. 기본 process.cwd(). */
+  workspaceDir?: string;
+}
+
+/** 전문가 + 요청 모델 → 실행할 모델 체인. */
+export function buildExpertChain(expert: Expert, requestedModel?: string): ChainStep[] {
+  const base: ChainStep[] = expert.modelChain?.length
+    ? expert.modelChain
+    : [{ provider: expert.provider, model: expert.model }];
+
+  if (!requestedModel) return base;
+
+  // getModel이 미등록 슬러그를 여기서 터뜨린다 (CLI까지 가서 실패하지 않도록)
+  const spec = getModel(requestedModel);
+  return composeChain(base, { provider: spec.provider, model: spec.id });
 }
 
 export async function callExpert(
@@ -213,19 +212,24 @@ export async function callExpert(
   prompt: string,
   options: CallExpertOptions = {}
 ): Promise<ExpertResponse> {
-  const { context, skipCache = false, tools, toolChoice, messages, imagePath } = options;
+  const { context, skipCache = false, tools, toolChoice, messages, imagePath, workspaceDir } = options;
   const expertLogger = createExpertLogger(expert.id);
   const startTime = Date.now();
 
-  // 1. 현재 Rate Limit 상태 체크
-  if (isCurrentlyLimited(expert.model)) {
-    expertLogger.warn('Model is currently rate limited, will try fallback');
+  const chain = buildExpertChain(expert, options.model);
+
+  // 1. 현재 Rate Limit 상태 체크 — 체인 전체가 막혔을 때만 조기 실패한다.
+  //    (예전엔 expert.model 하나만 보고 던져서, 대체 모델이 멀쩡해도 폴백으로 새어나갔다)
+  if (chain.every(step => isCurrentlyLimited(step.model))) {
+    expertLogger.warn({ chain }, 'All models in chain are rate limited, will try fallback expert');
     throw new RateLimitExceededError(expert.id, expert.model, 0);
   }
 
-  // 2. 캐시 체크 (이미지가 없는 경우만)
+  // 2. 캐시 체크 (이미지가 없는 경우만).
+  //    명시 모델 요청은 캐시 키에 반영되어야 하므로 options.model을 컨텍스트에 섞는다.
+  const cacheContext = options.model ? `${context ?? ''}\n[model:${options.model}]` : context;
   if (!skipCache && !imagePath) {
-    const cached = getCached(expert.id, prompt, context);
+    const cached = getCached(expert.id, prompt, cacheContext);
     if (cached) {
       return {
         response: cached.response,
@@ -252,96 +256,83 @@ export async function callExpert(
       ? `${prompt}\n\n[컨텍스트]\n${context}`
       : prompt;
     effectiveSystemPrompt = expert.systemPrompt;
-
-    if (imagePath) {
-      effectivePrompt += `\n\n[이미지 첨부: ${imagePath}]`;
-      expertLogger.debug({ imagePath }, 'Including image reference in prompt');
-    }
   }
 
-  const timeoutMs = getModelTimeout(expert.model);
-  const provider = getProvider(expert.model);
-  const providerType = detectProvider(expert.model);
+  // 이미지: codex는 -i 로 진짜 첨부한다. agy/claude는 미지원이라 프로바이더가 거절하므로,
+  // 텍스트 힌트는 codex가 아닌 경로에만 남긴다.
+  const imagePaths = imagePath ? [imagePath] : undefined;
+  if (imagePath && chain[0].provider !== 'codex') {
+    effectivePrompt += `\n\n[이미지 첨부: ${imagePath}]`;
+    expertLogger.debug({ imagePath }, 'Including image reference in prompt (non-codex provider)');
+  }
+
+  const cwd = workspaceDir ?? process.cwd();
+
+  const buildParams = (step: ChainStep): CliCallParams => ({
+    prompt: effectivePrompt,
+    systemPrompt: effectiveSystemPrompt,
+    model: step.model,
+    timeoutMs: expert.timeoutMs ?? timeoutFor(step.model),
+    sandbox: expert.sandbox,
+    workspaceDir: cwd,
+    imagePaths: step.provider === 'codex' ? imagePaths : undefined,
+    expertId: expert.id,
+  });
 
   expertLogger.debug({
-    model: expert.model,
-    provider: provider.name,
-    timeoutMs,
+    chain,
+    sandbox: expert.sandbox,
     promptLength: effectivePrompt.length,
-  }, 'Calling CLI provider');
+  }, 'Calling CLI provider chain');
 
-  // 4. CLI 호출 (재시도 로직 + 동시성 제어)
-  const semaphore = getProviderSemaphore(providerType, config.concurrency.byProvider);
-  let content: string;
+  // 4. CLI 호출.
+  //    동시성 제어는 runModelChain 안에서 스텝 단위로 잡는다 — 예전처럼 체인 바깥에서
+  //    하나를 붙들면 멈춘 호출이 다른 모델의 슬롯까지 점유한다.
+  const chainResult = await withRetry(
+    async () => {
+      const result = await runModelChain(chain, buildParams, {
+        expertId: expert.id,
+        providerConcurrency: config.concurrency.byProvider,
+      });
 
-  try {
-    await semaphore.acquire();
+      if (result.content.length > MAX_RESPONSE_SIZE) {
+        throw new Error(
+          `Response too large (${Math.round(result.content.length / 1024 / 1024)}MB). ` +
+          `Maximum allowed: ${MAX_RESPONSE_SIZE / 1024 / 1024}MB`
+        );
+      }
 
-    try {
-      content = await withRetry(
-        async () => {
-          const result = await provider.call({
-            prompt: effectivePrompt,
-            systemPrompt: effectiveSystemPrompt,
-            model: expert.model,
-            timeoutMs,
-            imagePath,
-          });
-
-          // 응답 크기 체크
-          if (result.content.length > MAX_RESPONSE_SIZE) {
-            throw new Error(
-              `Response too large (${Math.round(result.content.length / 1024 / 1024)}MB). ` +
-              `Maximum allowed: ${MAX_RESPONSE_SIZE / 1024 / 1024}MB`
-            );
-          }
-
-          return result.content;
-        },
-        {
-          maxRetries: config.retry.maxRetries,
-          shouldRetry: (error) => {
-            if (error instanceof RateLimitExceededError) return false;
-            if (error instanceof TimeoutError) return false;
-            // ExpertCallError의 retryable 필드 확인
-            if (error instanceof ExpertCallError) return error.retryable;
-            // cli-spawner가 plain Error로 타임아웃 throw → 메시지로 감지
-            // classifyCliError()는 retry 루프 바깥에서 실행되므로 여기서 직접 체크
-            const msg = (error as Error).message || '';
-            if (msg.includes('timeout') || msg.includes('timed out')) return false;
-            return true;
-          }
-        }
-      );
-    } finally {
-      semaphore.release();
+      return result;
+    },
+    {
+      maxRetries: config.retry.maxRetries,
+      shouldRetry: (error) => ERROR_POLICY[kindOf(error)].retrySameModel,
     }
-  } catch (error) {
-    // CLI 에러를 적절한 커스텀 에러로 변환
-    const classified = classifyCliError(error as Error, expert.id, expert.model, timeoutMs);
-
+  ).catch((error: unknown) => {
+    const classified = toLegacyError(error, expert.id, expert.model, expert.timeoutMs ?? timeoutFor(expert.model));
     expertLogger.error({
-      error: (classified as Error).message,
-      errorType: (classified as Error).name,
-      timeoutMs,
-      model: expert.model,
-      provider: provider.name,
+      error: classified.message,
+      errorType: classified.name,
+      kind: kindOf(error),
+      chain,
     }, 'Expert CLI call failed');
-
     throw classified;
-  }
+  });
 
+  const content = chainResult.content;
   const latencyMs = Date.now() - startTime;
 
   // 5. 캐시 저장 (CLI 모드에서는 toolCalls가 없으므로 항상 캐시 가능)
   if (content) {
-    setCache(expert.id, prompt, content, context);
+    setCache(expert.id, prompt, content, cacheContext);
   }
 
   expertLogger.info({
     latencyMs,
-    provider: provider.name,
+    provider: chainResult.provider,
+    model: chainResult.model,
     contentLength: content.length,
+    usage: chainResult.usage,
   }, 'Expert CLI call completed');
 
   return {
@@ -350,6 +341,8 @@ export async function callExpert(
     fellBack: false,
     cached: false,
     latencyMs,
+    actualModel: chainResult.model,
+    usage: chainResult.usage,
     // CLI 모드에서는 tool_calls 미지원 → 항상 undefined
     toolCalls: undefined,
     finishReason: "stop",

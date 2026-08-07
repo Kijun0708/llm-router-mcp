@@ -6,6 +6,7 @@ import { getRateLimitStatus } from "../utils/rate-limit.js";
 import { getCacheStats, clearCache } from "../utils/cache.js";
 import { getStats as getBackgroundStats, cleanupOldTasks } from "../services/background-manager.js";
 import { experts } from "../experts/index.js";
+import { isModelBlocked, quotaSnapshot, semaphoreSnapshot } from "../services/providers/index.js";
 import { cleanupOldResponses } from "../utils/response-saver.js";
 import { getDashboardInfo } from "../dashboard-server/index.js";
 import { readFileSync } from "fs";
@@ -89,18 +90,39 @@ export async function handleHealthCheck(params: z.infer<typeof healthCheckSchema
   }
 
   output += `### CLI 도구\n`;
-  const useAntigravity = process.env.USE_ANTIGRAVITY === 'true';
-  output += `- Active Google provider: ${useAntigravity ? 'Antigravity (agy)' : 'Gemini CLI'}\n`;
-  output += `- Gemini: \`${config.cli.geminiPath}\`${useAntigravity ? ' (dormant)' : ''}\n`;
-  output += `- Antigravity: \`${config.cli.antigravityPath}\`${useAntigravity ? '' : ' (dormant)'}\n`;
-  output += `- Codex: \`${config.cli.codexPath}\`\n\n`;
+  output += `- Codex: \`${config.cli.codexPath}\` (GPT)\n`;
+  output += `- Antigravity: \`${config.cli.agyPath}\` (Gemini / Claude / GPT-OSS)\n`;
+  output += `- Claude: \`${config.cli.claudePath}\` (opt-in 전용 — 사용자 본인 한도 소모)\n\n`;
 
   output += `### 전문가 (${Object.keys(experts).length}명)\n`;
   for (const [id, expert] of Object.entries(experts)) {
     const limited = rateLimitStatus[expert.model]?.limited;
-    output += `- **${id}**: ${expert.model} ${limited ? '🔴 한도초과' : '🟢'}\n`;
+    const blocked = isModelBlocked(expert.provider, expert.model);
+    const mark = limited || blocked ? '🔴 한도초과' : '🟢';
+    const rw = expert.sandbox === 'workspace-write' ? ' ✏️' : '';
+    output += `- **${id}**: \`${expert.model}\` (${expert.provider})${rw} ${mark}\n`;
   }
   output += '\n';
+
+  // 한도 차단 현황
+  const blocks = quotaSnapshot();
+  if (blocks.length > 0) {
+    output += `### ⛔ 한도 차단 중\n`;
+    for (const b of blocks) {
+      output += `- ${b.provider}:${b.model} — ${Math.ceil(b.remainingMs / 60000)}분 후 해제 (${b.unblockAt})\n`;
+    }
+    output += '\n';
+  }
+
+  // 동시 실행 현황
+  const sems = semaphoreSnapshot().filter(s => s.inFlight > 0 || s.waiting > 0);
+  if (sems.length > 0) {
+    output += `### ⚙️ 동시 실행\n`;
+    for (const s of sems) {
+      output += `- ${s.key}: ${s.inFlight}/${s.limit} 실행 중, ${s.waiting} 대기\n`;
+    }
+    output += '\n';
+  }
 
   output += `### 캐시\n`;
   output += `- 항목 수: ${cacheStats.size}/${cacheStats.maxSize}\n`;

@@ -2,6 +2,7 @@
 
 import { Expert } from '../types.js';
 import { config } from '../config.js';
+import { EXPERT_RUNTIME_DEFAULTS } from '../model-defaults.js';
 import { DATA_SYSTEM_PROMPT, DATA_METADATA } from '../prompts/experts/index.js';
 
 export const data: Expert = {
@@ -9,15 +10,14 @@ export const data: Expert = {
   name: "GPT Data Architect",
   model: config.models.data,
 
+  provider: EXPERT_RUNTIME_DEFAULTS.data.provider,
+  sandbox: EXPERT_RUNTIME_DEFAULTS.data.sandbox,
   role: "DB 설계/쿼리 최적화 전문가",
 
   systemPrompt: DATA_SYSTEM_PROMPT,
 
   temperature: 0.1,  // Conservative for accurate query optimization
   maxTokens: 4000,
-
-  fallbacks: ["strategist", "codereview"],
-
   useCases: DATA_METADATA.useWhen,
 
   toolChoice: "auto"
