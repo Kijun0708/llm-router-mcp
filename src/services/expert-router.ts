@@ -3,6 +3,8 @@
 import { ExpertResponse } from '../types.js';
 import { experts, FALLBACK_CHAIN } from '../experts/index.js';
 import { callExpert, RateLimitExceededError, ExpertCallError } from './cliproxy-client.js';
+import { ERROR_POLICY, kindOf } from '../utils/errors.js';
+import { billingProviderOf } from './providers/index.js';
 import { callExpertWithTools } from './expert-with-tools.js';
 import { logger } from '../utils/logger.js';
 import { executeHooks } from '../hooks/index.js';
@@ -13,50 +15,16 @@ import { wrapWithPreamble, hasPreamble } from '../utils/worker-preamble.js';
 // ============================================================================
 
 /**
- * 폴백을 시도해야 하는 에러인지 판단
- * - Rate Limit: 폴백 시도
- * - Timeout: 폴백 시도
- * - 5xx 서버 에러: 폴백 시도
- * - 인증 에러 (401, 403): 즉시 throw (폴백 무의미)
- * - 잘못된 요청 (400): 즉시 throw (폴백 무의미)
+ * 폴백을 시도해야 하는 에러인지 판단.
+ *
+ * 판정 자체는 utils/errors.ts의 단일 분류표에 위임한다.
+ * 예전에는 여기 인라인 문자열 매칭이 있었고, 같은 일을 하는 표가 총 5벌이라
+ * 새 CLI 에러 문자열 하나를 처리하려면 최대 5곳을 고쳐야 했다.
+ * 게다가 message.includes('400')이 "14002ms"에도 걸리는 등 오분류가 있었다.
  */
 function shouldAttemptFallback(error: Error): { shouldFallback: boolean; reason: string } {
-  // Rate Limit 에러는 항상 폴백
-  if (error instanceof RateLimitExceededError) {
-    return { shouldFallback: true, reason: 'rate_limit' };
-  }
-
-  const message = error.message.toLowerCase();
-
-  // Timeout 에러: 폴백 시도
-  if (message.includes('timeout') || message.includes('timed out') || message.includes('aborted')) {
-    return { shouldFallback: true, reason: 'timeout' };
-  }
-
-  // 5xx 서버 에러: 폴백 시도
-  if (message.includes('500') || message.includes('502') || message.includes('503') ||
-      message.includes('504') || message.includes('server error') || message.includes('internal error')) {
-    return { shouldFallback: true, reason: 'server_error' };
-  }
-
-  // 과부하: 폴백 시도
-  if (message.includes('overloaded') || message.includes('capacity') || message.includes('unavailable')) {
-    return { shouldFallback: true, reason: 'overloaded' };
-  }
-
-  // 인증 에러: 폴백 무의미 (즉시 throw)
-  if (message.includes('401') || message.includes('403') || message.includes('unauthorized') ||
-      message.includes('forbidden') || message.includes('authentication') || message.includes('api key')) {
-    return { shouldFallback: false, reason: 'auth_error' };
-  }
-
-  // 잘못된 요청: 폴백 무의미 (즉시 throw)
-  if (message.includes('400') || message.includes('bad request') || message.includes('invalid')) {
-    return { shouldFallback: false, reason: 'bad_request' };
-  }
-
-  // 기타 에러: 기본적으로 폴백 시도
-  return { shouldFallback: true, reason: 'unknown' };
+  const kind = kindOf(error);
+  return { shouldFallback: ERROR_POLICY[kind].tryFallbackExpert, reason: kind };
 }
 
 /**
@@ -337,20 +305,11 @@ export async function callExpertWithFallback(
 }
 
 /**
- * Extracts provider from model name.
+ * 모델명 → 과금/집계용 프로바이더 라벨.
+ * 레지스트리가 단일 소스이며, 미등록 이름(과거 로그 등)에도 안전하다.
  */
 function getProviderFromModel(model: string): string {
-  const modelLower = model.toLowerCase();
-  if (modelLower.includes('gpt') || modelLower.includes('o1') || modelLower.includes('o3')) {
-    return 'openai';
-  }
-  if (modelLower.includes('claude') || modelLower.includes('anthropic')) {
-    return 'anthropic';
-  }
-  if (modelLower.includes('gemini') || modelLower.includes('google')) {
-    return 'google';
-  }
-  return 'unknown';
+  return billingProviderOf(model);
 }
 
 /**

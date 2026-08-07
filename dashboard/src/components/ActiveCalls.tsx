@@ -8,23 +8,31 @@ interface Props {
   calls: Record<string, ActiveCall>;
 }
 
-// Model-specific timeout thresholds (ms)
+// 진행바 기준이 되는 모델별 타임아웃 (ms).
+// 서버의 src/services/providers/model-registry.ts와 값을 맞춰야 한다.
+// (이전 표는 codex를 5분으로 표시했는데 서버 실제값은 20분이었고,
+//  gemini-3 키가 없어 모든 Gemini 3 모델이 기본값 2분으로 떨어졌다.)
 const MODEL_TIMEOUTS: Record<string, number> = {
-  'gpt': 300000,       // 5 min
-  'o1': 300000,
-  'o3': 300000,
-  'codex': 300000,
-  'gemini-pro': 120000, // 2 min
-  'gemini-2': 120000,
-  'gemini-flash': 90000, // 1.5 min
+  'gpt-5.5': 1_200_000,              // 20 min
+  'gemini-3.1-pro-high': 900_000,    // 15 min
+  'gemini-3.1-pro-low': 600_000,     // 10 min
+  'gemini-3.6-flash': 300_000,       // 5 min
+  'gemini-3.5-flash': 300_000,
+  'claude-opus-4-6-thinking': 900_000,
+  'claude-sonnet-4-6': 600_000,
+  'gpt-oss-120b': 600_000,
+  'opus': 300_000,                   // claude -p
+  'sonnet': 300_000,
 };
 
 function getTimeoutForModel(model: string): number {
   const m = model.toLowerCase();
-  for (const [key, timeout] of Object.entries(MODEL_TIMEOUTS)) {
-    if (m.includes(key)) return timeout;
-  }
-  return 120000; // default 2 min
+  // 정확 일치 우선, 없으면 가장 긴 접두 매칭 (gemini-3.1-pro-high가 gemini-3.1-pro보다 우선)
+  if (MODEL_TIMEOUTS[m] !== undefined) return MODEL_TIMEOUTS[m];
+  const hit = Object.keys(MODEL_TIMEOUTS)
+    .filter((key) => m.includes(key))
+    .sort((a, b) => b.length - a.length)[0];
+  return hit ? MODEL_TIMEOUTS[hit] : 600_000; // 기본 10분
 }
 
 function getTimeoutLevel(ratio: number): string {

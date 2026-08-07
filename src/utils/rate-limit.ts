@@ -1,21 +1,18 @@
 // src/utils/rate-limit.ts
 
 import { logger } from './logger.js';
+import { classifyErrorText, kindOf } from './errors.js';
 
-// Rate Limit 패턴 매칭
-const RATE_LIMIT_PATTERNS = [
-  /rate.?limit/i,
-  /too.?many.?requests/i,
-  /quota.?exceeded/i,
-  /resource.?exhausted/i,
-  /try.?again.?later/i,
-  /overloaded/i,
-  /capacity/i,
-  /429/
-];
-
+/**
+ * 한도 소진 여부.
+ *
+ * 판정은 utils/errors.ts의 단일 분류표에 위임한다. 여기 있던 자체
+ * RATE_LIMIT_PATTERNS는 삭제했다 — /capacity/ 와 벌거벗은 /429/ 가
+ * 모델의 평범한 답변 텍스트에까지 걸려 오탐을 냈고, /overloaded/를
+ * quota로 잡아 5xx 과부하와 구분하지 못했다.
+ */
 export function isRateLimitError(error: unknown, responseText?: string): boolean {
-  // HTTP 429 체크
+  // HTTP 429 체크 (구조적 신호 우선)
   if (error && typeof error === 'object') {
     const err = error as Record<string, unknown>;
     if (err.status === 429) return true;
@@ -25,9 +22,10 @@ export function isRateLimitError(error: unknown, responseText?: string): boolean
     }
   }
 
-  // 응답 텍스트에서 패턴 매칭
-  const text = responseText || (error instanceof Error ? error.message : String(error)) || '';
-  return RATE_LIMIT_PATTERNS.some(pattern => pattern.test(text));
+  if (responseText !== undefined) {
+    return classifyErrorText(responseText) === 'quota';
+  }
+  return kindOf(error) === 'quota';
 }
 
 export function parseRetryAfter(headers: Headers): number | null {
@@ -47,12 +45,11 @@ export function parseRetryAfter(headers: Headers): number | null {
   return null;
 }
 
-export function detectProvider(model: string): 'openai' | 'anthropic' | 'google' {
-  if (model.includes('gpt') || model.includes('openai')) return 'openai';
-  if (model.includes('claude') || model.includes('anthropic')) return 'anthropic';
-  if (model.includes('gemini') || model.includes('google')) return 'google';
-  return 'google'; // 기본값
-}
+// detectProvider는 삭제됐다.
+// 모델명 문자열로 프로바이더를 추론하는 것은 원리적으로 불가능하다 —
+// agy 하나가 Gemini·Claude·GPT-OSS를 모두 서빙하므로 "claude-opus-4-6-thinking"이
+// agy로 갈지 claude CLI로 갈지 이름만으로는 결정할 수 없다.
+// 라우팅은 Expert.provider(명시), 과금 라벨은 billingProviderOf()를 쓴다.
 
 // Rate Limit 추적
 const rateLimitTracker = new Map<string, {

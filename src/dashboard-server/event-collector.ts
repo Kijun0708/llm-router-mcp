@@ -25,6 +25,7 @@ import {
   addToHistory,
 } from './types.js';
 import { broadcast, sendSnapshot, onNewClient } from './ws-broadcaster.js';
+import { billingProviderOf } from '../services/providers/index.js';
 
 let state: DashboardState = createInitialState();
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -36,11 +37,10 @@ export function setEmitFunction(fn: (event: DashboardEvent) => void): void {
   emitFn = fn;
 }
 
+// 레지스트리 단일 소스. 이전 구현은 gpt/gemini 외를 전부 'unknown'으로 떨궈
+// agy가 서빙하는 Claude/GPT-OSS 모델이 대시보드에서 통째로 사라졌다.
 function getProvider(model: string): string {
-  const m = model.toLowerCase();
-  if (m.includes('gpt') || m.includes('o1') || m.includes('o3') || m.includes('codex')) return 'openai';
-  if (m.includes('gemini')) return 'google';
-  return 'unknown';
+  return billingProviderOf(model);
 }
 
 function guessWorkflowType(workflowId: string): string {

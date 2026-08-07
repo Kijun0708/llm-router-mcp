@@ -8,6 +8,7 @@ import { experts } from '../experts/index.js';
 import crypto from 'crypto';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
+import { billingProviderOf } from './providers/index.js';
 
 // ============================================================================
 // Persistence Configuration
@@ -231,9 +232,7 @@ loadTasks();
 startAutoSave();
 
 function getProvider(model: string): string {
-  if (model.includes('gpt') || model.includes('openai')) return 'openai';
-  if (model.includes('claude') || model.includes('anthropic')) return 'anthropic';
-  return 'google';
+  return billingProviderOf(model);
 }
 
 function canStartTask(model: string): boolean {

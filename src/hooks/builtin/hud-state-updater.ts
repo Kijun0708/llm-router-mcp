@@ -27,6 +27,7 @@ import type {
 } from '../types.js';
 import { DEFAULT_HOOK_RESULT } from '../types.js';
 import { getHookManager } from '../manager.js';
+import { billingProviderOf } from '../../services/providers/index.js';
 
 type ProviderKey = 'openai' | 'anthropic' | 'google';
 
@@ -34,11 +35,7 @@ type ProviderKey = 'openai' | 'anthropic' | 'google';
  * 모델 ID에서 Provider 추출
  */
 function getProvider(model: string): ProviderKey {
-  const m = model.toLowerCase();
-  if (m.includes('gpt') || m.includes('o1') || m.includes('o3')) return 'openai';
-  if (m.includes('claude')) return 'anthropic';
-  if (m.includes('gemini')) return 'google';
-  return 'openai';
+  return billingProviderOf(model) as ProviderKey;
 }
 
 /**

@@ -22,6 +22,7 @@ import {
 } from '../types.js';
 import { registerHook } from '../manager.js';
 import { logger } from '../../utils/logger.js';
+import { classifyErrorText, kindOf, type ErrorKind } from '../../utils/errors.js';
 
 /**
  * Error classification
@@ -117,83 +118,32 @@ let state: SessionState = {
 };
 
 /**
- * Error patterns for classification
+ * ErrorKind(단일 분류) -> 이 모듈의 ErrorType.
+ *
+ * 자체 ERROR_PATTERNS 표(8종 x 5~7개 정규식)는 삭제했다. 특히 /auth/i 단독 패턴이
+ * "authenticated"/"author"가 들어간 모든 문자열을 auth로 오분류했고,
+ * 벌거벗은 /400/ /500/ 이 "14002ms" 같은 숫자에도 걸렸다.
  */
-const ERROR_PATTERNS: Record<ErrorType, RegExp[]> = {
-  rate_limit: [
-    /rate.?limit/i,
-    /too.?many.?requests/i,
-    /quota.?exceeded/i,
-    /429/,
-    /throttl/i
-  ],
-  timeout: [
-    /timeout/i,
-    /timed?.?out/i,
-    /deadline.?exceeded/i,
-    /ETIMEDOUT/i,
-    /ESOCKETTIMEDOUT/i
-  ],
-  network: [
-    /network/i,
-    /ECONNREFUSED/i,
-    /ECONNRESET/i,
-    /ENOTFOUND/i,
-    /fetch.?failed/i,
-    /connection.?refused/i,
-    /socket.?hang.?up/i
-  ],
-  auth: [
-    /auth/i,
-    /unauthorized/i,
-    /forbidden/i,
-    /401/,
-    /403/,
-    /invalid.?api.?key/i,
-    /token.?expired/i
-  ],
-  server: [
-    /internal.?server/i,
-    /500/,
-    /502/,
-    /503/,
-    /504/,
-    /service.?unavailable/i,
-    /bad.?gateway/i
-  ],
-  invalid_request: [
-    /invalid.?request/i,
-    /bad.?request/i,
-    /400/,
-    /validation.?error/i,
-    /malformed/i
-  ],
-  context_overflow: [
-    /context.?length/i,
-    /token.?limit/i,
-    /too.?long/i,
-    /maximum.?context/i,
-    /overflow/i
-  ],
-  unknown: []
+const KIND_TO_ERROR_TYPE: Record<ErrorKind, ErrorType> = {
+  quota: 'rate_limit',
+  timeout: 'timeout',
+  network: 'network',
+  auth: 'auth',
+  // CLI argv 문제도 사용자가 손봐야 하는 종류라 auth와 같은 경로로 보낸다
+  permission_denied: 'auth',
+  server: 'server',
+  bad_request: 'invalid_request',
+  bad_model: 'invalid_request',
+  context_overflow: 'context_overflow',
+  unknown: 'unknown',
 };
 
 /**
  * Classifies an error
  */
 function classifyError(error: string | Error): ErrorType {
-  const errorStr = typeof error === 'string' ? error : error.message;
-
-  for (const [type, patterns] of Object.entries(ERROR_PATTERNS)) {
-    if (type === 'unknown') continue;
-    for (const pattern of patterns) {
-      if (pattern.test(errorStr)) {
-        return type as ErrorType;
-      }
-    }
-  }
-
-  return 'unknown';
+  const kind = typeof error === 'string' ? classifyErrorText(error) : kindOf(error);
+  return KIND_TO_ERROR_TYPE[kind];
 }
 
 /**

@@ -14,6 +14,7 @@ import {
   OnExpertResultContext,
   DEFAULT_HOOK_RESULT
 } from '../types.js';
+import { billingProviderOf } from '../../services/providers/index.js';
 
 /**
  * 텍스트 기반 토큰 추정
@@ -41,20 +42,8 @@ function estimateTokens(text: string): number {
  * 모델 ID에서 Provider 추출
  */
 function getProviderFromModel(model: string): Provider {
-  const modelLower = model.toLowerCase();
-
-  if (modelLower.includes('gpt') || modelLower.includes('o1')) {
-    return 'openai';
-  }
-  if (modelLower.includes('claude')) {
-    return 'anthropic';
-  }
-  if (modelLower.includes('gemini')) {
-    return 'google';
-  }
-
-  // 기본값
-  return 'openai';
+  // 레지스트리 단일 소스 (미등록 이름도 안전하게 추정)
+  return billingProviderOf(model) as Provider;
 }
 
 /**
