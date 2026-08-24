@@ -16,7 +16,7 @@ user-invocable: false
 |----|------|------|------|
 | `strategist` | codex / gpt-5.5 | 아키텍처 설계, 디버깅 전략 | codereview → momus |
 | `codereview` | agy / gemini-3.1-pro-high | 통합 코드 리뷰 (perspectives로 병렬 리뷰) | strategist → momus |
-| `frontend` | agy / gemini-3.1-pro-high | UI/UX, 컴포넌트 설계 | strategist → momus |
+| `frontend` | agy / gemini-3.7-flash-high | UI/UX, 컴포넌트 설계 | strategist → momus |
 
 #### 계획/분석 전문가 (2명)
 
@@ -95,6 +95,7 @@ consult_expert(expert: "momus", question: "...", model: "opus")
 |---|---|---|
 | `opus` / `sonnet` | Claude Opus/Sonnet (claude -p) | **사용자 본인 Claude 구독 한도 소모** |
 | `claude-opus-4-6-thinking` | Claude Opus 4.6 (agy 경유) | agy Claude 쿼터가 작다 |
+| `gemini-3.7-flash-high` | 최신 Flash | Pro의 60% 시간, UI/구조 논의에 |
 | `gemini-3.6-flash-high` | 빠른 Gemini | 간단한 작업에 |
 | `gpt-oss-120b-medium` | GPT-OSS 120B (agy 경유) | |
 

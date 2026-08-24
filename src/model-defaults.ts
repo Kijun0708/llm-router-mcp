@@ -45,9 +45,18 @@ export const EXPERT_RUNTIME_DEFAULTS = {
   implementer: { provider: 'codex', model: 'gpt-5.5', sandbox: 'workspace-write' },
 
   // ── Gemini (agy) ─────────────────────────────────────────────────────────
+  //
+  // codereview / momus 는 3.1 Pro 유지. 2026-08-24 실측에서 같은 코드 리뷰 과제에
+  // Pro(High)가 진짜 버그 4건으로 가장 깊었다. 리뷰는 깊이가 곧 값어치다.
   codereview: { ...GEMINI_PRO_READ },
-  frontend: { ...GEMINI_PRO_READ },
   momus: { ...GEMINI_PRO_READ },
+
+  // frontend 는 3.7 Flash (High).
+  // 같은 과제에서 Pro의 60% 시간(92초 vs 162초)에 사고량은 오히려 많았고
+  // (21k vs 12k thinking), Pro가 놓친 버그도 잡았다. UI 작업은 정확한 줄번호보다
+  // 구조·제안이 중요해 이쪽 균형이 맞다.
+  frontend: { provider: 'agy', model: 'gemini-3.7-flash-high', sandbox: 'read-only' },
+
   reality_checker: { ...GEMINI_PRO_READ },
   gemini_blank_1: { ...GEMINI_PRO_READ },
   debate_moderator: { ...GEMINI_PRO_READ },
@@ -79,7 +88,7 @@ export const DEFAULT_MODEL_FAMILIES: Record<ExpertId, string> = {
   gpt_blank_2: 'GPT',
   implementer: 'GPT',
   codereview: 'Gemini Pro',
-  frontend: 'Gemini Pro',
+  frontend: 'Gemini Flash',
   momus: 'Gemini Pro',
   reality_checker: 'Gemini Pro',
   gemini_blank_1: 'Gemini Pro',

@@ -13,7 +13,7 @@ LLM Router MCP is a Model Context Protocol (MCP) server that enables multi-LLM c
 | Provider | Binary | 서빙 모델 | 역할 |
 |---|---|---|---|
 | `codex` | `codex` (OpenAI Codex CLI) | `gpt-5.5` | GPT 전문가 11명 |
-| `agy` | `agy` (Antigravity CLI) | Gemini 3.1/3.5/3.6, Claude 4.6, GPT-OSS | Gemini 전문가 7명 |
+| `agy` | `agy` (Antigravity CLI) | Gemini 3.1 Pro / 3.5·3.6·3.7 Flash, Claude 4.6, GPT-OSS | Gemini 전문가 7명 |
 | `claude` | `claude -p` (Claude Code CLI) | `opus`, `sonnet` | **opt-in 전용** |
 
 **Gemini CLI(`@google/gemini-cli`)는 2026-06-18 공식 종료되어 제거됐다.** Google 계열은 agy만 쓴다.
@@ -70,7 +70,7 @@ codex는 `--sandbox read-only`, agy는 `--sandbox`, claude는 `--tools "Read,Gre
 |--------|------------------|------|-----------|
 | `strategist` | codex / gpt-5.5 | 아키텍처 설계, 디버깅 전략 | codereview → momus |
 | `codereview` | agy / gemini-3.1-pro-high | 통합 코드 리뷰 (perspectives로 GPT+Gemini 병렬) | strategist → momus |
-| `frontend` | agy / gemini-3.1-pro-high | UI/UX, 컴포넌트 설계 | strategist → momus |
+| `frontend` | agy / gemini-3.7-flash-high | UI/UX, 컴포넌트 설계 | strategist → momus |
 | `metis` | codex / gpt-5.5 | 전략적 계획, 문제 분해 | strategist → codereview |
 | `momus` | agy / gemini-3.1-pro-high | 비판적 분석, 품질 평가 | codereview → strategist |
 
@@ -101,6 +101,31 @@ codex는 `--sandbox read-only`, agy는 `--sandbox`, claude는 `--tools "Read,Gre
 | Expert | Provider / Model | Role |
 |--------|------------------|------|
 | `debate_moderator` | agy / gemini-3.1-pro-high | 패널 토론 중재 및 최종 요약 |
+
+### 모델 선택 근거 (2026-08-24 실측)
+
+같은 과제(`model-chain.ts`를 읽고 진짜 버그 찾기)로 측정한 결과:
+
+| 모델 | 시간 | thinking | 결과 |
+|---|---|---|---|
+| `gemini-3.1-pro-high` | 162초 | 12.4k | 진짜 버그 4건 (가장 깊음) |
+| `gemini-3.7-flash-high` | 92~100초 | 21~27k | 진짜 버그 2건 (Pro가 놓친 것 포함) |
+| `gemini-3.6-flash-high` | 58초 | 20.7k | 진짜 버그 1건 |
+| `gemini-3.7-flash-medium` | 85초 | 17.2k | — |
+| `gemini-3.7-flash-low` | 21초 | **0** | 근거 없는 지적 |
+
+**effort는 항상 `-high`를 쓴다.** `-low`는 thinking 토큰이 0인데 줄번호를 22번
+인용했다 — 파일을 읽지 않고 지어낸다. `-medium`은 시간이 high와 거의 같은데
+(85초 vs 92초) 사고량만 적어 선택할 이유가 없다.
+
+**리뷰는 Pro, UI는 Flash.** codereview/momus는 깊이가 값어치라 3.1 Pro,
+frontend는 구조·제안이 중요하고 속도가 값어치라 3.7 Flash.
+Pro와 Flash가 서로 다른 버그를 찾았으므로 `review_code`의 perspectives로
+섞어 쓰면 커버리지가 넓어진다.
+
+**주의**: `gemini-3.7-flash-high`는 2회 중 1회 agy 내부 오류
+(`ContentOffset ... exceeds line range size`)로 실패했다. 새 모델 + 새 agy
+조합이라 관찰이 필요하다. 실패해도 폴백 전문가로 넘어간다.
 
 ### 모델 오버라이드 (Claude opt-in 포함)
 
@@ -253,9 +278,10 @@ cp plugin/skills/<skill>/SKILL.md "$CACHE_DIR/skills/<skill>/SKILL.md"
 |-------|---------|
 | `gpt-5.5` | 20분 |
 | `gemini-3.1-pro-high` | 15분 |
+| `gemini-3.7-flash-high` | 10분 |
 | `gemini-3.1-pro-low`, `gpt-oss-120b-medium`, `claude-sonnet-4-6` | 10분 |
 | `claude-opus-4-6-thinking` | 15분 |
-| `gemini-3.5/3.6-flash-*` | 5분 |
+| `gemini-3.5/3.6-flash-*`, `gemini-3.7-flash-medium/low` | 5분 |
 | `opus`, `sonnet` (claude -p) | 5분 |
 
 agy는 단순 파일 읽기 1건에도 실측 147초가 걸린다. 짧게 잡지 말 것.
