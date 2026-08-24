@@ -261,6 +261,31 @@ cp plugin/skills/<skill>/SKILL.md "$CACHE_DIR/skills/<skill>/SKILL.md"
 - 주기적 정리 (매 10번째 호출)
 - JSON 키 정렬로 일관된 해시 생성
 
+### 응답 캐시
+
+`src/utils/cache.ts` — TTL 30분 LRU(100개). 캐시 키:
+
+```
+sha256(expertId : prompt : context + [chain:...] + [files:<지문>])
+```
+
+**파일 지문이 키에 들어간다.** 전문가 프롬프트는 파일 *경로*만 담고 내용은 CLI가
+직접 읽는 설계라(토큰 절약), 예전 키는 파일 변경을 전혀 보지 못했다. 리뷰 →
+지적된 버그 수정 → 재리뷰 시 프롬프트가 동일해 **30분 동안 고치기 전 코드의
+리뷰가 재생**됐다. 코드 리뷰 도구로서 오동작이라, 프롬프트/컨텍스트에서 실제로
+존재하는 파일 경로를 추출해 `mtime+size` 지문을 키에 섞는다
+(`fingerprintReferencedFiles`).
+
+- 워크스페이스 밖(절대경로·상위 탈출)과 URL은 제외한다
+- 존재하지 않는 토큰은 조용히 버린다 — 오탐해도 캐시가 보수적이 될 뿐이다
+- 후보는 최대 40개로 묶어 큰 프롬프트에서도 비용이 일정하다
+
+**모델도 키에 들어간다.** 전문가 기본 모델을 바꿔도(`MODEL_*`, `set_expert_model`,
+기본값 변경) 옛 모델의 답변이 계속 나오던 문제를 막는다.
+
+따라서 `llm_router_health(clear_cache: true)`를 습관적으로 쓸 필요가 없다.
+그래도 필요하면 그 파라미터는 그대로 있다.
+
 ### Persistence
 
 **Background Task Persistence** - `src/services/background-manager.ts`

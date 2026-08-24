@@ -5,7 +5,7 @@ import { readFileSync, existsSync } from 'fs';
 import { extname } from 'path';
 import { config } from '../config.js';
 import { logger, createExpertLogger } from '../utils/logger.js';
-import { getCached, setCache } from '../utils/cache.js';
+import { getCached, setCache, fingerprintReferencedFiles } from '../utils/cache.js';
 import { markRateLimited, isCurrentlyLimited } from '../utils/rate-limit.js';
 import { ERROR_POLICY, kindOf, type ErrorKind } from '../utils/errors.js';
 import { withRetry } from '../utils/retry.js';
@@ -225,9 +225,25 @@ export async function callExpert(
     throw new RateLimitExceededError(expert.id, expert.model, 0);
   }
 
-  // 2. 캐시 체크 (이미지가 없는 경우만).
-  //    명시 모델 요청은 캐시 키에 반영되어야 하므로 options.model을 컨텍스트에 섞는다.
-  const cacheContext = options.model ? `${context ?? ''}\n[model:${options.model}]` : context;
+  // 2. 캐시 키 구성.
+  //
+  //    캐시 키는 (expertId, prompt, context) 뿐이었고 그래서 두 가지를 놓쳤다:
+  //
+  //    a) 실제로 응답할 모델. 전문가 기본 모델을 바꿔도(MODEL_* env,
+  //       set_expert_model, 기본값 변경) 옛 모델의 답변이 계속 나왔다.
+  //    b) 참조된 파일의 내용. 프롬프트에는 경로만 있고 내용은 CLI가 직접 읽으므로,
+  //       파일을 고치고 다시 리뷰해도 프롬프트가 동일해 TTL(30분) 동안 고치기 전
+  //       코드의 리뷰가 재생됐다. 코드 리뷰 도구로서 명백한 오동작이었다.
+  //
+  //    cacheContext는 캐시 키에만 쓰이고 실제 프롬프트에는 들어가지 않는다.
+  const cacheCwd = workspaceDir ?? process.cwd();
+  const fileFingerprint = fingerprintReferencedFiles(`${prompt}\n${context ?? ''}`, cacheCwd);
+  const cacheContext = [
+    context ?? '',
+    `[chain:${chain.map(s => `${s.provider}/${s.model}`).join(',')}]`,
+    fileFingerprint ? `[files:${fileFingerprint}]` : '',
+  ].join('\n');
+
   if (!skipCache && !imagePath) {
     const cached = getCached(expert.id, prompt, cacheContext);
     if (cached) {
