@@ -16,7 +16,7 @@
 import { pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, '..', 'dist');
@@ -140,15 +140,52 @@ async function denyProbe(mods, modelOverride) {
   const { envelope, preamble } = mods.agyParse.parseAgyStdout(result.stdout);
   const outcome = mods.agyParse.classifyAgy(envelope, preamble, result.exitCode, result.stderr);
 
-  const ok = !outcome.ok && outcome.kind === 'permission_denied';
+  const kind = outcome.ok ? 'ok' : outcome.kind;
+  const note = `exit=${result.exitCode} status=${envelope?.status ?? 'null'} kind=${kind}`;
+
+  if (kind === 'permission_denied') {
+    return { providerId: 'agy', model, ok: true, durationMs: Date.now() - started, note };
+  }
+
+  // 호출이 그냥 성공했다면 이 머신의 agy 설정이 툴을 미리 승인해 둔 것이다.
+  // 그 경우 "거부" 시나리오 자체를 만들 수 없으므로 실패가 아니라 건너뛴 것으로 본다.
+  // (분류 로직 자체는 agy-parse.test.ts 가 실측 페이로드로 검증한다)
+  if (kind === 'ok') {
+    const allow = readAgyAllowRules();
+    if (allow.length > 0) {
+      return {
+        providerId: 'agy',
+        model,
+        ok: true,
+        skipped: true,
+        durationMs: Date.now() - started,
+        note: `${note} — agy settings.json 의 permissions.allow [${allow.join(', ')}] 때문에 사전 승인됨. 거부 시나리오 재현 불가.`,
+      };
+    }
+  }
+
   return {
     providerId: 'agy',
     model,
-    ok,
+    ok: false,
     durationMs: Date.now() - started,
-    note: `exit=${result.exitCode} status=${envelope?.status ?? 'null'} kind=${outcome.ok ? 'ok' : outcome.kind}`,
-    error: ok ? undefined : `permission_denied로 분류되지 않음 (${outcome.ok ? 'ok' : outcome.kind})`,
+    note,
+    error: `permission_denied로 분류되지 않음 (${kind})`,
   };
+}
+
+/** ~/.gemini/antigravity-cli/settings.json 의 permissions.allow 목록. 없으면 []. */
+function readAgyAllowRules() {
+  try {
+    const home = process.env.USERPROFILE || process.env.HOME || '';
+    const p = join(home, '.gemini', 'antigravity-cli', 'settings.json');
+    if (!existsSync(p)) return [];
+    const json = JSON.parse(readFileSync(p, 'utf-8'));
+    const allow = json?.permissions?.allow;
+    return Array.isArray(allow) ? allow : [];
+  } catch {
+    return [];
+  }
 }
 
 async function main() {
@@ -177,7 +214,7 @@ async function main() {
 
   console.log('');
   for (const r of results) {
-    const mark = r.ok ? '✅' : '❌';
+    const mark = r.skipped ? '⏭️' : r.ok ? '✅' : '❌';
     const time = r.durationMs !== undefined ? ` (${fmt(r.durationMs)})` : '';
     console.log(`${mark} ${r.providerId} / ${r.model}${time}`);
     if (r.note) console.log(`   ${r.note}`);
