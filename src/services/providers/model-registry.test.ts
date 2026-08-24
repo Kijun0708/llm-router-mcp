@@ -20,6 +20,9 @@ import {
 describe('MODELS — agy models 실측 목록과 일치', () => {
   // 2026-08-07 `agy models` 출력에 실제로 존재하는 슬러그
   const AGY_LIVE_SLUGS = [
+    'gemini-3.7-flash-high',
+    'gemini-3.7-flash-medium',
+    'gemini-3.7-flash-low',
     'gemini-3.6-flash-high',
     'gemini-3.6-flash-medium',
     'gemini-3.6-flash-low',

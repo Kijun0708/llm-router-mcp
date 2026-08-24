@@ -76,6 +76,32 @@ export const MODELS: Record<string, ModelSpec> = {
     timeoutMs: 10 * MINUTE,
     concurrency: 6,
   }),
+  // Gemini 3.7 Flash — agy 1.1.19에서 추가된 최신 Flash 세대.
+  // -high는 실제 리뷰 작업을 맡길 수 있어 넉넉히 잡는다.
+  'gemini-3.7-flash-high': spec({
+    id: 'gemini-3.7-flash-high',
+    provider: 'agy',
+    family: 'gemini',
+    label: 'Gemini 3.7 Flash (High)',
+    timeoutMs: 10 * MINUTE,
+    concurrency: 10,
+  }),
+  'gemini-3.7-flash-medium': spec({
+    id: 'gemini-3.7-flash-medium',
+    provider: 'agy',
+    family: 'gemini',
+    label: 'Gemini 3.7 Flash (Medium)',
+    timeoutMs: 5 * MINUTE,
+    concurrency: 10,
+  }),
+  'gemini-3.7-flash-low': spec({
+    id: 'gemini-3.7-flash-low',
+    provider: 'agy',
+    family: 'gemini',
+    label: 'Gemini 3.7 Flash (Low)',
+    timeoutMs: 5 * MINUTE,
+    concurrency: 10,
+  }),
   'gemini-3.6-flash-high': spec({
     id: 'gemini-3.6-flash-high',
     provider: 'agy',

@@ -101,7 +101,8 @@ export class ClaudeCliProvider implements CliProvider {
         timeoutMs: params.timeoutMs,
         // 프롬프트는 stdin — argv 상한 회피
         stdin: params.prompt,
-        env: params.workspaceDir ? { PWD: params.workspaceDir } : undefined,
+        // Windows에서 PWD 환경변수는 무의미하다. 실제 cwd를 지정해야 한다.
+        cwd: params.workspaceDir,
         // cmd.exe를 거치면 공백 있는 경로(--add-dir "C:\Program Files\...")가 깨진다.
         // claude는 네이티브 실행 파일이라 셸이 필요 없다.
         // .cmd/.ps1 shim을 쓰는 환경이면 CLI_CLAUDE_PATH에 전체 경로를 지정할 것.

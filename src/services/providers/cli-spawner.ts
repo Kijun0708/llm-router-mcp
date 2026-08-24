@@ -1,6 +1,7 @@
 // src/services/providers/cli-spawner.ts
 
 import { spawn, spawnSync } from 'child_process';
+import { existsSync, statSync } from 'fs';
 import { logger } from '../../utils/logger.js';
 import { ClassifiedError } from '../../utils/errors.js';
 
@@ -21,6 +22,8 @@ export interface SpawnOptions {
   injectNodeOptions?: boolean;
   /** 로그 식별용. */
   label?: string;
+  /** 자식 프로세스 작업 디렉터리. 미지정 시 부모 cwd 상속. */
+  cwd?: string;
 }
 
 export interface SpawnResult {
@@ -65,9 +68,26 @@ export async function spawnCli(
     shell = true,
     injectNodeOptions = false,
     label = command,
+    cwd,
   } = options;
 
   const startedAt = Date.now();
+
+  // 존재하지 않는 cwd를 넘기면 Node가 **명령어**에 대한 ENOENT로 보고한다.
+  // ("spawn C:\...\agy.exe ENOENT" — 실제로는 작업 디렉터리가 없는 것)
+  // 원인을 정반대로 가리키므로 여기서 걸러내고 부모 cwd를 상속시킨다.
+  let effectiveCwd: string | undefined;
+  if (cwd) {
+    try {
+      if (existsSync(cwd) && statSync(cwd).isDirectory()) {
+        effectiveCwd = cwd;
+      } else {
+        logger.warn({ label, cwd }, 'Requested cwd does not exist, inheriting parent cwd');
+      }
+    } catch (err) {
+      logger.warn({ label, cwd, err: (err as Error).message }, 'Failed to stat requested cwd, inheriting parent cwd');
+    }
+  }
 
   return new Promise((resolve, reject) => {
     // Claude Code 중첩 세션 감지 회피
@@ -89,6 +109,7 @@ export async function spawnCli(
       env: childEnv,
       shell,
       windowsHide: true,
+      ...(effectiveCwd ? { cwd: effectiveCwd } : {}),
     });
 
     const stdoutChunks: Buffer[] = [];

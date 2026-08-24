@@ -10,7 +10,7 @@
 import { logger } from '../../utils/logger.js';
 import { ERROR_POLICY, kindOf, describeKind, type ErrorKind } from '../../utils/errors.js';
 import { CliProviderError, type CliProvider, type CliCallParams, type CliCallResult, type ProviderId } from './types.js';
-import { isScarce, concurrencyFor, quotaBlockMsFor } from './model-registry.js';
+import { MODELS, isScarce } from './model-registry.js';
 import { isBlocked, block, unblockAt } from './quota-registry.js';
 import { providerFor } from './registry.js';
 import { getSemaphore } from './concurrency.js';
@@ -40,6 +40,12 @@ export interface ChainContext {
 
 function stepKey(step: ChainStep): string {
   return `${step.provider}:${step.model}`;
+}
+
+function summarize(attempts: ChainAttempt[]): string {
+  return attempts
+    .map(a => `${stepKey(a.step)}(${describeKind(a.kind)}: ${a.message.slice(0, 80)})`)
+    .join(' -> ');
 }
 
 /**
@@ -78,10 +84,26 @@ export async function runModelChain(
     }
 
     const providerSem = getSemaphore(step.provider, ctx.providerConcurrency?.[step.provider]);
-    const modelSem = getSemaphore(stepKey(step), concurrencyFor(step.model));
+    // MODELS를 직접 본다. concurrencyFor()는 미등록 슬러그에 throw하는데
+    // 이 위치는 try 밖이라 체인 전체가 죽는다. bad_model 은 다음 모델로
+    // 강등되어야 하므로, 여기서는 보수적 기본값을 쓰고 실패는 provider.call
+    // 안에서 나게 둔다.
+    const modelSem = getSemaphore(stepKey(step), MODELS[step.model]?.concurrency ?? 1);
 
-    await providerSem.acquire();
+    // 좁은 자원(모델)을 먼저, 넓은 자원(프로바이더)을 나중에 잡는다.
+    //
+    // 반대로 하면 head-of-line blocking이 생긴다: 동시성 1짜리 모델
+    // (claude-opus-4-6-thinking) 요청 여러 개가 프로바이더 슬롯을 점유한 채
+    // 모델 큐에서 대기해, 슬롯이 남아도는 Gemini 요청까지 굶긴다.
+    // 이 파일이 애초에 없애려던 문제가 계층만 바꿔 재발하는 셈이다.
     await modelSem.acquire();
+    try {
+      await providerSem.acquire();
+    } catch (err) {
+      // acquire가 실패해도 이미 잡은 모델 슬롯은 반드시 돌려준다.
+      modelSem.release();
+      throw err;
+    }
 
     try {
       const params = build(step);
@@ -101,12 +123,25 @@ export async function runModelChain(
       const policy = ERROR_POLICY[kind];
 
       if (policy.blockModelMs !== undefined) {
-        block(step.provider, step.model, quotaBlockMsFor(step.model));
+        // 모델별 명시값이 있으면 그것을, 없으면 정책값을 쓴다.
+        // (예전엔 정책값 존재 여부만 보고 항상 모델 기본값으로 덮어써서
+        //  ERROR_POLICY의 blockModelMs가 사실상 boolean 플래그로만 쓰였다)
+        block(step.provider, step.model, MODELS[step.model]?.quotaBlockMs ?? policy.blockModelMs);
       }
 
       if (!policy.tryNextModel) {
         // auth / bad_request / permission_denied / timeout — 다음 모델로 가도 소용없거나
         // 조용히 넘어가면 원인이 묻힌다. 즉시 전파.
+        //
+        // 단, 앞선 스텝들의 시도 이력은 붙여서 던진다. 그냥 throw err 하면
+        // "왜 이 모델까지 왔는지"가 사라져 진단이 불가능해진다.
+        if (attempts.length > 1) {
+          throw new CliProviderError(
+            kind, step.provider, step.model,
+            `${message} (앞선 시도: ${summarize(attempts.slice(0, -1))})`,
+            err instanceof CliProviderError ? err.raw : undefined
+          );
+        }
         throw err;
       }
 
@@ -122,9 +157,7 @@ export async function runModelChain(
 
   // 체인 소진
   const last = attempts[attempts.length - 1];
-  const summary = attempts
-    .map(a => `${stepKey(a.step)}(${describeKind(a.kind)}: ${a.message.slice(0, 80)})`)
-    .join(' -> ');
+  const summary = summarize(attempts);
   const skippedNote = skipped.length > 0 ? ` 건너뜀: ${skipped.join(', ')}.` : '';
 
   if (attempts.length === 0) {

@@ -78,6 +78,7 @@ export class CodexCliProvider implements CliProvider {
       const result = await spawnCli(cliPath, args, {
         timeoutMs: params.timeoutMs,
         stdin: prompt,
+        cwd: params.workspaceDir,
         label: `codex(${params.model})`,
       });
 

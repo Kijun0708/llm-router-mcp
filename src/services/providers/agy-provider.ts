@@ -57,19 +57,26 @@ export function buildAgyArgs(params: CliCallParams, promptArg: string, extraDirs
     '--disable-slash-commands',
   ];
 
-  if (params.workspaceDir) {
-    args.push('--project', params.workspaceDir);
-  }
-
   // 역할 게이트. --sandbox는 터미널 제약을 건다.
   // read-only 전문가에만 적용하고 implementer는 제외.
   if (params.sandbox === 'read-only') {
     args.push('--sandbox');
   }
 
-  for (const dir of [...(params.addDirs ?? []), ...extraDirs]) {
-    args.push('--add-dir', dir);
-  }
+  // 작업 디렉터리는 반드시 --add-dir 로 워크스페이스에 넣는다.
+  //
+  // agy 1.1.19는 프로세스 cwd를 무시하고 상대 경로를 자기 기본 디렉터리에서
+  // 찾는다. 워크스페이스에 없으면 "failed to read file: open
+  // C:/Users/<user>/Desktop/<path>: The system cannot find the file specified"
+  // 로 실패하며, 모델이 수십 번 재시도해 200초씩 태운 뒤 죽는다.
+  // (실측 2026-08-24: --add-dir 없이 205초 실패 → --add-dir 추가 시 21초 성공)
+  //
+  // --project 는 경로가 아니라 "Project ID or project name"이다. 경로를 넘기면
+  // 조용히 무시되므로 절대 쓰지 않는다.
+  const dirs = new Set<string>();
+  if (params.workspaceDir) dirs.add(params.workspaceDir);
+  for (const dir of [...(params.addDirs ?? []), ...extraDirs]) dirs.add(dir);
+  for (const dir of dirs) args.push('--add-dir', dir);
 
   // --effort는 의도적으로 넘기지 않는다.
   // 레지스트리의 모든 agy 슬러그는 effort가 이름에 인코딩돼 있고(-high/-low/-thinking),
@@ -125,6 +132,7 @@ export class AgyCliProvider implements CliProvider {
         env: { TZ: 'UTC' },
         // 프롬프트 argv에 백슬래시 경로/줄바꿈이 들어가 cmd quoting이 깨진다.
         shell: false,
+        cwd: params.workspaceDir,
         label: `agy(${params.model})`,
       });
 

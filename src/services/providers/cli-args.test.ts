@@ -70,14 +70,28 @@ describe('buildAgyArgs', () => {
     assert.equal(printTimeout, '615s'); // 600s + 15s 여유
   });
 
-  test('--project로 워크스페이스를 지정한다', () => {
-    assert.equal(valueOf(buildAgyArgs(params(), 'p'), '--project'), 'C:\\work\\repo');
+  test('--project는 쓰지 않는다 (경로가 아니라 프로젝트 ID/이름이다)', () => {
+    assert.equal(buildAgyArgs(params(), 'p').includes('--project'), false);
   });
 
-  test('addDirs와 추가 디렉터리가 모두 --add-dir로 반복된다', () => {
+  test('워크스페이스를 --add-dir로 넣는다 (agy 1.1.19는 프로세스 cwd를 무시한다)', () => {
+    // 실측 2026-08-24: --add-dir 없으면 상대 경로를 엉뚱한 기본 디렉터리에서 찾아
+    // 205초 태우고 실패한다. 넣으면 21초에 성공.
+    const args = buildAgyArgs(params(), 'p');
+    const dirs = args.filter((_, i) => args[i - 1] === '--add-dir');
+    assert.deepEqual(dirs, ['C:\\work\\repo']);
+  });
+
+  test('워크스페이스 + addDirs + 추가 디렉터리가 모두 --add-dir로 반복된다', () => {
     const args = buildAgyArgs(params({ addDirs: ['/a'] }), 'p', ['/tmp']);
-    const dirs = args.filter((a, i) => args[i - 1] === '--add-dir');
-    assert.deepEqual(dirs, ['/a', '/tmp']);
+    const dirs = args.filter((_, i) => args[i - 1] === '--add-dir');
+    assert.deepEqual(dirs, ['C:\\work\\repo', '/a', '/tmp']);
+  });
+
+  test('중복 디렉터리는 한 번만 넣는다', () => {
+    const args = buildAgyArgs(params({ addDirs: ['C:\\work\\repo'] }), 'p', ['C:\\work\\repo']);
+    const dirs = args.filter((_, i) => args[i - 1] === '--add-dir');
+    assert.deepEqual(dirs, ['C:\\work\\repo']);
   });
 
   test('프롬프트가 argv 첫 값으로 들어간다', () => {
